@@ -1,7 +1,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { URL } from 'node:url';
 import type { ApiRequestOptions } from './ApiRequestOptions.js';
 import type { ApiResult } from './ApiResult.js';
 

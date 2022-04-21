@@ -1,5 +1,4 @@
 import type { AsyncReturnType } from 'type-fest';
-import type { URL } from 'node:url';
 import {
   Config,
   OpenAPI,
