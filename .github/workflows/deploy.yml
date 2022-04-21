@@ -14,8 +14,7 @@ jobs:
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
-      - run: yarn install --production=false --non-interactive --frozen-lockfile
-      - run: yarn build
+      - run: make
       - run: npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}

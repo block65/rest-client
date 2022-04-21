@@ -2,11 +2,11 @@ SRC = $(wildcard src)
 
 all: dist
 
-node_modules: package.json yarn.lock
+node_modules: yarn.lock
 	yarn install
 
 yarn.lock: package.json
-	yarn install
+	yarn install --frozen-lockfile
 
 test: dist node_modules
 	yarn test
