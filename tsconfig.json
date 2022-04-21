@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "moduleResolution": "node",
+    "declaration": true,
+    "target": "es2021",
+    "lib": ["es2021"],
+    "module": "es2022",
+    "sourceMap": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "outDir": "dist",
+    "useUnknownInCatchVariables": true
+  },
+  "include": ["./src", "./__tests__", "lib/errors.ts", "lib/utils.ts"]
+}
