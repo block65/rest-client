@@ -11,7 +11,7 @@ yarn.lock: package.json
 test: dist node_modules
 	yarn test
 
-dist: node_modules
+dist: node_modules $(SRC)
 	yarn tsc -b
 
 clean:
