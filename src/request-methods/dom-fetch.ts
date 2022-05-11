@@ -12,7 +12,9 @@ import { ProviderError } from '../../lib/errors.js';
 import { stripUndefined, isPlainObject } from '../../lib/utils.js';
 
 export function createDomFetchRequestMethod(
-  options?: RequestMethodFactoryOptions & { credentials?: RequestCredentials },
+  options: RequestMethodFactoryOptions & {
+    credentials?: RequestCredentials;
+  } = {},
 ): RequestMethod {
   return async (params, config) => {
     if (params.mediaType && params.mediaType !== 'application/json') {
@@ -25,20 +27,24 @@ export function createDomFetchRequestMethod(
       url.searchParams.set(k, v !== null ? v : ''),
     );
 
+    const { keepAlive, credentials } = options;
+
+    const { signal, TOKEN, HEADERS } = config || {};
+
     const res = await fetch(url.toString(), {
-      keepalive: options?.keepAlive,
       body: JSON.stringify(params.body),
       method: params.method,
-      signal: config?.signal,
-      credentials: options?.credentials,
       headers: {
         'content-type': 'application/json;charset=utf-8',
         accept: 'application/json',
-        ...(config?.TOKEN && {
-          authorization: `Bearer ${await resolve(config.TOKEN, params)}`,
+        ...(TOKEN && {
+          authorization: `Bearer ${await resolve(TOKEN, params)}`,
         }),
-        ...(config?.HEADERS && (await resolve(config.HEADERS, params))),
+        ...(HEADERS && (await resolve(HEADERS, params))),
       },
+      ...(signal && { signal }),
+      ...(credentials && { credentials }),
+      ...(keepAlive && { keepalive: keepAlive }),
     });
 
     const body: CustomErrorSerialized | JsonValue = await (res.headers

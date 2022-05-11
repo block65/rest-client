@@ -27,29 +27,33 @@ export function createGotRequestMethod(
       url.searchParams.set(k, v !== null ? v : ''),
     );
 
+    const { signal, TOKEN, HEADERS } = config || {};
+
     const gotPomise = got(url.toString(), {
-      agent: {
-        https: agent,
-      },
       json: params.body,
       method: params.method,
       headers: {
-        ...(config?.TOKEN && {
-          authorization: `Bearer ${await resolve(config.TOKEN, params)}`,
+        ...(TOKEN && {
+          authorization: `Bearer ${await resolve(TOKEN, params)}`,
         }),
-        ...(config?.HEADERS && (await resolve(config.HEADERS, params))),
+        ...(HEADERS && (await resolve(HEADERS, params))),
       },
       timeout: {
         request: 30000, // cold start for serverless fns
       },
       throwHttpErrors: false,
+      ...(agent && {
+        agent: {
+          https: agent,
+        },
+      }),
     });
 
-    if (config?.signal) {
-      config?.signal.addEventListener('abort', () => {
+    if (signal) {
+      signal.addEventListener('abort', () => {
         gotPomise.cancel();
       });
-      if (config?.signal.aborted) {
+      if (signal.aborted) {
         gotPomise.cancel();
       }
     }

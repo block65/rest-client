@@ -9,18 +9,18 @@ type Headers = Record<string, string>;
 
 export type RequestMethod = (
   options: ApiRequestOptions,
-  localConfig?: Config,
+  localConfig?: Config | undefined,
 ) => Promise<ApiResult>;
 
 export type Config = {
   BASE: URL;
   VERSION: string;
-  WITH_CREDENTIALS?: boolean;
   REQUEST: RequestMethod;
-  TOKEN?: string | Resolver<string>;
-  USERNAME?: string | Resolver<string>;
-  PASSWORD?: string | Resolver<string>;
-  HEADERS?: Headers | Resolver<Headers>;
+  WITH_CREDENTIALS?: boolean | undefined;
+  TOKEN?: string | Resolver<string> | undefined;
+  USERNAME?: string | Resolver<string> | undefined;
+  PASSWORD?: string | Resolver<string> | undefined;
+  HEADERS?: Headers | Resolver<Headers> | undefined;
   signal?: AbortSignal;
 };
 

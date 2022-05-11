@@ -11,7 +11,8 @@
     "isolatedModules": true,
     "esModuleInterop": true,
     "outDir": "dist",
-    "useUnknownInCatchVariables": true
+    "useUnknownInCatchVariables": true,
+    "exactOptionalPropertyTypes": true
   },
   "include": ["./src", "./__tests__", "lib/errors.ts", "lib/utils.ts"]
 }

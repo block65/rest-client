@@ -9,12 +9,12 @@ import {
 export interface RestServiceClientConfig {
   requestMethod: RequestMethod;
   id: string;
-  basePath?: URL;
-  headers?: Record<string, string>;
-  credentials?: 'include' | 'omit' | 'same-origin';
-  buildId?: string;
-  userAgent?: string;
-  token?: string | Resolver<string>;
+  basePath?: URL | undefined;
+  headers?: Record<string, string> | undefined;
+  credentials?: 'include' | 'omit' | 'same-origin' | undefined;
+  buildId?: string | undefined;
+  userAgent?: string | undefined;
+  token?: string | Resolver<string> | undefined;
 }
 
 export type ApiMethod = (...args: any[]) => Promise<any>;

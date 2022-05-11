@@ -10,7 +10,7 @@ import { RequestMethod } from '../generated/core/OpenAPI.js';
 import { isPlainObject, stripUndefined } from '../../lib/utils.js';
 
 export function createNodeFetchRequestMethod(
-  options?: RequestMethodFactoryOptions,
+  options: RequestMethodFactoryOptions = {},
 ): RequestMethod {
   const agent = options?.keepAlive
     ? new Agent({ keepAlive: options?.keepAlive })
@@ -27,19 +27,21 @@ export function createNodeFetchRequestMethod(
       url.searchParams.set(k, v !== null ? v : ''),
     );
 
+    const { signal, TOKEN, HEADERS } = config || {};
+
     const res = await fetch(url.toString(), {
-      agent,
       body: JSON.stringify(params.body),
       method: params.method,
-      signal: config?.signal,
       headers: {
         'content-type': 'application/json;charset=utf-8',
         accept: 'application/json',
-        ...(config?.TOKEN && {
-          authorization: `Bearer ${await resolve(config.TOKEN, params)}`,
+        ...(TOKEN && {
+          authorization: `Bearer ${await resolve(TOKEN, params)}`,
         }),
-        ...(config?.HEADERS && (await resolve(config.HEADERS, params))),
+        ...(HEADERS && (await resolve(HEADERS, params))),
       },
+      ...(agent && { agent }),
+      ...(signal && { signal }),
     });
 
     const body = await (res.headers
