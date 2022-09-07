@@ -1,10 +1,6 @@
-import { Resolver } from '../generated/core/OpenAPI.js';
-import { ApiRequestOptions } from '../generated/core/ApiRequestOptions.js';
-import { isPlainObject } from '../../lib/utils.js';
+import { isPlainObject } from '../lib/utils.js';
 
-export interface RequestMethodFactoryOptions {
-  keepAlive?: boolean;
-}
+type Resolver<T> = () => T | Promise<T>;
 
 export function hackyConvertDates(val: unknown): unknown {
   if (Array.isArray(val)) {
@@ -32,7 +28,6 @@ export function hackyConvertDates(val: unknown): unknown {
 
 export function resolve<T extends any | Resolver<any>>(
   val: T,
-  params: ApiRequestOptions,
 ): Promise<T extends Resolver<any> ? ReturnType<T> : T> {
-  return Promise.resolve(typeof val === 'function' ? val(params) : val);
+  return Promise.resolve(typeof val === 'function' ? val() : val);
 }

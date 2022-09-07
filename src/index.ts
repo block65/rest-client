@@ -1,7 +1,11 @@
+// for checking errors thrown
+export { ServiceError } from '../lib/errors.js';
+
+// for building your own client
+export { hackyConvertDates } from '../lib/common.js';
+
+// the client
 export {
   RestServiceClient,
   type RestServiceClientConfig,
-  type ApiMethod,
-} from './rest-service-client.js';
-
-export { request } from './generated/core/request.js';
+} from '../lib/rest-service-client.js';

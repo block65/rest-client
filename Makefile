@@ -1,21 +1,25 @@
-SRC = $(wildcard src)
+SRCS = $(wildcard src/**)
 
 all: dist
 
-node_modules: yarn.lock
-	yarn install
+.PHONY: deps
+deps: node_modules
 
-yarn.lock: package.json
-	yarn install --frozen-lockfile
-
-test: dist node_modules
-	yarn test
-
-dist: node_modules $(SRC)
-	yarn tsc -b
-
+.PHONY: clean
 clean:
+	yarn tsc -b --clean
 	rm -rf dist
 
-distclean: clean
-	rm -rf node_modules
+.PHONY: test
+test:
+	NODE_OPTIONS=--experimental-vm-modules yarn jest
+
+node_modules: package.json
+	yarn install
+
+dist: node_modules tsconfig.json $(SRCS)
+	yarn tsc
+
+.PHONY: dev
+dev:
+	yarn tsc -w

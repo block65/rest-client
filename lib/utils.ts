@@ -1,3 +1,5 @@
+export type Resolver<T> = () => T | Promise<T>;
+
 export function isPlainObject<T extends Record<string, unknown>>(
   value: unknown | T,
 ): value is T {
