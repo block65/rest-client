@@ -1,17 +1,16 @@
 import { CustomError, type CustomErrorSerialized } from '@block65/custom-error';
-import { hackyConvertDates, resolve } from '../lib/common.js';
+import { hackyConvertDates } from '../lib/common.js';
 import { ServiceError } from './errors.js';
-import type { FetcherMethod } from './fetcher.js';
+import type { FetcherMethod, ResolvableHeaders } from './fetcher.js';
 import type {
   RequestMethodCaller,
   RuntimeOptions,
 } from './generated/models.js';
-import { isPlainObject, Resolver } from './utils.js';
+import { isPlainObject } from './utils.js';
 
 export interface RestServiceClientConfig {
-  headers?: Record<string, string> | undefined;
+  headers?: ResolvableHeaders | undefined;
   credentials?: 'include' | 'omit' | 'same-origin' | undefined;
-  token?: string | Resolver<string> | undefined;
 }
 
 export class RestServiceClient {
@@ -54,9 +53,6 @@ export class RestServiceClient {
         headers: {
           ...headers,
           ...this.#config.headers,
-          ...(this.#config.token && {
-            authorization: `Bearer ${await resolve(this.#config.token)}`,
-          }),
         },
         ...(realTimeOptions?.signal && { signal: realTimeOptions?.signal }),
       });
