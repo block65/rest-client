@@ -1,21 +1,44 @@
 import ky from 'ky-universal';
-import type { FetcherParams, FetcherResponse } from '../lib/fetcher.js';
+import type {
+  FetcherParams,
+  FetcherResponse,
+  ResolvableHeaders,
+} from '../lib/fetcher.js';
+
+async function resolveHeaders(
+  headers: ResolvableHeaders | undefined,
+): Promise<Record<string, string | undefined>> {
+  if (!headers) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    await Promise.all(
+      Object.entries(headers).map(
+        async ([key, value]): Promise<[string, string]> => [
+          key,
+          value instanceof Function ? await value() : value,
+        ],
+      ),
+    ),
+  );
+}
 
 export async function isomorphicFetcher<T>(
   params: FetcherParams,
 ): Promise<FetcherResponse<T>> {
   const { url, method, body, headers, credentials, signal } = params;
 
-  // const { keepAlive,  } = options;
+  const resolvedHeaders = await resolveHeaders(headers);
 
   const res = await ky(url, {
     method,
     throwHttpErrors: false,
-    ...(headers && { headers }),
+    ...(resolvedHeaders && { headers: resolvedHeaders }),
     ...(credentials && { credentials }),
     ...(!!body && { json: body }),
     ...(signal && { signal }),
-    // ...(keepAlive && { keepalive: keepAlive }),
+    timeout: 10000,
   });
 
   return {
