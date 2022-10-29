@@ -10,6 +10,15 @@ const server = createServer((req, res) => {
       res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify([1, 2, 3]));
       break;
+    case '/my-headers':
+      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(
+        JSON.stringify({
+          ...req.headers,
+          host: 'redacted', // redacted as it changes every test run
+        }),
+      );
+      break;
     case '/json-error':
       res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
       res.end(
@@ -52,6 +61,44 @@ describe('Fetcher', () => {
           2,
           3,
         ],
+        "ok": true,
+        "status": 200,
+        "statusText": "OK",
+        "url": Any<URL>,
+      }
+    `,
+    );
+  });
+
+  test('Headers', async () => {
+    const response = await isomorphicFetcher({
+      method: 'get',
+      url: new URL('/my-headers', base),
+      headers: {
+        'x-async': () => Promise.resolve('Bearer 1234567890'),
+        'x-func': () => 'hello',
+        'x-primitive': 'hello',
+      },
+    });
+
+    expect(response).toMatchInlineSnapshot(
+      {
+        url: expect.any(URL),
+      },
+      `
+      {
+        "body": {
+          "accept": "*/*",
+          "accept-encoding": "gzip, deflate",
+          "accept-language": "*",
+          "connection": "keep-alive",
+          "host": "redacted",
+          "sec-fetch-mode": "cors",
+          "user-agent": "undici",
+          "x-async": "Bearer 1234567890",
+          "x-func": "hello",
+          "x-primitive": "hello",
+        },
         "ok": true,
         "status": 200,
         "statusText": "OK",
