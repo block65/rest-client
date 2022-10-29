@@ -3,23 +3,22 @@
  *
  * WARN: Do not edit directly.
  *
- * Generated on 2022-09-07T12:48:13.446Z
+ * Generated on 2022-10-29T10:44:17.417Z
  *
  */
 export type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'head';
-export type RequestParams = {
-  method: HttpMethod;
+export type RequestParameters = {
   pathname: string;
-  query?: Record<string, string | number> | undefined;
+  method: HttpMethod;
+  query?: Record<string, string | number | string[] | number[]> | undefined;
   body?: unknown;
   headers?: Record<string, string>;
 };
-
 export type RuntimeOptions = {
   signal?: AbortSignal;
 };
 export type RequestMethod<T = any> = (
-  params: RequestParams,
+  params: RequestParameters,
   options?: RuntimeOptions,
 ) => Promise<T>;
 export type RequestMethodCaller<T = unknown> = (
