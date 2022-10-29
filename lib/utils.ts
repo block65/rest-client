@@ -7,6 +7,7 @@ export function isPlainObject<T extends Record<string, unknown>>(
     return false;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const prototype = Object.getPrototypeOf(value);
   return prototype === null || prototype === Object.getPrototypeOf({});
 }
@@ -14,10 +15,14 @@ export function isPlainObject<T extends Record<string, unknown>>(
 export function withNullProto<T extends Record<string | number, unknown>>(
   obj: T,
 ): T {
-  return Object.assign(Object.create(null), obj);
+  return Object.assign<T, T>(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    Object.create(null),
+    obj,
+  );
 }
 
-export function stripUndefined<T extends Record<string, any>>(obj: T): T {
+export function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
   return Object.entries(obj).reduce(
     (accum, [k, v]) =>
       typeof v === 'undefined'
