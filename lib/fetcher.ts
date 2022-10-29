@@ -1,9 +1,7 @@
 import type { HttpMethod } from './generated/models.js';
+import type { Resolver } from './utils.js';
 
-export type ResolvableHeaders = Record<
-  string,
-  string | (() => string) | (() => Promise<string>)
->;
+export type ResolvableHeaders = Record<string, string | Resolver<string>>;
 
 export type FetcherParams<T = unknown> = {
   url: URL;

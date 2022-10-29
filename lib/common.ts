@@ -1,7 +1,5 @@
 import { isPlainObject } from '../lib/utils.js';
 
-type Resolver<T> = () => T | Promise<T>;
-
 export function hackyConvertDates(val: unknown): unknown {
   if (Array.isArray(val)) {
     return val.map(hackyConvertDates);
@@ -24,10 +22,4 @@ export function hackyConvertDates(val: unknown): unknown {
     );
   }
   return val;
-}
-
-export function resolve<T extends any | Resolver<any>>(
-  val: T,
-): Promise<T extends Resolver<any> ? ReturnType<T> : T> {
-  return Promise.resolve(typeof val === 'function' ? val() : val);
 }

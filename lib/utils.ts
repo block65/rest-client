@@ -1,4 +1,4 @@
-export type Resolver<T> = () => T | Promise<T>;
+export type Resolver<T = unknown> = () => T | Promise<T>;
 
 export function isPlainObject<T extends Record<string, unknown>>(
   value: unknown | T,
@@ -25,4 +25,8 @@ export function stripUndefined<T extends Record<string, any>>(obj: T): T {
         : { ...accum, [k]: isPlainObject(v) ? stripUndefined(v) : v },
     withNullProto({} as T),
   );
+}
+
+export function resolve<T>(val: Resolver<T>) {
+  return Promise.resolve<T>(typeof val === 'function' ? val() : val);
 }
