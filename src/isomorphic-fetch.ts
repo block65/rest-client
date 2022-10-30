@@ -43,8 +43,24 @@ export async function isomorphicFetcher<T>(
     timeout: 10000,
   });
 
+  const contentType = res.headers.get('content-type');
+  const isJson = contentType && contentType.startsWith('application/json');
+
+  if (isJson) {
+    // with ky, an empty string is returned on a 204
+    const responseBody: T | '' = await res.json();
+
+    return {
+      ...(responseBody !== '' && { body: responseBody }),
+      url: new URL(res.url),
+      status: res.status,
+      statusText: res.statusText,
+      ok: res.ok,
+    };
+  }
+
   return {
-    body: await res.json<T>(),
+    body: (await res.text()) as T,
     url: new URL(res.url),
     status: res.status,
     statusText: res.statusText,
