@@ -36,7 +36,7 @@ export class RestServiceClient {
     fn: RequestMethodCaller<T>,
     options?: RuntimeOptions,
   ): Promise<T> {
-    return fn(async (params, realTimeOptions) => {
+    return fn(async (params, runtimeOptions) => {
       const { method, pathname, query, body, headers } = params;
 
       const url = new URL(`.${pathname}`, this.#base);
@@ -54,7 +54,8 @@ export class RestServiceClient {
           ...headers,
           ...this.#config.headers,
         },
-        ...(realTimeOptions?.signal && { signal: realTimeOptions?.signal }),
+        }),
+        ...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),
       });
 
       if (res.status >= 400) {
