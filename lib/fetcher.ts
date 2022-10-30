@@ -13,7 +13,7 @@ export type FetcherParams<T = unknown> = {
 };
 
 export type FetcherResponse<T> = {
-  body: T;
+  body?: T;
   url: URL;
   status: number;
   statusText: string;
