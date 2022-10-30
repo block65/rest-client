@@ -2,7 +2,7 @@
 export { ServiceError } from '../lib/errors.js';
 
 // for building your own fetcher
-export { hackyConvertDates } from '../lib/common.js';
+export type { FetcherMethod } from '../lib/fetcher.js';
 
 // a good standard/basic fetcher
 export { isomorphicFetcher } from '../src/isomorphic-fetch.js';
