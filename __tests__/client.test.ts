@@ -58,9 +58,7 @@ describe('Client', () => {
           options,
         ),
       ),
-    ).rejects.toThrowErrorMatchingInlineSnapshot(
-      '"Unexpected token < in JSON at position 0"',
-    );
+    ).rejects.toMatchInlineSnapshot(`[Error: Not Found]`);
   });
 
   test('JSON Error', async () => {
@@ -75,7 +73,9 @@ describe('Client', () => {
           options,
         ),
       ),
-    ).rejects.toThrowErrorMatchingInlineSnapshot('"Bad Request"');
+    ).rejects.toThrowErrorMatchingInlineSnapshot(`"Data should be array"`);
+  });
+
   test('Headers', async () => {
     const response = await client.send((requestMethod, options) =>
       requestMethod(

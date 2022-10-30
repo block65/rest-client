@@ -40,15 +40,10 @@ describe('Fetcher', () => {
     );
   });
 
-  test('Headers', async () => {
+  test('204', async () => {
     const response = await isomorphicFetcher({
       method: 'get',
-      url: new URL('/my-headers', base),
-      headers: {
-        'x-async': () => Promise.resolve('Bearer 1234567890'),
-        'x-func': () => 'hello',
-        'x-primitive': 'hello',
-      },
+      url: new URL('/204', base),
     });
 
     expect(response).toMatchInlineSnapshot(
@@ -57,21 +52,10 @@ describe('Fetcher', () => {
       },
       `
       {
-        "body": {
-          "accept": "*/*",
-          "accept-encoding": "gzip, deflate",
-          "accept-language": "*",
-          "connection": "keep-alive",
-          "host": "redacted",
-          "sec-fetch-mode": "cors",
-          "user-agent": "undici",
-          "x-async": "Bearer 1234567890",
-          "x-func": "hello",
-          "x-primitive": "hello",
-        },
+        "body": "",
         "ok": true,
-        "status": 200,
-        "statusText": "OK",
+        "status": 204,
+        "statusText": "No Content",
         "url": Any<URL>,
       }
     `,
@@ -79,13 +63,12 @@ describe('Fetcher', () => {
   });
 
   test('JSON Error', async () => {
-    const response = await isomorphicFetcher({
-      method: 'get',
-      url: new URL('/json-error', base),
-    });
-
-    // expect(CustomError.isCustomError(response)).toBeTruthy();
-    expect(response).toMatchInlineSnapshot(
+    expect(
+      await isomorphicFetcher({
+        method: 'get',
+        url: new URL('/json-error', base),
+      }),
+    ).toMatchInlineSnapshot(
       {
         url: expect.any(URL),
       },
@@ -106,13 +89,24 @@ describe('Fetcher', () => {
   });
 
   test('404', async () => {
-    await expect(
-      isomorphicFetcher({
+    expect(
+      await isomorphicFetcher({
         method: 'get',
         url: new URL('/404', base),
       }),
-    ).rejects.toMatchInlineSnapshot(
-      '[SyntaxError: Unexpected token < in JSON at position 0]',
+    ).toMatchInlineSnapshot(
+      {
+        url: expect.any(URL),
+      },
+      `
+      {
+        "body": "<h1>Not Found</h1>",
+        "ok": false,
+        "status": 404,
+        "statusText": "Not Found",
+        "url": Any<URL>,
+      }
+    `,
     );
   });
 
