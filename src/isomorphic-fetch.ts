@@ -40,7 +40,6 @@ export async function isomorphicFetcher<T>(
     ...(!!body && { json: body }),
     ...(signal && { signal }),
     parseJson: parse,
-    timeout: 10000,
   });
 
   const contentType = res.headers.get('content-type');
