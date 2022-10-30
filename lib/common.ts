@@ -1,4 +1,24 @@
 import { isPlainObject } from '../lib/utils.js';
+import type { ResolvableHeaders } from './fetcher.js';
+
+export async function resolveHeaders(
+  headers: ResolvableHeaders | undefined,
+): Promise<Record<string, string>> {
+  if (!headers) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    await Promise.all(
+      Object.entries(headers).map(
+        async ([key, value]): Promise<[string, string]> => [
+          key,
+          value instanceof Function ? await value() : value,
+        ],
+      ),
+    ),
+  );
+}
 
 export function hackyConvertDates(val: unknown): unknown {
   if (Array.isArray(val)) {

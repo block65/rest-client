@@ -1,5 +1,5 @@
 import { CustomError, type CustomErrorSerialized } from '@block65/custom-error';
-import { hackyConvertDates } from '../lib/common.js';
+import { hackyConvertDates, resolveHeaders } from '../lib/common.js';
 import { ServiceError } from './errors.js';
 import type { FetcherMethod, ResolvableHeaders } from './fetcher.js';
 import type {
@@ -50,10 +50,9 @@ export class RestServiceClient {
         url,
         method,
         body,
-        headers: {
+        headers: await resolveHeaders({
           ...headers,
           ...this.#config.headers,
-        },
         }),
         ...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),
       });
