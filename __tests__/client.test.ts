@@ -16,6 +16,8 @@ describe('Client', () => {
     {
       headers: {
         'x-build-id': 'test/123',
+        'x-async': () => Promise.resolve('Bearer 1234567890'),
+        'x-func': () => 'hello',
       },
     },
   );
@@ -74,6 +76,35 @@ describe('Client', () => {
         ),
       ),
     ).rejects.toThrowErrorMatchingInlineSnapshot('"Bad Request"');
+  test('Headers', async () => {
+    const response = await client.send((requestMethod, options) =>
+      requestMethod(
+        {
+          pathname: '/my-headers',
+          method: 'get',
+          headers: {
+            'x-merged': 'hello',
+          },
+        },
+        options,
+      ),
+    );
+
+    expect(response).toMatchInlineSnapshot(`
+      {
+        "accept": "*/*",
+        "accept-encoding": "gzip, deflate",
+        "accept-language": "*",
+        "connection": "keep-alive",
+        "host": "redacted",
+        "sec-fetch-mode": "cors",
+        "user-agent": "undici",
+        "x-async": "Bearer 1234567890",
+        "x-build-id": "test/123",
+        "x-func": "hello",
+        "x-merged": "hello",
+      }
+    `);
   });
 
   afterAll((done) => {
