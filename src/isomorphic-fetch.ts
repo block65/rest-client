@@ -23,6 +23,7 @@ async function resolveHeaders(
     ),
   );
 }
+import { parse } from '@hapi/bourne';
 
 export async function isomorphicFetcher<T>(
   params: FetcherParams,
@@ -38,6 +39,7 @@ export async function isomorphicFetcher<T>(
     ...(credentials && { credentials }),
     ...(!!body && { json: body }),
     ...(signal && { signal }),
+    parseJson: parse,
     timeout: 10000,
   });
 
