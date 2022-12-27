@@ -1,7 +1,10 @@
 import { createServer } from 'node:http';
 import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import getPort from 'get-port';
-import { isomorphicFetcher } from '../src/isomorphic-fetch.js';
+import {
+  createIsomorphicFetcher,
+  isomorphicFetcher,
+} from '../src/isomorphic-fetch.js';
 import { requestListener } from './server.js';
 
 const server = createServer(requestListener);
@@ -109,6 +112,56 @@ describe('Fetcher', () => {
     `,
     );
   });
+
+  test('Custom options iso fetcher', async () => {
+    const customOptionsFetcher = createIsomorphicFetcher({
+      headers: {
+        'x-fetcher': 'custom',
+      },
+    });
+
+    expect(
+      await customOptionsFetcher({
+        method: 'get',
+        url: new URL('/my-headers', base),
+      }),
+    ).toMatchInlineSnapshot(
+      {
+        url: expect.any(URL),
+      },
+      `
+      {
+        "body": {
+          "accept": "*/*",
+          "accept-encoding": "gzip, deflate",
+          "accept-language": "*",
+          "connection": "keep-alive",
+          "host": "redacted",
+          "sec-fetch-mode": "cors",
+          "user-agent": "undici",
+          "x-fetcher": "custom",
+        },
+        "ok": true,
+        "status": 200,
+        "statusText": "OK",
+        "url": Any<URL>,
+      }
+    `,
+    );
+  });
+
+  test('Custom timeout iso fetcher', async () => {
+    const customTimeoutFetcher = createIsomorphicFetcher({
+      timeout: 100,
+    });
+
+    await expect(
+      customTimeoutFetcher({
+        method: 'get',
+        url: new URL('/unresponsive', base),
+      }),
+    ).rejects.toMatchInlineSnapshot(`[TimeoutError: Request timed out]`);
+  }, 150);
 
   afterAll((done) => {
     server.close(done);
