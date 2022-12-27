@@ -24,6 +24,7 @@ export const requestListener: RequestListener = (req, res) => {
       res.writeHead(200, { 'content-type': 'text/html' });
       res.end('<h1>Hello</h1>');
       break;
+
     case '/json-error':
       res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
       res.end(
@@ -33,6 +34,9 @@ export const requestListener: RequestListener = (req, res) => {
           status: 'FAILED_PRECONDITION',
         } as CustomErrorSerialized),
       );
+      break;
+    case '/unresponsive':
+      // do nothing
       break;
     default:
       res.writeHead(404, { 'content-type': 'text/html' });
