@@ -58,7 +58,10 @@ describe('Client', () => {
           options,
         ),
       ),
-    ).rejects.toMatchInlineSnapshot(`[Error: Not Found]`);
+    ).rejects.toMatchInlineSnapshot(
+      // eslint-disable-next-line quotes
+      `[Error: Not Found]`,
+    );
   });
 
   test('JSON Error', async () => {
@@ -73,7 +76,10 @@ describe('Client', () => {
           options,
         ),
       ),
-    ).rejects.toThrowErrorMatchingInlineSnapshot(`"Data should be array"`);
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      // eslint-disable-next-line quotes
+      `"Data should be array"`,
+    );
   });
 
   test('Headers', async () => {

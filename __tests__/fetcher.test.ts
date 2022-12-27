@@ -160,7 +160,10 @@ describe('Fetcher', () => {
         method: 'get',
         url: new URL('/unresponsive', base),
       }),
-    ).rejects.toMatchInlineSnapshot(`[TimeoutError: Request timed out]`);
+    ).rejects.toMatchInlineSnapshot(
+      // eslint-disable-next-line quotes
+      `[TimeoutError: Request timed out]`,
+    );
   }, 150);
 
   afterAll((done) => {
