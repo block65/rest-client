@@ -1,6 +1,6 @@
+import { parse } from '@hapi/bourne';
 import ky, { Options } from 'ky-universal';
 import type { FetcherParams, FetcherResponse } from '../lib/fetcher.js';
-import { parse } from '@hapi/bourne';
 
 export function createIsomorphicFetcher(
   options: Omit<Options, 'method' | 'json' | 'parseJson' | 'signal'> = {},

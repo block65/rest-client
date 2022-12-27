@@ -1,5 +1,5 @@
 import { CustomError, type CustomErrorSerialized } from '@block65/custom-error';
-import { hackyConvertDates, resolveHeaders } from '../lib/common.js';
+import { hackyConvertDates, resolveHeaders } from './common.js';
 import { ServiceError } from './errors.js';
 import type { FetcherMethod, ResolvableHeaders } from './fetcher.js';
 import type {

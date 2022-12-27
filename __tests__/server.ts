@@ -1,5 +1,5 @@
-import type { CustomErrorSerialized } from '@block65/custom-error';
 import type { RequestListener } from 'node:http';
+import type { CustomErrorSerialized } from '@block65/custom-error';
 
 export const requestListener: RequestListener = (req, res) => {
   switch (req.url) {

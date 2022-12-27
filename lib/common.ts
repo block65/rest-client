@@ -1,5 +1,5 @@
-import { isPlainObject } from '../lib/utils.js';
 import type { ResolvableHeaders } from './fetcher.js';
+import { isPlainObject } from './utils.js';
 
 export async function resolveHeaders(
   headers: ResolvableHeaders | undefined,
