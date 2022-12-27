@@ -3,7 +3,7 @@ import type { FetcherParams, FetcherResponse } from '../lib/fetcher.js';
 import { parse } from '@hapi/bourne';
 
 export function createIsomorphicFetcher(
-  options: Omit<Options, 'method' | 'json' | 'parseJson' | 'signal'>,
+  options: Omit<Options, 'method' | 'json' | 'parseJson' | 'signal'> = {},
 ) {
   return async function isomorphicFetcher<T>(
     params: FetcherParams,
@@ -55,7 +55,3 @@ export function createIsomorphicFetcher(
     };
   };
 }
-
-export const isomorphicFetcher = createIsomorphicFetcher({
-  timeout: 30000,
-});
