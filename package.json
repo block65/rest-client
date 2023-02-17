@@ -13,7 +13,7 @@
     }
   },
   "files": [
-    "dist/{src,lib}"
+    "dist/{src,lib}/**/*"
   ],
   "dependencies": {
     "@block65/custom-error": "^11.0.1"
