@@ -24,7 +24,6 @@
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "importsNotUsedAsValues": "error",
     "removeComments": true
   },
   "include": ["./src", "./__tests__", "./lib"],
