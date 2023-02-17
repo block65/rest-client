@@ -100,12 +100,10 @@ describe('Client', () => {
     expect(response).toMatchInlineSnapshot(`
       {
         "accept": "*/*",
-        "accept-encoding": "gzip, deflate",
-        "accept-language": "*",
-        "connection": "keep-alive",
+        "accept-encoding": "gzip, deflate, br",
+        "connection": "close",
         "host": "redacted",
-        "sec-fetch-mode": "cors",
-        "user-agent": "undici",
+        "user-agent": "node-fetch",
         "x-async": "Bearer 1234567890",
         "x-build-id": "test/123",
         "x-func": "hello",
