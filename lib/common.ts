@@ -28,7 +28,12 @@ export function hackyConvertDates(val: unknown): unknown {
     return Object.fromEntries(
       Object.entries(val).map(([k, v]) => {
         if (v && k.endsWith('Time')) {
-          if (typeof v === 'string' && v.length === 24) {
+          // regular ISO format
+          if (typeof v === 'string' && v.length === 24 && v.endsWith('Z')) {
+            return [k, new Date(v)];
+          }
+          // postgres-ish JSON format
+          if (typeof v === 'string' && v.match(/\.[0-9]{3,6}$/)) {
             return [k, new Date(v)];
           }
           console.warn(
