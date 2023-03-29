@@ -1,4 +1,4 @@
-import type { HttpMethod } from './generated/models.js';
+import type { HttpMethod } from './types.js';
 import type { Resolver } from './utils.js';
 
 export type ResolvableHeaders = Record<string, string | Resolver<string>>;

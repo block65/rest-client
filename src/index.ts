@@ -8,6 +8,9 @@ export type {
   FetcherParams,
 } from '../lib/fetcher.js';
 
+// types needed as peer dep for generated clients
+export * from '../lib/types.js';
+
 // a good standard/basic fetcher factory
 export { createIsomorphicFetcher } from './isomorphic-fetch.js';
 

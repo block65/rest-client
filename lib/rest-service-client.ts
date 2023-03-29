@@ -2,10 +2,7 @@ import { CustomError, type CustomErrorSerialized } from '@block65/custom-error';
 import { hackyConvertDates, resolveHeaders } from './common.js';
 import { ServiceError } from './errors.js';
 import type { FetcherMethod, ResolvableHeaders } from './fetcher.js';
-import type {
-  RequestMethodCaller,
-  RuntimeOptions,
-} from './generated/models.js';
+import type { RequestMethodCaller, RuntimeOptions } from './types.js';
 import { isPlainObject } from './utils.js';
 
 export interface RestServiceClientConfig {
