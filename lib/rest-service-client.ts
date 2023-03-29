@@ -39,7 +39,7 @@ export class RestServiceClient {
       const url = new URL(`.${pathname}`, this.#base);
       url.search = query
         ? new URLSearchParams(
-            Object.entries(query).map(([k, v]) => [k, v.toString()]),
+            Object.entries(query).map(([k, v]) => [k, v?.toString() || '']),
           ).toString()
         : '';
 
