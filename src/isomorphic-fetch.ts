@@ -1,13 +1,16 @@
 import { parse } from '@hapi/bourne';
-import ky, { Options } from 'ky-universal';
-import type { FetcherParams, FetcherResponse } from '../lib/fetcher.js';
+import ky, { type Options } from 'ky-universal';
+import type { Jsonifiable } from 'type-fest';
+import type {
+  FetcherMethod,
+  FetcherParams,
+  FetcherResponse,
+} from '../lib/fetcher.js';
 
 export function createIsomorphicFetcher(
   options: Omit<Options, 'method' | 'json' | 'parseJson' | 'signal'> = {},
-) {
-  return async function isomorphicFetcher<T>(
-    params: FetcherParams,
-  ): Promise<FetcherResponse<T>> {
+): FetcherMethod {
+  return async (params: FetcherParams) => {
     const { url, method, body, headers, credentials, signal } = params;
 
     const res = await ky(url, {
@@ -31,27 +34,30 @@ export function createIsomorphicFetcher(
     });
 
     const contentType = res.headers.get('content-type');
-    const isJson = contentType && contentType.startsWith('application/json');
 
-    if (isJson) {
-      // with ky, an empty string is returned on a 204
-      const responseBody: T | '' = await res.json();
+    const isJson = contentType?.startsWith('application/json');
+    const isStringy = isJson || contentType?.startsWith('text/');
+
+    if (isStringy) {
+      const responseBody = await (isJson
+        ? res.json<Jsonifiable>()
+        : res.text());
 
       return {
-        ...(responseBody !== '' && { body: responseBody }),
+        body: responseBody,
         url: new URL(res.url),
         status: res.status,
         statusText: res.statusText,
         ok: res.ok,
-      };
+      } satisfies FetcherResponse<Jsonifiable | string>;
     }
 
     return {
-      body: (await res.text()) as T,
+      body: res.body,
       url: new URL(res.url),
       status: res.status,
       statusText: res.statusText,
       ok: res.ok,
-    };
+    } satisfies FetcherResponse<ReadableStream<Uint8Array> | null>;
   };
 }
