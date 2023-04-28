@@ -1,0 +1,6 @@
+dist
+build
+coverage
+tmp
+.vscode
+.idea

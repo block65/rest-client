@@ -1,16 +1,11 @@
 {
   "compilerOptions": {
-    "strict": true,
     "moduleResolution": "node16",
-    "declaration": true,
     "target": "es2022",
     "lib": ["es2022", "dom"],
     "module": "es2022",
-    "sourceMap": true,
-    "inlineSources": false,
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
+    "incremental": true,
+    "strict": true,
     "outDir": "dist",
     "preserveSymlinks": true,
     "forceConsistentCasingInFileNames": true,
@@ -20,11 +15,13 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
-    "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "removeComments": true
+    "verbatimModuleSyntax": true,
+    "removeComments": true,
+    "allowArbitraryExtensions": true,
+    "skipLibCheck": true
   },
   "include": ["./src", "./__tests__", "./lib"],
   "exclude": ["./dist", "node_modules"]
