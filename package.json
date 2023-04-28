@@ -16,6 +16,9 @@
       "default": "./dist/src/legacy.js"
     }
   },
+  "scripts": {
+    "preversion": "make test"
+  },
   "files": [
     "dist/{src,lib}/**/*"
   ],
