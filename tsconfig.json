@@ -5,6 +5,7 @@
     "lib": ["es2022", "dom"],
     "module": "es2022",
     "incremental": true,
+    "declaration": true,
     "strict": true,
     "outDir": "dist",
     "preserveSymlinks": true,
