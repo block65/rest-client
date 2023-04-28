@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import getPort from 'get-port';
-import { createIsomorphicFetcher } from '../src/isomorphic-fetch.js';
+import { createIsomorphicFetcher } from '../src/main.js';
 import { requestListener } from './server.js';
 
 const server = createServer(requestListener);

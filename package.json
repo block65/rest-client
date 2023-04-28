@@ -8,8 +8,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/src/index.d.ts",
-      "default": "./dist/src/index.js"
+      "types": "./dist/src/main.d.ts",
+      "default": "./dist/src/main.js"
     },
     "./legacy": {
       "types": "./dist/src/legacy.d.ts",

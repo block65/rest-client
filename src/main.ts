@@ -11,6 +11,8 @@ export type {
 // types needed as peer dep for generated clients
 export * from '../lib/types.js';
 
+export { Command } from '../lib/command.js';
+
 // a good standard/basic fetcher factory
 export { createIsomorphicFetcher } from './isomorphic-fetch.js';
 

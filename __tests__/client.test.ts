@@ -1,8 +1,11 @@
 import { createServer } from 'node:http';
 import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import getPort from 'get-port';
-import { RestServiceClient } from '../lib/rest-service-client.js';
-import { createIsomorphicFetcher } from '../src/isomorphic-fetch.js';
+import {
+  Command,
+  RestServiceClient,
+  createIsomorphicFetcher,
+} from '../src/main.js';
 import { requestListener } from './server.js';
 
 const port = await getPort();
