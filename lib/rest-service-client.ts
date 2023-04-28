@@ -1,9 +1,12 @@
 import { CustomError, type CustomErrorSerialized } from '@block65/custom-error';
-import { Command } from './command.js';
+import type { Command } from './command.js';
 import { hackyConvertDates, resolveHeaders } from './common.js';
 import { ServiceError } from './errors.js';
-import type { FetcherMethod, ResolvableHeaders } from './fetcher.js';
-import type { RuntimeOptions } from './types.js';
+import type {
+  FetcherMethod,
+  ResolvableHeaders,
+  RuntimeOptions,
+} from './types.js';
 import { isPlainObject } from './utils.js';
 
 export interface RestServiceClientConfig {

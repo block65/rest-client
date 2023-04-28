@@ -5,7 +5,7 @@ import type {
   FetcherMethod,
   FetcherParams,
   FetcherResponse,
-} from '../lib/fetcher.js';
+} from '../lib/types.js';
 
 export function createIsomorphicFetcher(
   options: Omit<Options, 'method' | 'json' | 'parseJson' | 'signal'> = {},

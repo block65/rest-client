@@ -1,4 +1,4 @@
-export type Resolver<T = unknown> = () => T | Promise<T>;
+import type { Resolver } from './types.js';
 
 export function isPlainObject<T extends Record<string, unknown>>(
   value: unknown | T,

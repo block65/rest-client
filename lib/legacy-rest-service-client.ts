@@ -1,9 +1,12 @@
 import { CustomError, type CustomErrorSerialized } from '@block65/custom-error';
 import { hackyConvertDates, resolveHeaders } from './common.js';
 import { ServiceError } from './errors.js';
-import type { LegacyFetcherMethod } from './fetcher.js';
-import { type RestServiceClientConfig } from './rest-service-client.js';
-import { type RequestMethodCaller, type RuntimeOptions } from './types.js';
+import type { RestServiceClientConfig } from './rest-service-client.js';
+import type {
+  LegacyFetcherMethod,
+  RequestMethodCaller,
+  RuntimeOptions,
+} from './types.js';
 import { isPlainObject } from './utils.js';
 
 /** @deprecated */

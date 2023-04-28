@@ -1,4 +1,4 @@
-import { type HttpMethod } from './types.js';
+import type { HttpMethod } from './types.js';
 
 export abstract class Command<
   CommandInput extends Record<string, unknown> | void = void,
