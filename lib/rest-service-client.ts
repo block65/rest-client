@@ -43,7 +43,7 @@ export class RestServiceClient<
       method,
       body,
       headers: await resolveHeaders({
-        // ...headers,
+        ...runtimeOptions?.headers,
         ...this.#config.headers,
       }),
       ...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),

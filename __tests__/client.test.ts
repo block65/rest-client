@@ -102,7 +102,11 @@ describe('Client', () => {
 
   test('Headers', async () => {
     const command = new FakeMyHeadersCommand();
-    const response = await client.send(command);
+    const response = await client.send(command, {
+      headers: {
+        'x-merged': 'hello',
+      },
+    });
 
     expect(response).toMatchInlineSnapshot(`
       {

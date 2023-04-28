@@ -57,6 +57,7 @@ export type RequestParameters = {
 };
 
 export type RuntimeOptions = {
+  headers?: Record<string, string> | undefined;
   signal?: AbortSignal;
 };
 
