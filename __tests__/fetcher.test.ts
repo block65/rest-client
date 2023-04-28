@@ -53,7 +53,7 @@ describe('Fetcher', () => {
       },
       `
       {
-        "body": "",
+        "body": null,
         "ok": true,
         "status": 204,
         "statusText": "No Content",
