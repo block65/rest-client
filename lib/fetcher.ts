@@ -1,18 +1,20 @@
+import type { Jsonifiable } from 'type-fest';
 import type { HttpMethod } from './types.js';
 import type { Resolver } from './utils.js';
 
 export type ResolvableHeaders = Record<string, string | Resolver<string>>;
 
 export type FetcherParams<T = unknown> = {
+  body?: T;
   url: URL;
   method: HttpMethod;
-  body?: T;
   headers?: Record<string, string>;
   credentials?: 'include' | 'omit' | 'same-origin';
   signal?: AbortSignal;
 };
 
-export type FetcherResponse<T> = {
+/** @deprecated */
+export type LegacyFetcherResponse<T> = {
   body?: T;
   url: URL;
   status: number;
@@ -20,6 +22,21 @@ export type FetcherResponse<T> = {
   ok: boolean;
 };
 
-export type FetcherMethod<T = unknown> = (
+/** @deprecated */
+export type LegacyFetcherMethod<T = unknown> = (
   params: FetcherParams,
-) => Promise<FetcherResponse<T>>;
+) => Promise<LegacyFetcherResponse<T>>;
+
+export type FetcherResponse<
+  T extends ReadableStream<Uint8Array> | null | unknown | string = unknown,
+> = {
+  body?: T;
+  url: URL;
+  status: number;
+  statusText: string;
+  ok: boolean;
+};
+
+export type FetcherMethod = (
+  params: FetcherParams,
+) => Promise<FetcherResponse<ReadableStream<Uint8Array> | null | Jsonifiable>>;
