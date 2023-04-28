@@ -36,6 +36,7 @@ export function hackyConvertDates(val: unknown): unknown {
           if (typeof v === 'string' && v.match(/\.[0-9]{3,6}$/)) {
             return [k, new Date(v)];
           }
+          // eslint-disable-next-line no-console
           console.warn(
             `Unsupported Date format ${v} (${typeof v}) in key ${k}. Returning epoch`,
           );

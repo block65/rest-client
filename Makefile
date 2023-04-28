@@ -23,3 +23,8 @@ dist: node_modules tsconfig.json $(SRCS)
 .PHONY: dev
 dev:
 	yarn tsc -w
+
+.PHONY: pretty
+pretty: node_modules
+	pnpm eslint --fix .
+	pnpm prettier --write .

@@ -1,3 +1,4 @@
+/* eslint-disable */
 export default {
   modulePathIgnorePatterns: ['<rootDir>/dist'],
   testMatch: ['<rootDir>/__tests__/**/*.test.ts'],
