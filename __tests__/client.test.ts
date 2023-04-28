@@ -94,10 +94,7 @@ describe('Client', () => {
   test('JSON Error', async () => {
     await expect(
       client.send(new FakeJsonErrorCommand()),
-    ).rejects.toThrowErrorMatchingInlineSnapshot(
-      // eslint-disable-next-line quotes
-      `"Data should be array"`,
-    );
+    ).rejects.toThrowErrorMatchingInlineSnapshot('"Data should be array"');
   });
 
   test('Headers', async () => {

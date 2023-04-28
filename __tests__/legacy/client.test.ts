@@ -79,10 +79,7 @@ describe('Client', () => {
           options,
         ),
       ),
-    ).rejects.toThrowErrorMatchingInlineSnapshot(
-      // eslint-disable-next-line quotes
-      `"Data should be array"`,
-    );
+    ).rejects.toThrowErrorMatchingInlineSnapshot('"Data should be array"');
   });
 
   test('Headers', async () => {
