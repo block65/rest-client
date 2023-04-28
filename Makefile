@@ -7,22 +7,22 @@ deps: node_modules
 
 .PHONY: clean
 clean:
-	yarn tsc -b --clean
+	pnpm tsc -b --clean
 	rm -rf dist
 
 .PHONY: test
 test:
-	NODE_OPTIONS=--experimental-vm-modules yarn jest
+	NODE_OPTIONS=--experimental-vm-modules pnpm jest
 
 node_modules: package.json
-	yarn install
+	pnpm install
 
 dist: node_modules tsconfig.json $(SRCS)
-	yarn tsc
+	pnpm tsc
 
 .PHONY: dev
 dev:
-	yarn tsc -w
+	pnpm tsc -w
 
 .PHONY: pretty
 pretty: node_modules
