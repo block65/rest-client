@@ -35,10 +35,12 @@ export function createIsomorphicFetcher(
 
     const contentType = res.headers.get('content-type');
 
-    const isJson = contentType?.startsWith('application/json');
-    const isStringy = isJson || contentType?.startsWith('text/');
+    // this can be replaced with any other way of detecting streaming
+    const streaming = contentType === 'text/event-stream';
 
-    if (isStringy) {
+    if (!streaming) {
+      const isJson = contentType?.includes('/json');
+
       const responseBody = await (isJson
         ? res.json<Jsonifiable>()
         : res.text());
