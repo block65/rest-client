@@ -1,5 +1,10 @@
 export type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'head';
 
+export type RequestMethod<T = any> = (
+  params: RequestParameters,
+  options?: RuntimeOptions,
+) => Promise<T>;
+
 export type RequestParameters = {
   pathname: string;
   method: HttpMethod;
@@ -11,11 +16,6 @@ export type RequestParameters = {
 export type RuntimeOptions = {
   signal?: AbortSignal;
 };
-
-export type RequestMethod<T = any> = (
-  params: RequestParameters,
-  options?: RuntimeOptions,
-) => Promise<T>;
 
 export type RequestMethodCaller<T = unknown> = (
   requestMethod: RequestMethod<T>,
