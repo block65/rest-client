@@ -14,8 +14,47 @@ const server = createServer(requestListener);
 
 const isomorphicFetcher = createIsomorphicFetcher();
 
+class Fake200Command extends Command {
+  public override method = 'get' as const;
+
+  constructor() {
+    super('/200');
+  }
+}
+
+// 404
+class Fake404Command extends Command {
+  public override method = 'get' as const;
+
+  constructor() {
+    super('/404');
+  }
+}
+
+// json-error
+class FakeJsonErrorCommand extends Command {
+  public override method = 'get' as const;
+
+  constructor() {
+    super('/json-error');
+  }
+}
+
+type HeadersOutput = Record<string, string>;
+type Outputs = void | HeadersOutput;
+type Inputs = void;
+
+// my headers
+class FakeMyHeadersCommand extends Command<Inputs, HeadersOutput> {
+  public override method = 'get' as const;
+
+  constructor() {
+    super('/my-headers');
+  }
+}
+
 describe('Client', () => {
-  const client = new RestServiceClient(
+  const client = new RestServiceClient<Inputs, Outputs>(
     new URL(`http://0.0.0.0:${port}`),
     isomorphicFetcher,
     {
@@ -32,15 +71,7 @@ describe('Client', () => {
   });
 
   test('200 OK!', async () => {
-    const response = await client.send((requestMethod, options) =>
-      requestMethod(
-        {
-          method: 'get',
-          pathname: '/200',
-        },
-        options,
-      ),
-    );
+    const response = await client.send(new Fake200Command());
 
     expect(response).toMatchInlineSnapshot(`
       [
@@ -53,16 +84,7 @@ describe('Client', () => {
 
   test('404', async () => {
     await expect(
-      client.send((requestMethod, options) =>
-        requestMethod(
-          {
-            method: 'get',
-            pathname: '/404',
-          },
-
-          options,
-        ),
-      ),
+      client.send(new Fake404Command()),
     ).rejects.toMatchInlineSnapshot(
       // eslint-disable-next-line quotes
       `[Error: Not Found]`,
@@ -71,16 +93,7 @@ describe('Client', () => {
 
   test('JSON Error', async () => {
     await expect(
-      client.send((requestMethod, options) =>
-        requestMethod(
-          {
-            method: 'get',
-            pathname: '/json-error',
-          },
-
-          options,
-        ),
-      ),
+      client.send(new FakeJsonErrorCommand()),
     ).rejects.toThrowErrorMatchingInlineSnapshot(
       // eslint-disable-next-line quotes
       `"Data should be array"`,
@@ -88,18 +101,8 @@ describe('Client', () => {
   });
 
   test('Headers', async () => {
-    const response = await client.send((requestMethod, options) =>
-      requestMethod(
-        {
-          pathname: '/my-headers',
-          method: 'get',
-          headers: {
-            'x-merged': 'hello',
-          },
-        },
-        options,
-      ),
-    );
+    const command = new FakeMyHeadersCommand();
+    const response = await client.send(command);
 
     expect(response).toMatchInlineSnapshot(`
       {
