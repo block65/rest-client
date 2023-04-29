@@ -1,4 +1,6 @@
 import { CustomError, type CustomErrorSerialized } from '@block65/custom-error';
+import type { Jsonifiable } from 'type-fest';
+import type { JsonifiableObject } from 'type-fest/source/jsonifiable.js';
 import type { Command } from './command.js';
 import { hackyConvertDates, resolveHeaders } from './common.js';
 import { ServiceError } from './errors.js';
@@ -15,8 +17,8 @@ export interface RestServiceClientConfig {
 }
 
 export class RestServiceClient<
-  ClientInput extends Record<string, unknown> | void = void,
-  ClientOutput extends Record<string, unknown> | void = void,
+  ClientInput extends JsonifiableObject | void = void,
+  ClientOutput extends Jsonifiable | void = void,
 > {
   readonly #config: RestServiceClientConfig;
 
@@ -27,7 +29,10 @@ export class RestServiceClient<
   public async response<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
-  >(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
+  >(
+    command: Command<InputType, OutputType, any, any>,
+    runtimeOptions?: RuntimeOptions,
+  ) {
     const { method, pathname, query, body } = command;
 
     const url = new URL(`.${pathname}`, this.#base);
@@ -53,7 +58,7 @@ export class RestServiceClient<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(
-    command: Command<InputType, OutputType>,
+    command: Command<InputType, OutputType, any, any>,
     runtimeOptions?: RuntimeOptions,
   ): Promise<OutputType> {
     const res = await this.response(command, runtimeOptions);
@@ -82,7 +87,7 @@ export class RestServiceClient<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(
-    command: Command<InputType, OutputType>,
+    command: Command<InputType, OutputType, any, any>,
     runtimeOptions?: RuntimeOptions,
   ): Promise<OutputType> {
     return this.json(command, runtimeOptions);
@@ -91,7 +96,10 @@ export class RestServiceClient<
   public async stream<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
-  >(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
+  >(
+    command: Command<InputType, OutputType, any, any>,
+    runtimeOptions?: RuntimeOptions,
+  ) {
     const res = await this.response(command, runtimeOptions);
 
     if (res.status >= 400) {
