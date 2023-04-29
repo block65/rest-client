@@ -20,7 +20,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "verbatimModuleSyntax": true,
-    "removeComments": true,
     "allowArbitraryExtensions": true,
     "skipLibCheck": true
   },
