@@ -41,6 +41,7 @@ class FakeJsonErrorCommand extends Command {
 }
 
 type HeadersOutput = Record<string, string>;
+
 type Outputs = void | HeadersOutput;
 type Inputs = void;
 
@@ -71,7 +72,7 @@ describe('Client', () => {
   });
 
   test('200 OK!', async () => {
-    const response = await client.send(new Fake200Command());
+    const response = await client.json(new Fake200Command());
 
     expect(response).toMatchInlineSnapshot(`
       [
@@ -84,7 +85,7 @@ describe('Client', () => {
 
   test('404', async () => {
     await expect(
-      client.send(new Fake404Command()),
+      client.json(new Fake404Command()),
     ).rejects.toMatchInlineSnapshot(
       // eslint-disable-next-line quotes
       `[Error: Not Found]`,
@@ -93,13 +94,13 @@ describe('Client', () => {
 
   test('JSON Error', async () => {
     await expect(
-      client.send(new FakeJsonErrorCommand()),
+      client.json(new FakeJsonErrorCommand()),
     ).rejects.toThrowErrorMatchingInlineSnapshot('"Data should be array"');
   });
 
   test('Headers', async () => {
     const command = new FakeMyHeadersCommand();
-    const response = await client.send(command, {
+    const response = await client.json(command, {
       headers: {
         'x-merged': 'hello',
       },

@@ -24,12 +24,11 @@ export class RestServiceClient<
 
   readonly #fetcher: FetcherMethod;
 
-  async #res<InputType extends ClientInput, OutputType extends ClientOutput>(
-    command: Command<InputType, OutputType>,
-    runtimeOptions?: RuntimeOptions,
-  ) {
-    const { method, pathname, /* query, */ body } = command;
-    const query = undefined;
+  public async response<
+    InputType extends ClientInput,
+    OutputType extends ClientOutput,
+  >(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
+    const { method, pathname, query, body } = command;
 
     const url = new URL(`.${pathname}`, this.#base);
     url.search = query
@@ -50,14 +49,14 @@ export class RestServiceClient<
     });
   }
 
-  public async send<
+  public async json<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(
     command: Command<InputType, OutputType>,
     runtimeOptions?: RuntimeOptions,
   ): Promise<OutputType> {
-    const res = await this.#res(command, runtimeOptions);
+    const res = await this.response(command, runtimeOptions);
 
     if (res.status >= 400) {
       if (
@@ -75,11 +74,25 @@ export class RestServiceClient<
     return hackyConvertDates(res.body) as OutputType;
   }
 
+  /**
+   * @deprecated
+   * @see {json}
+   */
+  public async send<
+    InputType extends ClientInput,
+    OutputType extends ClientOutput,
+  >(
+    command: Command<InputType, OutputType>,
+    runtimeOptions?: RuntimeOptions,
+  ): Promise<OutputType> {
+    return this.json(command, runtimeOptions);
+  }
+
   public async stream<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
-    const res = await this.#res(command, runtimeOptions);
+    const res = await this.response(command, runtimeOptions);
 
     if (res.status >= 400) {
       throw new ServiceError(res.statusText).debug({ res });
