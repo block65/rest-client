@@ -6,7 +6,6 @@
  * Generated on 2023-05-11T04:29:01.276Z
  *
  */
-import type { Jsonifiable } from 'type-fest';
 import type { JsonifiableObject } from 'type-fest/source/jsonifiable.js';
 
 export type PromoCode = string;

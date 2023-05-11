@@ -1,11 +1,10 @@
+/* eslint-disable max-classes-per-file */
 import { Command } from '../../../src/main.js';
 import type { RequestMethodCaller } from '../../../src/main.js';
-import type { Jsonifiable } from 'type-fest';
 import type {
   GetOperationCommandInput,
   GetOperationCommandBody,
   LongRunningOperation,
-  ListBillingAccountsCommandInput,
   ListBillingAccountsCommandBody,
   BillingAccountList,
   BillingAccountCreateRequest,
@@ -98,7 +97,7 @@ export class GetOperationCommand extends Command<
 export function listBillingAccountsCommand(): RequestMethodCaller<BillingAccountList> {
   const req = {
     method: 'get' as const,
-    pathname: `/billing-accounts`,
+    pathname: '/billing-accounts',
   };
   return (requestMethod, options) => requestMethod(req, options);
 }
@@ -117,7 +116,7 @@ export class ListBillingAccountsCommand extends Command<
 
   constructor() {
     // no input parameters
-    super(`/billing-accounts`);
+    super('/billing-accounts');
   }
 }
 
@@ -131,7 +130,7 @@ export function createBillingAccountCommand(parameters: {
 }): RequestMethodCaller<BillingAccount> {
   const req = {
     method: 'post' as const,
-    pathname: `/billing-accounts`,
+    pathname: '/billing-accounts',
     body: parameters.body,
   };
   return (requestMethod, options) => requestMethod(req, options);
@@ -151,7 +150,7 @@ export class CreateBillingAccountCommand extends Command<
 
   constructor(input: CreateBillingAccountCommandInput) {
     const body = input;
-    super(`/billing-accounts`, body);
+    super('/billing-accounts', body);
   }
 }
 
