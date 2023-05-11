@@ -13,9 +13,13 @@ import { BillingCountry } from './fixtures/test1/types.js';
 async function thisAlwaysThrows<
   CommandInput extends JsonifiableObject | void = void,
   CommandOutput extends Jsonifiable | void = void,
->(_: Command<CommandInput, CommandOutput, any, any>): Promise<CommandOutput> {
+  CommandBody extends Jsonifiable | void = void,
+  CommandQuery extends JsonifiableObject | void = void,
+>(
+  _: Command<CommandInput, CommandOutput, CommandBody, CommandQuery>,
+): Promise<CommandOutput> {
   if (process.pid) {
-    throw new Error('Not expected to to succeed');
+    throw new Error('You can ignore this safely');
   }
 
   return { _ } as unknown as CommandOutput;
@@ -44,7 +48,7 @@ test('command without a body', async () => {
     const resultForTypeChecks = await thisAlwaysThrows(command);
     expect(typeof resultForTypeChecks.billingAccountId).toBe('string');
   } catch (err) {
-    console.log(Object(err).message);
+    // console.debug(Object(err).message);
   }
 });
 
@@ -58,6 +62,6 @@ test('command with a body', async () => {
     const resultForTypeChecks = await thisAlwaysThrows(command);
     expect(typeof resultForTypeChecks.billingAccountId).toBe('string');
   } catch (err) {
-    console.log(Object(err).message);
+    // console.debug(Object(err).message);
   }
 });
