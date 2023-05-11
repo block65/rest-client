@@ -34,9 +34,10 @@ export function createIsomorphicFetcher(
     });
 
     const contentType = res.headers.get('content-type');
+    const contentLength = res.headers.get('content-length');
 
     // this can be replaced with any other way of detecting streaming
-    const streaming = contentType === 'text/event-stream';
+    const streaming = !contentLength && contentType === 'text/event-stream';
 
     if (!streaming) {
       const isJson = contentType?.includes('/json');
