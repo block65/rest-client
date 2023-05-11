@@ -2,9 +2,13 @@ import type { Jsonifiable } from 'type-fest';
 import type { JsonifiableObject } from 'type-fest/source/jsonifiable.js';
 import type { HttpMethod } from './types.js';
 
+type Middleware<
+  CommandInput extends JsonifiableObject | void = void,
+  CommandOutput extends Jsonifiable | void = void,
+> = (input: CommandInput, output: CommandOutput) => CommandOutput;
+
 export abstract class Command<
-  // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unused-vars
-  _CommandInput extends JsonifiableObject | void = void,
+  CommandInput extends JsonifiableObject | void = void,
   CommandOutput extends Jsonifiable | void = void,
   CommandBody extends Jsonifiable | void = void,
   CommandQuery extends JsonifiableObject | void = void,
@@ -17,7 +21,7 @@ export abstract class Command<
 
   #query: CommandQuery;
 
-  protected middlewareStack: CommandOutput[] = [];
+  protected middleware: Middleware<CommandInput, CommandOutput>[] = [];
 
   constructor(pathname: string, body: CommandBody, query: CommandQuery) {
     this.#pathname = pathname;
