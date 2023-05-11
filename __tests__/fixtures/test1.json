@@ -1,0 +1,1324 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Billing Service REST API",
+    "version": "1.0.0"
+  },
+  "components": {
+    "schemas": {
+      "Uuid": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "Id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 16,
+        "pattern": "^[a-zA-Z0-9]+$"
+      },
+      "Origin": {
+        "type": "string",
+        "format": "uri",
+        "pattern": "^https://.*$",
+        "minLength": 1,
+        "maxLength": 263
+      },
+      "Url": {
+        "type": "string",
+        "format": "uri",
+        "pattern": "^https://.*",
+        "minLength": 1,
+        "maxLength": 2048
+      },
+      "Name": {
+        "description": "Reasonable string to be used as a name of a person, or an object",
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 512
+      },
+      "DateTime": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "Email": {
+        "description": "Valid email address with fully qualified public top-level domain",
+        "type": "string",
+        "minLength": 6,
+        "maxLength": 512,
+        "format": "email"
+      },
+      "StringU8": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "PromoCode": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "pattern": "/^[A-Z0-9]$/"
+      },
+      "LongRunningOperationIndeterminate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["done", "operationId"],
+        "properties": {
+          "operationId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "done": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LongRunningOperationFail": {
+        "type": "object",
+        "required": ["done", "operationId", "result"],
+        "properties": {
+          "operationId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "done": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "result": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["error"],
+            "properties": {
+              "error": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "LongRunningOperationSuccess": {
+        "type": "object",
+        "required": ["done", "result", "operationId"],
+        "additionalProperties": false,
+        "properties": {
+          "operationId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "done": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "result": {
+            "type": "object",
+            "required": ["response"],
+            "additionalProperties": false,
+            "properties": {
+              "response": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "LongRunningOperation": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/LongRunningOperationIndeterminate"
+          },
+          {
+            "$ref": "#/components/schemas/LongRunningOperationFail"
+          },
+          {
+            "$ref": "#/components/schemas/LongRunningOperationSuccess"
+          }
+        ]
+      },
+      "BillingAccountStatus": {
+        "type": "string",
+        "enum": ["nominal", "delinquent"]
+      },
+      "BillingAccountType": {
+        "type": "string",
+        "enum": ["standard", "agency", "reseller"]
+      },
+      "BillingLocale": {
+        "type": "string",
+        "enum": ["en"]
+      },
+      "BillingCountry": {
+        "type": "string",
+        "enum": ["us", "au", "sg", "my", "gb"]
+      },
+      "Currency": {
+        "type": "string",
+        "enum": ["usd", "aud", "sgd", "myr", "gbp"]
+      },
+      "TimeZone": {
+        "type": "string",
+        "pattern": "^\\w{1,32}/\\w{1,32}$"
+      },
+      "BillingAccountIdentifiers": {
+        "type": "object",
+        "required": ["billingAccountId"],
+        "additionalProperties": false,
+        "properties": {
+          "billingAccountId": {
+            "$ref": "#/components/schemas/Id"
+          }
+        }
+      },
+      "BillingAccount": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BillingAccountIdentifiers"
+          },
+          {
+            "type": "object",
+            "required": [
+              "name",
+              "email",
+              "country",
+              "status",
+              "currency",
+              "type",
+              "createdTime"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "$ref": "#/components/schemas/Name"
+              },
+              "email": {
+                "$ref": "#/components/schemas/Email"
+              },
+              "country": {
+                "$ref": "#/components/schemas/BillingCountry"
+              },
+              "status": {
+                "$ref": "#/components/schemas/BillingAccountStatus"
+              },
+              "currency": {
+                "$ref": "#/components/schemas/Currency"
+              },
+              "type": {
+                "$ref": "#/components/schemas/BillingAccountType"
+              },
+              "createdTime": {
+                "$ref": "#/components/schemas/DateTime"
+              },
+              "updatedTime": {
+                "$ref": "#/components/schemas/DateTime"
+              },
+              "locale": {
+                "$ref": "#/components/schemas/BillingLocale"
+              },
+              "purchaseOrder": {
+                "$ref": "#/components/schemas/StringU8"
+              },
+              "taxId": {
+                "$ref": "#/components/schemas/StringU8"
+              },
+              "timeZone": {
+                "$ref": "#/components/schemas/TimeZone"
+              },
+              "defaultPaymentMethodId": {
+                "$ref": "#/components/schemas/Id"
+              }
+            }
+          }
+        ]
+      },
+      "BillingAccountCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "email", "country", "timeZone", "currency"],
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/Name"
+          },
+          "email": {
+            "$ref": "#/components/schemas/Email"
+          },
+          "country": {
+            "$ref": "#/components/schemas/BillingCountry"
+          },
+          "timeZone": {
+            "$ref": "#/components/schemas/TimeZone"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "locale": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/BillingLocale"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "nullable": true,
+                "enum": [null]
+              }
+            ]
+          },
+          "purchaseOrder": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StringU8"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "nullable": true,
+                "enum": [null]
+              }
+            ]
+          },
+          "taxId": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StringU8"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "nullable": true,
+                "enum": [null]
+              }
+            ]
+          }
+        }
+      },
+      "BillingAccountUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/Name"
+          },
+          "email": {
+            "$ref": "#/components/schemas/Email"
+          },
+          "country": {
+            "$ref": "#/components/schemas/BillingCountry"
+          },
+          "timeZone": {
+            "$ref": "#/components/schemas/TimeZone"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "locale": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/BillingLocale"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "nullable": true,
+                "enum": [null]
+              }
+            ]
+          },
+          "purchaseOrder": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StringU8"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "nullable": true,
+                "enum": [null]
+              }
+            ]
+          },
+          "taxId": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StringU8"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "nullable": true,
+                "enum": [null]
+              }
+            ]
+          }
+        }
+      },
+      "BillingAccountList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/BillingAccount"
+        }
+      },
+      "BillingAccountPortalRequest": {
+        "type": "object",
+        "required": ["origin", "accountId"],
+        "additionalProperties": false,
+        "properties": {
+          "origin": {
+            "$ref": "#/components/schemas/Origin"
+          },
+          "accountId": {
+            "$ref": "#/components/schemas/Id"
+          }
+        }
+      },
+      "BillingAccountPortal": {
+        "type": "object",
+        "required": ["url"],
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "$ref": "#/components/schemas/Url"
+          }
+        }
+      },
+      "LinkBillingAccountRequest": {
+        "type": "object",
+        "required": ["accountId"],
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "$ref": "#/components/schemas/Id"
+          }
+        }
+      },
+      "PaymentMethodIdentifiers": {
+        "type": "object",
+        "required": ["billingAccountId", "paymentMethodId"],
+        "additionalProperties": false,
+        "properties": {
+          "billingAccountId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "paymentMethodId": {
+            "$ref": "#/components/schemas/Id"
+          }
+        }
+      },
+      "StripeId": {
+        "type": "string",
+        "minLength": 11,
+        "maxLength": 255,
+        "pattern": "^(pm|cus|sub)_\\w{8,}$"
+      },
+      "PaymentMethodBrand": {
+        "type": "string",
+        "enum": [
+          "amex",
+          "diners",
+          "discover",
+          "jcb",
+          "mastercard",
+          "unionpay",
+          "visa",
+          "unknown"
+        ]
+      },
+      "PaymentMethod": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PaymentMethodIdentifiers"
+          },
+          {
+            "required": ["expireTime", "label", "humanId"],
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "$ref": "#/components/schemas/Name"
+              },
+              "expireTime": {
+                "$ref": "#/components/schemas/DateTime"
+              },
+              "humanId": {
+                "$ref": "#/components/schemas/StringU8"
+              },
+              "brand": {
+                "$ref": "#/components/schemas/PaymentMethodBrand"
+              }
+            }
+          }
+        ]
+      },
+      "UpdatePaymentMethodRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "label": {
+            "$ref": "#/components/schemas/Name"
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PaymentMethodLongRunningOperationSuccess": {
+        "type": "object",
+        "required": ["done", "result", "operationId"],
+        "additionalProperties": false,
+        "properties": {
+          "operationId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "done": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "result": {
+            "type": "object",
+            "required": ["response"],
+            "additionalProperties": false,
+            "properties": {
+              "response": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["clientSecret"],
+                "properties": {
+                  "clientSecret": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "PaymentMethodDeletedLongRunningOperationSuccess": {
+        "type": "object",
+        "required": ["done", "result", "operationId"],
+        "additionalProperties": false,
+        "properties": {
+          "operationId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "done": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "result": {
+            "type": "object",
+            "required": ["response"],
+            "additionalProperties": false,
+            "properties": {
+              "response": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["ok"],
+                "properties": {
+                  "ok": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "PaymentMethodIntendedLro": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/LongRunningOperationIndeterminate"
+          },
+          {
+            "$ref": "#/components/schemas/PaymentMethodLongRunningOperationSuccess"
+          },
+          {
+            "$ref": "#/components/schemas/LongRunningOperationFail"
+          }
+        ]
+      },
+      "PaymentMethodDeletedLro": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/LongRunningOperationIndeterminate"
+          },
+          {
+            "$ref": "#/components/schemas/PaymentMethodDeletedLongRunningOperationSuccess"
+          },
+          {
+            "$ref": "#/components/schemas/LongRunningOperationFail"
+          }
+        ]
+      },
+      "PaymentMethods": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "$ref": "#/components/schemas/PaymentMethod"
+        }
+      },
+      "PlanSku": {
+        "type": "string",
+        "enum": ["donotuse", "plasku1", "plasku2", "plasku3", "plasku4"]
+      },
+      "BillingSubscriptionStatus": {
+        "type": "string",
+        "enum": ["active", "inactive"]
+      },
+      "BillingSubscriptionInterval": {
+        "type": "string",
+        "enum": ["monthly", "yearly"]
+      },
+      "BillingSubscriptionIdentifiers": {
+        "type": "object",
+        "required": ["billingAccountId", "subscriptionId"],
+        "additionalProperties": false,
+        "properties": {
+          "billingAccountId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "subscriptionId": {
+            "$ref": "#/components/schemas/Id"
+          }
+        }
+      },
+      "BillingSubscription": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BillingSubscriptionIdentifiers"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "planSku",
+              "interval",
+              "status",
+              "cycleTime",
+              "createdTime"
+            ],
+            "properties": {
+              "accountId": {
+                "$ref": "#/components/schemas/Id"
+              },
+              "planSku": {
+                "$ref": "#/components/schemas/PlanSku"
+              },
+              "interval": {
+                "$ref": "#/components/schemas/BillingSubscriptionInterval"
+              },
+              "status": {
+                "$ref": "#/components/schemas/BillingSubscriptionStatus"
+              },
+              "cycleTime": {
+                "$ref": "#/components/schemas/DateTime"
+              },
+              "trialEndTime": {
+                "$ref": "#/components/schemas/DateTime"
+              },
+              "createdTime": {
+                "$ref": "#/components/schemas/DateTime"
+              },
+              "updatedTime": {
+                "$ref": "#/components/schemas/DateTime"
+              }
+            }
+          }
+        ]
+      },
+      "CreateBillingSubscriptionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["accountId", "planSku", "interval"],
+        "properties": {
+          "accountId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "planSku": {
+            "$ref": "#/components/schemas/PlanSku"
+          },
+          "interval": {
+            "$ref": "#/components/schemas/BillingSubscriptionInterval"
+          },
+          "promoCode": {
+            "$ref": "#/components/schemas/StringU8"
+          }
+        }
+      },
+      "UpdateBillingSubscriptionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "label": {
+            "$ref": "#/components/schemas/Name"
+          },
+          "trialEndTime": {
+            "$ref": "#/components/schemas/DateTime"
+          }
+        }
+      },
+      "UpdateBillingSubscriptionPromoCodeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "required": ["promoCode"],
+        "properties": {
+          "promoCode": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StringU8"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "nullable": true,
+                "enum": [null]
+              }
+            ]
+          }
+        }
+      },
+      "BillingSubscriptionPromoCodeLongRunningOperationSuccess": {
+        "type": "object",
+        "required": ["done", "result", "operationId"],
+        "additionalProperties": false,
+        "properties": {
+          "operationId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "done": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "result": {
+            "type": "object",
+            "required": ["response"],
+            "additionalProperties": false,
+            "properties": {
+              "response": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["promoCode"],
+                "properties": {
+                  "promoCode": {
+                    "$ref": "#/components/schemas/StringU8"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "BillingSubscriptionLro": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/LongRunningOperationIndeterminate"
+          },
+          {
+            "$ref": "#/components/schemas/BillingSubscriptionPromoCodeLongRunningOperationSuccess"
+          },
+          {
+            "$ref": "#/components/schemas/LongRunningOperationFail"
+          }
+        ]
+      },
+      "BillingSubscriptions": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "$ref": "#/components/schemas/BillingSubscription"
+        }
+      }
+    },
+    "parameters": {
+      "OperationIdParam": {
+        "name": "operationId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Uuid"
+        }
+      },
+      "BillingAccountIdParameter": {
+        "name": "billingAccountId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Id"
+        }
+      },
+      "SubscriptionIdParameter": {
+        "name": "subscriptionId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Id"
+        }
+      },
+      "PaymentMethodIdParameter": {
+        "name": "paymentMethodId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Id"
+        }
+      },
+      "StripePaymentMethodIdParameter": {
+        "name": "stripePaymentMethodId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/StripeId"
+        }
+      }
+    },
+    "securitySchemes": {
+      "HttpBearerJwtScheme": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/operations/{operationId}": {
+      "get": {
+        "operationId": "getOperationCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.read"]
+          }
+        ],
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Operation 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LongRunningOperation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/OperationIdParam"
+        }
+      ]
+    },
+    "/billing-accounts": {
+      "get": {
+        "operationId": "listBillingAccountsCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.read"]
+          }
+        ],
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "List Billing Accounts 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccountList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createBillingAccountCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.write"]
+          }
+        ],
+        "tags": [],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingAccountCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Billing Account 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccount"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/billing-accounts/{billingAccountId}": {
+      "get": {
+        "operationId": "getBillingAccountCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.read"]
+          }
+        ],
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Billing Account 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccount"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateBillingAccountCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.write"]
+          }
+        ],
+        "tags": [],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingAccountUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Billing Account 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccount"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BillingAccountIdParameter"
+        }
+      ]
+    },
+    "/billing-accounts/{billingAccountId}/portal": {
+      "post": {
+        "operationId": "getBillingAccountPortalCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.read"]
+          }
+        ],
+        "tags": [],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingAccountPortalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Billing Account Portal 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingAccountPortal"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BillingAccountIdParameter"
+        }
+      ]
+    },
+    "/billing-accounts/{billingAccountId}/link": {
+      "post": {
+        "operationId": "linkBillingAccountCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.write"]
+          }
+        ],
+        "tags": [],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkBillingAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {}
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BillingAccountIdParameter"
+        }
+      ]
+    },
+    "/billing-accounts/{billingAccountId}/payment-methods": {
+      "get": {
+        "operationId": "listPaymentMethodsCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.read"]
+          }
+        ],
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Payment Method 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethods"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPaymentMethodCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.write"]
+          }
+        ],
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Payment Method 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodIntendedLro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BillingAccountIdParameter"
+        }
+      ]
+    },
+    "/billing-accounts/{billingAccountId}/payment-methods/stripe/{stripePaymentMethodId}": {
+      "get": {
+        "operationId": "getPaymentMethodFromStripeCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.read"]
+          }
+        ],
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Payment Method 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethod"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BillingAccountIdParameter"
+        },
+        {
+          "$ref": "#/components/parameters/StripePaymentMethodIdParameter"
+        }
+      ]
+    },
+    "/billing-accounts/{billingAccountId}/payment-methods/{paymentMethodId}": {
+      "get": {
+        "operationId": "getPaymentMethodCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.read"]
+          }
+        ],
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Payment Method 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethod"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updatePaymentMethodCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.write"]
+          }
+        ],
+        "tags": [],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePaymentMethodRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Payment Method 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethod"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deletePaymentMethodCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.write"]
+          }
+        ],
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Long Running Operation 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodDeletedLro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BillingAccountIdParameter"
+        },
+        {
+          "$ref": "#/components/parameters/PaymentMethodIdParameter"
+        }
+      ]
+    },
+    "/billing-accounts/{billingAccountId}/subscriptions": {
+      "get": {
+        "operationId": "listBillingSubscriptionsCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.read"]
+          }
+        ],
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Payment Method 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingSubscriptions"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createBillingSubscriptionCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.write"]
+          }
+        ],
+        "tags": [],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBillingSubscriptionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingSubscriptionLro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BillingAccountIdParameter"
+        }
+      ]
+    },
+    "/billing-accounts/{billingAccountId}/subscriptions/{subscriptionId}": {
+      "put": {
+        "operationId": "updateBillingSubscriptionCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.write"]
+          }
+        ],
+        "tags": [],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBillingSubscriptionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Subscription 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateBillingSubscriptionRequest"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "cancelSubscriptionCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.write"]
+          }
+        ],
+        "tags": [],
+        "responses": {
+          "204": {
+            "description": "Subscription 204 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingSubscription"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BillingAccountIdParameter"
+        },
+        {
+          "$ref": "#/components/parameters/SubscriptionIdParameter"
+        }
+      ]
+    },
+    "/billing-accounts/{billingAccountId}/subscriptions/{subscriptionId}/promo-code": {
+      "put": {
+        "operationId": "updateBillingSubscriptionPromoCodeCommand",
+        "security": [
+          {
+            "HttpBearerJwtScheme": ["billing.write"]
+          }
+        ],
+        "tags": [],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBillingSubscriptionPromoCodeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingSubscriptionLro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BillingAccountIdParameter"
+        },
+        {
+          "$ref": "#/components/parameters/SubscriptionIdParameter"
+        }
+      ]
+    }
+  },
+  "security": [
+    {
+      "HttpBearerJwtScheme": []
+    },
+    {
+      "HttpBearerJwtScheme": ["billing.read"]
+    },
+    {
+      "HttpBearerJwtScheme": ["billing.write"]
+    }
+  ]
+}
