@@ -131,10 +131,12 @@ describe('Fetcher', () => {
       {
         "body": {
           "accept": "*/*",
-          "accept-encoding": "gzip, deflate, br",
-          "connection": "close",
+          "accept-encoding": "gzip, deflate",
+          "accept-language": "*",
+          "connection": "keep-alive",
           "host": "redacted",
-          "user-agent": "node-fetch",
+          "sec-fetch-mode": "cors",
+          "user-agent": "undici",
           "x-fetcher": "custom",
         },
         "ok": true,
