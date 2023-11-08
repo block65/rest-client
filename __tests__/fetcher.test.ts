@@ -21,24 +21,9 @@ describe('Fetcher', () => {
       url: new URL('/200', base),
     });
 
-    expect(response).toMatchInlineSnapshot(
-      {
-        url: expect.any(URL),
-      },
-      `
-      {
-        "body": [
-          1,
-          2,
-          3,
-        ],
-        "ok": true,
-        "status": 200,
-        "statusText": "OK",
-        "url": Any<URL>,
-      }
-    `,
-    );
+    expect(response).toMatchSnapshot({
+      url: expect.any(URL),
+    });
   });
 
   test('204', async () => {
@@ -47,20 +32,9 @@ describe('Fetcher', () => {
       url: new URL('/204', base),
     });
 
-    expect(response).toMatchInlineSnapshot(
-      {
-        url: expect.any(URL),
-      },
-      `
-      {
-        "body": "",
-        "ok": true,
-        "status": 204,
-        "statusText": "No Content",
-        "url": Any<URL>,
-      }
-    `,
-    );
+    expect(response).toMatchSnapshot({
+      url: expect.any(URL),
+    });
   });
 
   test('JSON Error', async () => {
@@ -69,24 +43,9 @@ describe('Fetcher', () => {
         method: 'get',
         url: new URL('/json-error', base),
       }),
-    ).toMatchInlineSnapshot(
-      {
-        url: expect.any(URL),
-      },
-      `
-      {
-        "body": {
-          "code": 9,
-          "message": "Data should be array",
-          "status": "FAILED_PRECONDITION",
-        },
-        "ok": false,
-        "status": 400,
-        "statusText": "Bad Request",
-        "url": Any<URL>,
-      }
-    `,
-    );
+    ).toMatchSnapshot({
+      url: expect.any(URL),
+    });
   });
 
   test('404', async () => {
@@ -95,20 +54,9 @@ describe('Fetcher', () => {
         method: 'get',
         url: new URL('/404', base),
       }),
-    ).toMatchInlineSnapshot(
-      {
-        url: expect.any(URL),
-      },
-      `
-      {
-        "body": "<h1>Not Found</h1>",
-        "ok": false,
-        "status": 404,
-        "statusText": "Not Found",
-        "url": Any<URL>,
-      }
-    `,
-    );
+    ).toMatchSnapshot({
+      url: expect.any(URL),
+    });
   });
 
   test('Custom options iso fetcher', async () => {
@@ -123,29 +71,9 @@ describe('Fetcher', () => {
         method: 'get',
         url: new URL('/my-headers', base),
       }),
-    ).toMatchInlineSnapshot(
-      {
-        url: expect.any(URL),
-      },
-      `
-      {
-        "body": {
-          "accept": "*/*",
-          "accept-encoding": "gzip, deflate",
-          "accept-language": "*",
-          "connection": "keep-alive",
-          "host": "redacted",
-          "sec-fetch-mode": "cors",
-          "user-agent": "undici",
-          "x-fetcher": "custom",
-        },
-        "ok": true,
-        "status": 200,
-        "statusText": "OK",
-        "url": Any<URL>,
-      }
-    `,
-    );
+    ).toMatchSnapshot({
+      url: expect.any(URL),
+    });
   });
 
   test('Custom timeout iso fetcher', async () => {
@@ -158,10 +86,7 @@ describe('Fetcher', () => {
         method: 'get',
         url: new URL('/unresponsive', base),
       }),
-    ).rejects.toMatchInlineSnapshot(
-      // eslint-disable-next-line quotes
-      `[TimeoutError: Request timed out]`,
-    );
+    ).rejects.toMatchSnapshot();
   }, 150);
 
   afterAll((done) => {

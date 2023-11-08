@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Client 200 OK! 1`] = `
+[
+  1,
+  2,
+  3,
+]
+`;
+
+exports[`Client 404 1`] = `[Error: Not Found]`;
+
+exports[`Client Headers 1`] = `
+{
+  "accept": "*/*",
+  "accept-encoding": "gzip, deflate",
+  "accept-language": "*",
+  "connection": "keep-alive",
+  "host": "redacted",
+  "sec-fetch-mode": "cors",
+  "user-agent": "node",
+  "x-async": "Bearer 1234567890",
+  "x-build-id": "test/123",
+  "x-func": "hello",
+  "x-merged": "hello",
+}
+`;
