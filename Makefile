@@ -15,7 +15,7 @@ distclean: clean
 	rm -rf node_modules
 
 .PHONY: test
-test:
+test: node_modules
 	NODE_OPTIONS=--experimental-vm-modules pnpm exec jest
 
 node_modules: package.json
@@ -25,7 +25,7 @@ dist: node_modules tsconfig.json $(SRCS)
 	pnpm exec tsc
 
 .PHONY: dev
-dev:
+dev: node_modules
 	pnpm exec tsc -w
 
 .PHONY: pretty
