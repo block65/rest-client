@@ -40,13 +40,7 @@ describe('Client', () => {
       ),
     );
 
-    expect(response).toMatchInlineSnapshot(`
-      [
-        1,
-        2,
-        3,
-      ]
-    `);
+    expect(response).toMatchSnapshot();
   });
 
   test('404', async () => {
@@ -61,10 +55,7 @@ describe('Client', () => {
           options,
         ),
       ),
-    ).rejects.toMatchInlineSnapshot(
-      // eslint-disable-next-line quotes
-      `[Error: Not Found]`,
-    );
+    ).rejects.toMatchSnapshot();
   });
 
   test('JSON Error', async () => {
@@ -96,21 +87,7 @@ describe('Client', () => {
       ),
     );
 
-    expect(response).toMatchInlineSnapshot(`
-      {
-        "accept": "*/*",
-        "accept-encoding": "gzip, deflate",
-        "accept-language": "*",
-        "connection": "keep-alive",
-        "host": "redacted",
-        "sec-fetch-mode": "cors",
-        "user-agent": "undici",
-        "x-async": "Bearer 1234567890",
-        "x-build-id": "test/123",
-        "x-func": "hello",
-        "x-merged": "hello",
-      }
-    `);
+    expect(response).toMatchSnapshot();
   });
 
   afterAll((done) => {
