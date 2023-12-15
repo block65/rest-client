@@ -53,8 +53,6 @@ exports[`Fetcher Custom options iso fetcher 1`] = `
 }
 `;
 
-exports[`Fetcher Custom timeout iso fetcher 1`] = `[TimeoutError: Request timed out]`;
-
 exports[`Fetcher JSON Error 1`] = `
 {
   "body": {

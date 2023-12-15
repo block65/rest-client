@@ -60,14 +60,14 @@ describe('Fetcher', () => {
   });
 
   test('Custom options iso fetcher', async () => {
-    const customOptionsFetcher = createIsomorphicNativeFetcher({
+    const fetcher = createIsomorphicNativeFetcher({
       headers: {
         'x-fetcher': 'custom',
       },
     });
 
     expect(
-      await customOptionsFetcher({
+      await fetcher({
         method: 'get',
         url: new URL('/my-headers', base),
       }),
@@ -77,16 +77,38 @@ describe('Fetcher', () => {
   });
 
   test('Custom timeout iso fetcher', async () => {
-    const customTimeoutFetcher = createIsomorphicNativeFetcher({
+    const fetcher = createIsomorphicNativeFetcher({
       timeout: 100,
     });
 
-    await expect(
-      customTimeoutFetcher({
-        method: 'get',
-        url: new URL('/unresponsive', base),
-      }),
-    ).rejects.toMatchSnapshot();
+    const err = await fetcher({
+      method: 'get',
+      url: new URL('/unresponsive', base),
+    }).catch((e) => e);
+
+    expect(err).toBeInstanceOf(DOMException);
+    expect(err.code).toBe(DOMException.TIMEOUT_ERR);
+  }, 150);
+
+  test('User abort iso fetcher', async () => {
+    const fetcher = createIsomorphicNativeFetcher({
+      timeout: 100,
+    });
+
+    const controller = new AbortController();
+
+    setTimeout(() => controller.abort(), 100);
+
+    const err = await fetcher({
+      method: 'get',
+      url: new URL('/unresponsive', base),
+      signal: controller.signal,
+    }).catch((e) => e);
+
+    expect(err).toBeInstanceOf(DOMException);
+    expect(err.code).toBe(DOMException.ABORT_ERR);
+
+    expect(controller.signal.throwIfAborted).toThrowError();
   }, 150);
 
   afterAll((done) => {

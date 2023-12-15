@@ -12,12 +12,12 @@ import { requestListener } from './server.js';
 const port = await getPort();
 const server = createServer(requestListener);
 
-const isomorphicFetcher = createIsomorphicNativeFetcher();
+const fetcher = createIsomorphicNativeFetcher();
 
 class Fake200Command extends Command {
   public override method = 'get' as const;
 
-  constructor() {
+  constructor(_body?: Record<string, unknown>) {
     super('/200');
   }
 }
@@ -57,7 +57,7 @@ class FakeMyHeadersCommand extends Command<Inputs, HeadersOutput> {
 describe('Client', () => {
   const client = new RestServiceClient<Inputs, Outputs>(
     new URL(`http://0.0.0.0:${port}`),
-    isomorphicFetcher,
+    fetcher,
     {
       headers: {
         'x-build-id': 'test/123',
@@ -72,7 +72,11 @@ describe('Client', () => {
   });
 
   test('200 OK!', async () => {
-    const response = await client.json(new Fake200Command());
+    const response = await client.json(
+      new Fake200Command({
+        hello: true,
+      }),
+    );
 
     expect(response).toMatchSnapshot();
   });
@@ -84,7 +88,7 @@ describe('Client', () => {
   test('JSON Error', async () => {
     await expect(
       client.json(new FakeJsonErrorCommand()),
-    ).rejects.toThrowErrorMatchingInlineSnapshot('"Data should be array"');
+    ).rejects.toThrowErrorMatchingSnapshot('"Data should be array"');
   });
 
   test('Headers', async () => {
