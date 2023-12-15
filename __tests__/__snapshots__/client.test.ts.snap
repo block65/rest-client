@@ -16,6 +16,7 @@ exports[`Client Headers 1`] = `
   "accept-encoding": "gzip, deflate",
   "accept-language": "*",
   "connection": "keep-alive",
+  "content-type": "application/json;charset=utf-8",
   "host": "redacted",
   "sec-fetch-mode": "cors",
   "user-agent": "node",
@@ -25,3 +26,5 @@ exports[`Client Headers 1`] = `
   "x-merged": "hello",
 }
 `;
+
+exports[`Client JSON Error: "Data should be array" 1`] = `"Data should be array"`;

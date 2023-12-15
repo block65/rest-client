@@ -8,7 +8,7 @@
  */
 import {
   RestServiceClient,
-  createIsomorphicFetcher,
+  createIsomorphicNativeFetcher,
   type RestServiceClientConfig,
 } from '../../../src/main.js';
 import {
@@ -79,7 +79,7 @@ export class BillingServiceRestApiRestClient extends RestServiceClient<
 > {
   constructor(
     baseUrl = new URL('https://api.example.com/'),
-    fetcher = createIsomorphicFetcher(),
+    fetcher = createIsomorphicNativeFetcher(),
     config?: RestServiceClientConfig,
   ) {
     super(baseUrl, fetcher, config);
