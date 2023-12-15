@@ -4,3 +4,6 @@ coverage
 tmp
 .vscode
 .idea
+pnpm-lock.yaml
+yarn.lock
+package-lock.json

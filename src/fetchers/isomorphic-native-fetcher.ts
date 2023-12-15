@@ -42,6 +42,7 @@ export function createIsomorphicNativeFetcher(
     );
 
     return pRetry(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       async (_attempt: number) => {
         const res = await fetch(url, {
           // overridable

@@ -17,6 +17,7 @@ const fetcher = createIsomorphicNativeFetcher();
 class Fake200Command extends Command {
   public override method = 'get' as const;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(_body?: Record<string, unknown>) {
     super('/200');
   }
