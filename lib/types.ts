@@ -4,8 +4,8 @@ export type Resolver<T = unknown> = () => T | Promise<T>;
 
 export type ResolvableHeaders = Record<string, string | Resolver<string>>;
 
-export type FetcherParams<T = unknown> = {
-  body?: T;
+export type FetcherParams = {
+  body?: BodyInit | null;
   url: URL;
   method: HttpMethod;
   headers?: Record<string, string>;
@@ -45,6 +45,7 @@ export type RequestParameters = {
 export type RuntimeOptions = {
   headers?: Record<string, string> | undefined;
   signal?: AbortSignal;
+  json?: boolean;
 };
 
 export type RequestMethodCaller<T = unknown> = (

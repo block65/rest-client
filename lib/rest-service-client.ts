@@ -2,7 +2,7 @@ import { CustomError, type CustomErrorSerialized } from '@block65/custom-error';
 import type { Jsonifiable } from 'type-fest';
 import type { JsonifiableObject } from 'type-fest/source/jsonifiable.js';
 import type { Command } from './command.js';
-import { hackyConvertDates, resolveHeaders } from './common.js';
+import { resolveHeaders } from './common.js';
 import { ServiceError } from './errors.js';
 import type {
   FetcherMethod,
@@ -33,7 +33,7 @@ export class RestServiceClient<
     command: Command<InputType, OutputType, any, any>,
     runtimeOptions?: RuntimeOptions,
   ) {
-    const { method, pathname, query, body } = command;
+    const { method, pathname, query } = command;
 
     const url = new URL(`.${pathname}`, this.#base);
     url.search = query
@@ -45,10 +45,16 @@ export class RestServiceClient<
     return this.#fetcher({
       url,
       method,
-      body,
+      body:
+        command.body && runtimeOptions?.json
+          ? JSON.stringify(command.body)
+          : null,
       headers: await resolveHeaders({
         ...runtimeOptions?.headers,
         ...this.#config.headers,
+        ...(runtimeOptions?.json && {
+          'content-type': 'application/json;charset=utf-8',
+        }),
       }),
       ...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),
     });
@@ -61,7 +67,10 @@ export class RestServiceClient<
     command: Command<InputType, OutputType, any, any>,
     runtimeOptions?: RuntimeOptions,
   ): Promise<OutputType> {
-    const res = await this.response(command, runtimeOptions);
+    const res = await this.response(command, {
+      ...runtimeOptions,
+      json: true,
+    });
 
     if (res.status >= 400) {
       if (
@@ -76,24 +85,10 @@ export class RestServiceClient<
       throw new ServiceError(res.statusText).debug({ res });
     }
 
-    return hackyConvertDates(res.body) as OutputType;
+    return res.body as OutputType;
   }
 
-  /**
-   * @deprecated
-   * @see {json}
-   */
   public async send<
-    InputType extends ClientInput,
-    OutputType extends ClientOutput,
-  >(
-    command: Command<InputType, OutputType, any, any>,
-    runtimeOptions?: RuntimeOptions,
-  ): Promise<OutputType> {
-    return this.json(command, runtimeOptions);
-  }
-
-  public async stream<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(
@@ -106,11 +101,23 @@ export class RestServiceClient<
       throw new ServiceError(res.statusText).debug({ res });
     }
 
-    if (res.body instanceof ReadableStream) {
-      const reader = res.body?.getReader();
+    return res.body;
+  }
+
+  public async stream<
+    InputType extends ClientInput,
+    OutputType extends ClientOutput,
+  >(
+    command: Command<InputType, OutputType, any, any>,
+    runtimeOptions?: RuntimeOptions,
+  ) {
+    const body = await this.send(command, runtimeOptions);
+
+    if (body instanceof ReadableStream) {
+      const reader = body?.getReader();
       return reader;
     }
-    throw new ServiceError('Unstreamable response').debug({ res });
+    throw new ServiceError('Unstreamable response').debug({ body });
   }
 
   constructor(
