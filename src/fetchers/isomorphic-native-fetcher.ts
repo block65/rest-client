@@ -31,7 +31,7 @@ export function createIsomorphicNativeFetcher(
   } = {},
 ): FetcherMethod {
   return async (params: FetcherParams) => {
-    const { url, method, body, headers, credentials, signal } = params;
+    const { url, method, body = null, headers, credentials, signal } = params;
 
     const combinedSignal = multiSignal(
       signal,
@@ -46,21 +46,18 @@ export function createIsomorphicNativeFetcher(
         const res = await fetch(url, {
           // overridable
           ...(credentials && { credentials }),
-
           ...options,
 
           // combined
           headers: {
             ...options.headers,
             ...headers,
-            'content-type': 'application/json;charset=utf-8',
           },
+          signal: combinedSignal,
 
           // not overridable
           method,
-          ...(!!body && { body: JSON.stringify(body) }),
-          // ...(signal && { signal }),
-          signal: combinedSignal,
+          body,
         });
 
         // if we are set up for retries and the response is not ok, throw

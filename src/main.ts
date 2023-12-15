@@ -7,7 +7,7 @@ export * from '../lib/types.js';
 export { Command } from '../lib/command.js';
 
 // a good standard/basic fetcher factory
-export { createIsomorphicNativeFetcher } from './fetchers/isomorphic-native-fetch.js';
+export { createIsomorphicNativeFetcher } from './fetchers/isomorphic-native-fetcher.js';
 
 // the client
 export {
