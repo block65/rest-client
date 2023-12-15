@@ -13,20 +13,6 @@ export type FetcherParams<T = unknown> = {
   signal?: AbortSignal;
 };
 
-/** @deprecated */
-export type LegacyFetcherResponse<T> = {
-  body?: T;
-  url: URL;
-  status: number;
-  statusText: string;
-  ok: boolean;
-};
-
-/** @deprecated */
-export type LegacyFetcherMethod<T = unknown> = (
-  params: FetcherParams,
-) => Promise<LegacyFetcherResponse<T>>;
-
 export type FetcherResponse<
   T extends ReadableStream<Uint8Array> | null | unknown | string = unknown,
 > = {
