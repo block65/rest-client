@@ -1,11 +1,11 @@
 import { createServer } from 'node:http';
 import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import getPort from 'get-port';
-import { createIsomorphicFetcher } from '../src/main.js';
+import { createIsomorphicNativeFetcher } from '../src/main.js';
 import { requestListener } from './server.js';
 
 const server = createServer(requestListener);
-const isomorphicFetcher = createIsomorphicFetcher();
+const isomorphicFetcher = createIsomorphicNativeFetcher();
 
 describe('Fetcher', () => {
   let base: URL;
@@ -60,7 +60,7 @@ describe('Fetcher', () => {
   });
 
   test('Custom options iso fetcher', async () => {
-    const customOptionsFetcher = createIsomorphicFetcher({
+    const customOptionsFetcher = createIsomorphicNativeFetcher({
       headers: {
         'x-fetcher': 'custom',
       },
@@ -77,7 +77,7 @@ describe('Fetcher', () => {
   });
 
   test('Custom timeout iso fetcher', async () => {
-    const customTimeoutFetcher = createIsomorphicFetcher({
+    const customTimeoutFetcher = createIsomorphicNativeFetcher({
       timeout: 100,
     });
 

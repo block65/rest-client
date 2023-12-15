@@ -5,14 +5,14 @@ import getPort from 'get-port';
 import {
   Command,
   RestServiceClient,
-  createIsomorphicFetcher,
+  createIsomorphicNativeFetcher,
 } from '../src/main.js';
 import { requestListener } from './server.js';
 
 const port = await getPort();
 const server = createServer(requestListener);
 
-const isomorphicFetcher = createIsomorphicFetcher();
+const isomorphicFetcher = createIsomorphicNativeFetcher();
 
 class Fake200Command extends Command {
   public override method = 'get' as const;
