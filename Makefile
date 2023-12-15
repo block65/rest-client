@@ -18,6 +18,10 @@ distclean: clean
 test: node_modules
 	NODE_OPTIONS=--experimental-vm-modules pnpm exec jest
 
+.PHONY: test.update
+test.update: node_modules
+	NODE_OPTIONS=--experimental-vm-modules pnpm exec jest -u
+
 node_modules: package.json
 	pnpm install
 
