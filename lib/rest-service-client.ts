@@ -60,6 +60,8 @@ export class RestServiceClient<
     });
   }
 
+
+
   public async json<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
@@ -72,20 +74,22 @@ export class RestServiceClient<
       json: true,
     });
 
-    if (res.status >= 400) {
-      if (
-        isPlainObject(res.body) &&
-        'code' in res.body &&
-        'status' in res.body
-      ) {
-        throw CustomError.fromJSON(
-          res.body as unknown as CustomErrorSerialized,
-        );
-      }
-      throw new ServiceError(res.statusText).debug({ res });
+    if (res.status < 400) {
+      return res.body as OutputType;
     }
 
-    return res.body as OutputType;
+    if (isPlainObject(res.body) && 'code' in res.body && 'status' in res.body) {
+      throw CustomError.fromJSON(res.body as unknown as CustomErrorSerialized).addDetail(
+        {
+          reason: `http-${res.status}`,
+          metadata: {
+            status: res.status.toString(),
+            statusText: res.statusText,
+          },
+        }
+      );
+    }
+    throw new ServiceError(res.statusText).debug({ res });
   }
 
   public async send<
