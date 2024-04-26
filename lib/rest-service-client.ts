@@ -94,14 +94,14 @@ export class RestServiceClient<
   >(
     command: Command<InputType, OutputType, any, any>,
     runtimeOptions?: RuntimeOptions,
-  ) {
+  ): Promise<OutputType> {
     const res = await this.response(command, runtimeOptions);
 
-    if (res.status >= 400) {
-      throw new ServiceError(res.statusText).debug({ res });
+    if (res.status < 400) {
+      return res.body as OutputType;
     }
 
-    return res.body;
+    throw new ServiceError(res.statusText).debug({ res });
   }
 
   public async stream<
@@ -110,8 +110,8 @@ export class RestServiceClient<
   >(
     command: Command<InputType, OutputType, any, any>,
     runtimeOptions?: RuntimeOptions,
-  ) {
-    const body = await this.send(command, runtimeOptions);
+  ): Promise<ReadableStreamDefaultReader<OutputType>> {
+    const body = await this.response(command, runtimeOptions);
 
     if (body instanceof ReadableStream) {
       const reader = body?.getReader();
