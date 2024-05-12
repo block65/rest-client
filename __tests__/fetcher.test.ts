@@ -45,6 +45,7 @@ describe('Fetcher', () => {
 
     expect(response).toMatchSnapshot({
       body: '', // 200 so its empty string
+      url: expect.any(URL),
     });
   });
 
@@ -57,6 +58,7 @@ describe('Fetcher', () => {
 
     expect(response).toMatchSnapshot({
       body: null, // 204 so its null
+      url: expect.any(URL),
     });
   });
 
