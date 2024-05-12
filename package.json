@@ -23,7 +23,7 @@
     "preversion": "make test"
   },
   "dependencies": {
-    "@block65/custom-error": "^12.1.0",
+    "@block65/custom-error": "^12.2.0",
     "@hapi/bourne": "^3.0.0",
     "p-retry": "^6.2.0"
   },
