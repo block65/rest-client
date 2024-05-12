@@ -37,6 +37,29 @@ describe('Fetcher', () => {
     });
   });
 
+  test('200 empty content ala AWS lambda function URL', async () => {
+    const response = await isomorphicFetcher({
+      method: 'delete',
+      url: new URL('/aws-lambda-200', base),
+    });
+
+    expect(response).toMatchSnapshot({
+      body: '', // 200 so its empty string
+    });
+  });
+
+  //same but 204
+  test('204 empty content ala AWS lambda function URL', async () => {
+    const response = await isomorphicFetcher({
+      method: 'delete',
+      url: new URL('/aws-lambda-204', base),
+    });
+
+    expect(response).toMatchSnapshot({
+      body: null, // 204 so its null
+    });
+  });
+
   test('JSON Error', async () => {
     expect(
       await isomorphicFetcher({

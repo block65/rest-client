@@ -72,15 +72,18 @@ export function createIsomorphicNativeFetcher(
         // this can be replaced with any other way of detecting streaming
         const streaming = !contentLength && contentType === 'text/event-stream';
 
-        if (!streaming) {
-          const isJson = contentType?.includes('/json');
+        // not streaming and also has content
+        if (!streaming && res.status !== 204) {
+          const responseText = await res.text();
 
-          const responseBody = await (isJson
-            ? res.text().then<Jsonifiable>(parse)
-            : res.text());
+          // sanity check to ensure the body is not empty
+          // lambda function URLs can return an empty body and still indicate
+          // that content type is JSON.
+          const isJson =
+            responseText.length > 0 && contentType?.includes('/json');
 
           return {
-            body: responseBody,
+            body: isJson ? (parse(responseText) as Jsonifiable) : responseText,
             url: new URL(res.url),
             status: res.status,
             statusText: res.statusText,

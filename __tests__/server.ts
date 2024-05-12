@@ -11,6 +11,17 @@ export const requestListener: RequestListener = (req, res) => {
       res.writeHead(204);
       res.end();
       break;
+
+    case '/aws-lambda-200':
+      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+      res.end();
+      break;
+
+    case '/aws-lambda-204':
+      res.writeHead(204, { 'content-type': 'application/json; charset=utf-8' });
+      res.end();
+      break;
+
     case '/my-headers':
       res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
       res.end(

@@ -14,13 +14,33 @@ exports[`Fetcher 200 OK! 1`] = `
 }
 `;
 
-exports[`Fetcher 204 1`] = `
+exports[`Fetcher 200 empty content ala AWS lambda function URL 1`] = `
 {
   "body": "",
+  "ok": true,
+  "status": 200,
+  "statusText": "OK",
+  "url": "http://0.0.0.0:39813/aws-lambda-200",
+}
+`;
+
+exports[`Fetcher 204 1`] = `
+{
+  "body": null,
   "ok": true,
   "status": 204,
   "statusText": "No Content",
   "url": Any<URL>,
+}
+`;
+
+exports[`Fetcher 204 empty content ala AWS lambda function URL 1`] = `
+{
+  "body": null,
+  "ok": true,
+  "status": 204,
+  "statusText": "No Content",
+  "url": "http://0.0.0.0:39813/aws-lambda-204",
 }
 `;
 
