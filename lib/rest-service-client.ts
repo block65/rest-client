@@ -30,7 +30,7 @@ export class RestServiceClient<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(
-    command: Command<InputType, OutputType, any, any>,
+    command: Command<InputType, OutputType>,
     runtimeOptions?: RuntimeOptions,
   ) {
     const { method, pathname, query } = command;
@@ -66,7 +66,7 @@ export class RestServiceClient<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(
-    command: Command<InputType, OutputType, any, any>,
+    command: Command<InputType, OutputType>,
     runtimeOptions?: RuntimeOptions,
   ): Promise<OutputType> {
     const res = await this.response(command, {
@@ -96,7 +96,7 @@ export class RestServiceClient<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(
-    command: Command<InputType, OutputType, any, any>,
+    command: Command<InputType, OutputType>,
     runtimeOptions?: RuntimeOptions,
   ): Promise<OutputType> {
     const res = await this.response(command, runtimeOptions);
@@ -112,7 +112,7 @@ export class RestServiceClient<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(
-    command: Command<InputType, OutputType, any, any>,
+    command: Command<InputType, OutputType>,
     runtimeOptions?: RuntimeOptions,
   ): Promise<ReadableStreamDefaultReader<OutputType>> {
     const body = await this.response(command, runtimeOptions);
