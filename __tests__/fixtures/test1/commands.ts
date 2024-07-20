@@ -7,7 +7,7 @@
  *
  */
 /** eslint-disable max-classes */
-import { Command } from '@block65/rest-client';
+import { Command } from '../../../src/main.js';
 import type {
   BillingAccount,
   BillingAccountList,
