@@ -3,27 +3,27 @@ import type { JsonifiableObject } from 'type-fest/source/jsonifiable.js';
 import type { HttpMethod } from './types.js';
 
 type Middleware<
-  CommandInput extends JsonifiableObject | void = void,
-  CommandOutput extends Jsonifiable | void = void,
+  CommandInput extends JsonifiableObject | undefined  = never,
+  CommandOutput extends Jsonifiable | undefined  = never,
 > = (input: CommandInput, output: CommandOutput) => CommandOutput;
 
 export abstract class Command<
-  CommandInput extends JsonifiableObject | void = void,
-  CommandOutput extends Jsonifiable | void = void,
-  CommandBody extends Jsonifiable | void = void,
-  CommandQuery extends JsonifiableObject | void = void,
+  CommandInput extends JsonifiableObject | undefined  = never,
+  CommandOutput extends Jsonifiable | undefined  = never,
+  CommandBody extends Jsonifiable | undefined  = never,
+  CommandQuery extends JsonifiableObject | undefined = never,
 > {
   public method: HttpMethod = 'get';
 
   #pathname: string;
 
-  #body: CommandBody;
+  #body: CommandBody | undefined;
 
-  #query: CommandQuery;
+  #query: CommandQuery | undefined;
 
   protected middleware: Middleware<CommandInput, CommandOutput>[] = [];
 
-  constructor(pathname: string, body: CommandBody, query: CommandQuery) {
+  constructor(pathname: string, body?: CommandBody, query?: CommandQuery) {
     this.#pathname = pathname;
     this.#body = body;
     this.#query = query;

@@ -10,27 +10,43 @@ import type {
   RuntimeOptions,
 } from './types.js';
 import { isPlainObject } from './utils.js';
+import { createIsomorphicNativeFetcher } from '../src/main.js';
 
 export interface RestServiceClientConfig {
+  fetcher?: FetcherMethod;
   headers?: ResolvableHeaders | undefined;
   credentials?: 'include' | 'omit' | 'same-origin' | undefined;
 }
 
 export class RestServiceClient<
-  ClientInput extends JsonifiableObject | void = void,
-  ClientOutput extends Jsonifiable | void = void,
+  ClientInput extends JsonifiableObject | undefined = never,
+  ClientOutput extends Jsonifiable | undefined = never,
 > {
   readonly #config: RestServiceClientConfig;
 
   readonly #base: URL;
 
-  readonly #fetcher: FetcherMethod;
+  readonly #fetcher = createIsomorphicNativeFetcher();
+
+  constructor(
+    base: URL | string,
+    config: RestServiceClientConfig = {},
+  ) {
+    this.#config = Object.freeze(config);
+
+    if (config.fetcher) {
+      this.#fetcher = config.fetcher;
+    }
+
+    this.#base = new URL(base);
+
+  }
 
   public async response<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(
-    command: Command<InputType, OutputType, any, any>,
+    command: Command<InputType, OutputType>,
     runtimeOptions?: RuntimeOptions,
   ) {
     const { method, pathname, query } = command;
@@ -66,7 +82,7 @@ export class RestServiceClient<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(
-    command: Command<InputType, OutputType, any, any>,
+    command: Command<InputType, OutputType>,
     runtimeOptions?: RuntimeOptions,
   ): Promise<OutputType> {
     const res = await this.response(command, {
@@ -96,7 +112,7 @@ export class RestServiceClient<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(
-    command: Command<InputType, OutputType, any, any>,
+    command: Command<InputType, OutputType>,
     runtimeOptions?: RuntimeOptions,
   ): Promise<OutputType> {
     const res = await this.response(command, runtimeOptions);
@@ -112,7 +128,7 @@ export class RestServiceClient<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
   >(
-    command: Command<InputType, OutputType, any, any>,
+    command: Command<InputType, OutputType>,
     runtimeOptions?: RuntimeOptions,
   ): Promise<ReadableStreamDefaultReader<OutputType>> {
     const body = await this.response(command, runtimeOptions);
@@ -122,17 +138,5 @@ export class RestServiceClient<
       return reader;
     }
     throw new ServiceError('Unstreamable response').debug({ body });
-  }
-
-  constructor(
-    base: URL,
-    fetcher: FetcherMethod,
-    config: RestServiceClientConfig = {},
-  ) {
-    this.#config = config;
-
-    this.#base = base;
-
-    this.#fetcher = fetcher;
   }
 }

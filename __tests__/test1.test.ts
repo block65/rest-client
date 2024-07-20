@@ -11,18 +11,14 @@ import {
 import { BillingCountry } from './fixtures/test1/types.js';
 
 async function thisAlwaysThrows<
-  CommandInput extends JsonifiableObject | void = void,
-  CommandOutput extends Jsonifiable | void = void,
-  CommandBody extends Jsonifiable | void = void,
-  CommandQuery extends JsonifiableObject | void = void,
+CommandInput extends JsonifiableObject | undefined  = never,
+CommandOutput extends Jsonifiable | undefined  = never,
+CommandBody extends Jsonifiable | undefined  = never,
+CommandQuery extends JsonifiableObject | undefined = never,
 >(
   _: Command<CommandInput, CommandOutput, CommandBody, CommandQuery>,
 ): Promise<CommandOutput> {
-  if (process.pid) {
-    throw new Error('You can ignore this safely');
-  }
-
-  return { _ } as unknown as CommandOutput;
+  throw new Error('You can ignore this safely');
 }
 
 test('command that will result in a void response', async () => {

@@ -43,8 +43,8 @@ class FakeJsonErrorCommand extends Command {
 
 type HeadersOutput = Record<string, string>;
 
-type Outputs = void | HeadersOutput;
-type Inputs = void;
+type Outputs = undefined | HeadersOutput;
+type Inputs = never;
 
 // my headers
 class FakeMyHeadersCommand extends Command<Inputs, HeadersOutput> {
@@ -58,8 +58,8 @@ class FakeMyHeadersCommand extends Command<Inputs, HeadersOutput> {
 describe('Client', () => {
   const client = new RestServiceClient<Inputs, Outputs>(
     new URL(`http://0.0.0.0:${port}`),
-    fetcher,
     {
+      fetcher,
       headers: {
         'x-build-id': 'test/123',
         'x-async': () => Promise.resolve('Bearer 1234567890'),
