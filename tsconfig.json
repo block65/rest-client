@@ -8,6 +8,7 @@
     "declaration": true,
     "strict": true,
     "outDir": "dist",
+    "rootDir": ".",
     "preserveSymlinks": true,
     "forceConsistentCasingInFileNames": true,
     "allowUnusedLabels": false,
