@@ -9,7 +9,7 @@
 import {
   RestServiceClient,
   type RestServiceClientConfig,
-} from '@block65/rest-client';
+} from '../../../src/main.js';
 import type {
   BillingAccount,
   BillingAccountList,
