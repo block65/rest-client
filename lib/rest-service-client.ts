@@ -10,8 +10,10 @@ import type {
   RuntimeOptions,
 } from './types.js';
 import { isPlainObject } from './utils.js';
+import { createIsomorphicNativeFetcher } from '../src/main.js';
 
 export interface RestServiceClientConfig {
+  fetcher?: FetcherMethod;
   headers?: ResolvableHeaders | undefined;
   credentials?: 'include' | 'omit' | 'same-origin' | undefined;
 }
@@ -24,7 +26,21 @@ export class RestServiceClient<
 
   readonly #base: URL;
 
-  readonly #fetcher: FetcherMethod;
+  readonly #fetcher = createIsomorphicNativeFetcher();
+
+  constructor(
+    base: URL | string,
+    config: RestServiceClientConfig = {},
+  ) {
+    this.#config = Object.freeze(config);
+
+    if (config.fetcher) {
+      this.#fetcher = config.fetcher;
+    }
+
+    this.#base = new URL(base);
+
+  }
 
   public async response<
     InputType extends ClientInput,
@@ -122,17 +138,5 @@ export class RestServiceClient<
       return reader;
     }
     throw new ServiceError('Unstreamable response').debug({ body });
-  }
-
-  constructor(
-    base: URL,
-    fetcher: FetcherMethod,
-    config: RestServiceClientConfig = {},
-  ) {
-    this.#config = config;
-
-    this.#base = base;
-
-    this.#fetcher = fetcher;
   }
 }

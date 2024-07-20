@@ -8,7 +8,6 @@
  */
 import {
   RestServiceClient,
-  createIsomorphicNativeFetcher,
   type RestServiceClientConfig,
 } from '@block65/rest-client';
 import type {
@@ -79,9 +78,8 @@ export class BillingServiceRestApiRestClient extends RestServiceClient<
 > {
   constructor(
     baseUrl = new URL('https://api.example.com/'),
-    fetcher = createIsomorphicNativeFetcher(),
-    config?: RestServiceClientConfig,
+    config: RestServiceClientConfig,
   ) {
-    super(baseUrl, fetcher, config);
+    super(baseUrl, config);
   }
 }
