@@ -17,8 +17,8 @@ export interface RestServiceClientConfig {
 }
 
 export class RestServiceClient<
-  ClientInput extends JsonifiableObject | void = void,
-  ClientOutput extends Jsonifiable | void = void,
+  ClientInput extends JsonifiableObject | undefined = never,
+  ClientOutput extends Jsonifiable | undefined = never,
 > {
   readonly #config: RestServiceClientConfig;
 

@@ -43,8 +43,8 @@ class FakeJsonErrorCommand extends Command {
 
 type HeadersOutput = Record<string, string>;
 
-type Outputs = void | HeadersOutput;
-type Inputs = void;
+type Outputs = undefined | HeadersOutput;
+type Inputs = never;
 
 // my headers
 class FakeMyHeadersCommand extends Command<Inputs, HeadersOutput> {
