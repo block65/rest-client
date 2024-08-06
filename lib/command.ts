@@ -3,15 +3,15 @@ import type { JsonifiableObject } from 'type-fest/source/jsonifiable.js';
 import type { HttpMethod } from './types.js';
 
 type Middleware<
-  CommandInput extends JsonifiableObject | undefined,
-  CommandOutput extends Jsonifiable | undefined,
+  CommandInput extends JsonifiableObject | undefined = never,
+  CommandOutput extends Jsonifiable | undefined = never,
 > = (input: CommandInput, output: CommandOutput) => CommandOutput;
 
 export abstract class Command<
-  CommandInput extends JsonifiableObject | undefined,
-  CommandOutput extends Jsonifiable | undefined,
-  CommandBody extends Jsonifiable | undefined,
-  CommandQuery extends JsonifiableObject | undefined,
+  CommandInput extends JsonifiableObject | undefined = never,
+  CommandOutput extends Jsonifiable | undefined = never,
+  CommandBody extends Jsonifiable | undefined = never,
+  CommandQuery extends JsonifiableObject | undefined = never,
 > {
   public method: HttpMethod = 'get';
 
