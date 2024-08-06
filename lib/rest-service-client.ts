@@ -1,6 +1,7 @@
 import { CustomError, type CustomErrorSerialized } from '@block65/custom-error';
 import type { Jsonifiable } from 'type-fest';
 import type { JsonifiableObject } from 'type-fest/source/jsonifiable.js';
+import { createIsomorphicNativeFetcher } from '../src/fetchers/isomorphic-native-fetcher.js';
 import type { Command } from './command.js';
 import { resolveHeaders } from './common.js';
 import { ServiceError } from './errors.js';
@@ -10,7 +11,6 @@ import type {
   RuntimeOptions,
 } from './types.js';
 import { isPlainObject } from './utils.js';
-import { createIsomorphicNativeFetcher } from '../src/main.js';
 
 export type RestServiceClientConfig = {
   logger?: ((...args: unknown[]) => void) | undefined;
