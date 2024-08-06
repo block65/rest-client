@@ -28,7 +28,7 @@ export class RestServiceClient<
 
   readonly #base: URL;
 
-  readonly #fetcher = createIsomorphicNativeFetcher();
+  readonly #fetcher: FetcherMethod;
 
   constructor(
     base: URL | string,
@@ -45,6 +45,17 @@ export class RestServiceClient<
 
     this.#logger = config.logger;
 
+    this.#fetcher =
+      'fetcher' in config
+        ? config.fetcher
+        : createIsomorphicNativeFetcher(
+            'fetch' in config
+              ? {
+                  fetch: config.fetch,
+                }
+              : {},
+          );
+  }
 
   #log(msg: string, ...args: unknown[]) {
     this.#logger?.(`[rest-client] ${msg}`, ...args);
