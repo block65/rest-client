@@ -14,34 +14,25 @@ import { isPlainObject } from './utils.js';
 
 export type RestServiceClientConfig = {
   logger?: ((...args: unknown[]) => void) | undefined;
-export interface RestServiceClientConfig {
-  fetcher?: FetcherMethod;
   headers?: ResolvableHeaders | undefined;
   credentials?: 'include' | 'omit' | 'same-origin' | undefined;
-}
+} & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
 
 export class RestServiceClient<
   ClientInput extends JsonifiableObject | undefined = never,
   ClientOutput extends Jsonifiable | undefined = never,
 > {
-  readonly #config: RestServiceClientConfig;
-
   readonly #base: URL;
 
   readonly #fetcher: FetcherMethod;
 
-  constructor(
-    base: URL | string,
-    config: RestServiceClientConfig = {},
-  ) {
-    this.#config = Object.freeze(config);
+  readonly #headers: ResolvableHeaders | undefined;
 
   #logger: ((...args: unknown[]) => void) | undefined;
-    if (config.fetcher) {
-      this.#fetcher = config.fetcher;
-    }
 
+  constructor(base: URL | string, config: RestServiceClientConfig = {}) {
     this.#base = new URL(base);
+    this.#headers = Object.freeze(config.headers);
 
     this.#logger = config.logger;
 
@@ -76,6 +67,7 @@ export class RestServiceClient<
 
     this.#log('req: %s %s', method.toUpperCase(), url, runtimeOptions);
 
+    const res = await this.#fetcher({
       url,
       method,
       body:
@@ -84,14 +76,13 @@ export class RestServiceClient<
           : null,
       headers: await resolveHeaders({
         ...runtimeOptions?.headers,
-        ...this.#config.headers,
+        ...this.#headers,
         ...(runtimeOptions?.json && {
           'content-type': 'application/json;charset=utf-8',
         }),
       }),
       ...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),
     });
-  }
 
     this.#log(
       'res: %d %s %s %s',

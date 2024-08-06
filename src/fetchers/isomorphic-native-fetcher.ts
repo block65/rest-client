@@ -2,7 +2,11 @@ import { parse } from '@hapi/bourne';
 import pRetry, { AbortError } from 'p-retry';
 import type * as PRetry from 'p-retry';
 import type { Jsonifiable } from 'type-fest';
-import type { FetcherMethod, FetcherParams } from '../../lib/types.js';
+import type {
+  FetcherMethod,
+  FetcherParams,
+  FetcherResponse,
+} from '../../lib/types.js';
 
 function multiSignal(...signals: (AbortSignal | undefined)[]): AbortSignal {
   const controller = new AbortController();
@@ -26,12 +30,14 @@ function multiSignal(...signals: (AbortSignal | undefined)[]): AbortSignal {
 
 export function createIsomorphicNativeFetcher(
   options: Omit<RequestInit, 'method' | 'body' | 'signal'> & {
+    fetch?: typeof globalThis.fetch;
     timeout?: number;
     retry?: PRetry.Options;
   } = {},
 ): FetcherMethod {
   return async (params: FetcherParams) => {
     const { url, method, body = null, headers, credentials, signal } = params;
+    const { fetch = globalThis.fetch } = options;
 
     const combinedSignal = multiSignal(
       signal,
