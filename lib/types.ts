@@ -21,6 +21,7 @@ export type FetcherResponse<
   status: number;
   statusText: string;
   ok: boolean;
+  headers: Headers;
 };
 
 export type FetcherMethod = (

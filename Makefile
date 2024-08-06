@@ -16,11 +16,11 @@ distclean: clean
 
 .PHONY: test
 test: node_modules
-	NODE_OPTIONS=--experimental-vm-modules pnpm exec jest
+	pnpm exec vitest
 
 .PHONY: test.update
 test.update: node_modules
-	NODE_OPTIONS=--experimental-vm-modules pnpm exec jest -u
+	pnpm exec vitest -u
 
 node_modules: package.json
 	pnpm install

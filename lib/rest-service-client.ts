@@ -1,6 +1,7 @@
 import { CustomError, type CustomErrorSerialized } from '@block65/custom-error';
 import type { Jsonifiable } from 'type-fest';
 import type { JsonifiableObject } from 'type-fest/source/jsonifiable.js';
+import { createIsomorphicNativeFetcher } from '../src/fetchers/isomorphic-native-fetcher.js';
 import type { Command } from './command.js';
 import { resolveHeaders } from './common.js';
 import { ServiceError } from './errors.js';
@@ -10,45 +11,51 @@ import type {
   RuntimeOptions,
 } from './types.js';
 import { isPlainObject } from './utils.js';
-import { createIsomorphicNativeFetcher } from '../src/main.js';
 
-export interface RestServiceClientConfig {
-  fetcher?: FetcherMethod;
+export type RestServiceClientConfig = {
+  logger?: ((...args: unknown[]) => void) | undefined;
   headers?: ResolvableHeaders | undefined;
   credentials?: 'include' | 'omit' | 'same-origin' | undefined;
-}
+} & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
 
 export class RestServiceClient<
   ClientInput extends JsonifiableObject | undefined = never,
   ClientOutput extends Jsonifiable | undefined = never,
 > {
-  readonly #config: RestServiceClientConfig;
-
   readonly #base: URL;
 
-  readonly #fetcher = createIsomorphicNativeFetcher();
+  readonly #fetcher: FetcherMethod;
 
-  constructor(
-    base: URL | string,
-    config: RestServiceClientConfig = {},
-  ) {
-    this.#config = Object.freeze(config);
+  readonly #headers: ResolvableHeaders | undefined;
 
-    if (config.fetcher) {
-      this.#fetcher = config.fetcher;
-    }
+  #logger: ((...args: unknown[]) => void) | undefined;
 
+  constructor(base: URL | string, config: RestServiceClientConfig = {}) {
     this.#base = new URL(base);
+    this.#headers = Object.freeze(config.headers);
 
+    this.#logger = config.logger;
+
+    this.#fetcher =
+      'fetcher' in config
+        ? config.fetcher
+        : createIsomorphicNativeFetcher(
+            'fetch' in config
+              ? {
+                  fetch: config.fetch,
+                }
+              : {},
+          );
+  }
+
+  #log(msg: string, ...args: unknown[]) {
+    this.#logger?.(`[rest-client] ${msg}`, ...args);
   }
 
   public async response<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
-  >(
-    command: Command<InputType, OutputType>,
-    runtimeOptions?: RuntimeOptions,
-  ) {
+  >(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
     const { method, pathname, query } = command;
 
     const url = new URL(`.${pathname}`, this.#base);
@@ -58,7 +65,9 @@ export class RestServiceClient<
         ).toString()
       : '';
 
-    return this.#fetcher({
+    this.#log('req: %s %s', method.toUpperCase(), url, runtimeOptions);
+
+    const res = await this.#fetcher({
       url,
       method,
       body:
@@ -67,16 +76,24 @@ export class RestServiceClient<
           : null,
       headers: await resolveHeaders({
         ...runtimeOptions?.headers,
-        ...this.#config.headers,
+        ...this.#headers,
         ...(runtimeOptions?.json && {
           'content-type': 'application/json;charset=utf-8',
         }),
       }),
       ...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),
     });
+
+    this.#log(
+      'res: %d %s %s %s',
+      res.status,
+      res.statusText,
+      res.headers.get('content-type') || '-',
+      res.headers.get('content-length') || '-',
+    );
+
+    return res;
   }
-
-
 
   public async json<
     InputType extends ClientInput,
@@ -95,15 +112,15 @@ export class RestServiceClient<
     }
 
     if (isPlainObject(res.body) && 'code' in res.body && 'status' in res.body) {
-      throw CustomError.fromJSON(res.body as unknown as CustomErrorSerialized).addDetail(
-        {
-          reason: `http-${res.status}`,
-          metadata: {
-            status: res.status.toString(),
-            statusText: res.statusText,
-          },
-        }
-      );
+      throw CustomError.fromJSON(
+        res.body as unknown as CustomErrorSerialized,
+      ).addDetail({
+        reason: `http-${res.status}`,
+        metadata: {
+          status: res.status.toString(),
+          statusText: res.statusText,
+        },
+      });
     }
     throw new ServiceError(res.statusText).debug({ res });
   }

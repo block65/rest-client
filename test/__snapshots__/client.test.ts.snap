@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Client 200 OK! 1`] = `
+exports[`Client > 200 OK! 1`] = `
 [
   1,
   2,
@@ -8,9 +8,9 @@ exports[`Client 200 OK! 1`] = `
 ]
 `;
 
-exports[`Client 404 1`] = `[Error: Not Found]`;
+exports[`Client > 404 1`] = `[Error: Not Found]`;
 
-exports[`Client Headers 1`] = `
+exports[`Client > Headers 1`] = `
 {
   "accept": "*/*",
   "accept-encoding": "gzip, deflate",
@@ -27,4 +27,4 @@ exports[`Client Headers 1`] = `
 }
 `;
 
-exports[`Client JSON Error: "Data should be array" 1`] = `"Data should be array"`;
+exports[`Client > JSON Error > "Data should be array" 1`] = `[Error: Data should be array]`;

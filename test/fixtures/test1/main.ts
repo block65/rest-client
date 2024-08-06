@@ -6,10 +6,7 @@
  * Generated on 2024-07-20T05:47:35.352Z
  *
  */
-import {
-  RestServiceClient,
-  type RestServiceClientConfig,
-} from '../../../src/main.js';
+import { RestServiceClient } from '../../../src/main.js';
 import type {
   BillingAccount,
   BillingAccountList,
@@ -75,11 +72,4 @@ type AllOutputs =
 export class BillingServiceRestApiRestClient extends RestServiceClient<
   AllInputs,
   AllOutputs
-> {
-  constructor(
-    baseUrl = new URL('https://api.example.com/'),
-    config: RestServiceClientConfig,
-  ) {
-    super(baseUrl, config);
-  }
-}
+> {}

@@ -1,12 +1,13 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Fetcher 200 OK! 1`] = `
+exports[`Fetcher > 200 OK! 1`] = `
 {
   "body": [
     1,
     2,
     3,
   ],
+  "headers": Headers {},
   "ok": true,
   "status": 200,
   "statusText": "OK",
@@ -14,9 +15,10 @@ exports[`Fetcher 200 OK! 1`] = `
 }
 `;
 
-exports[`Fetcher 200 empty content ala AWS lambda function URL 1`] = `
+exports[`Fetcher > 200 empty content ala AWS lambda function URL 1`] = `
 {
   "body": "",
+  "headers": Headers {},
   "ok": true,
   "status": 200,
   "statusText": "OK",
@@ -24,9 +26,10 @@ exports[`Fetcher 200 empty content ala AWS lambda function URL 1`] = `
 }
 `;
 
-exports[`Fetcher 204 1`] = `
+exports[`Fetcher > 204 1`] = `
 {
   "body": null,
+  "headers": Headers {},
   "ok": true,
   "status": 204,
   "statusText": "No Content",
@@ -34,9 +37,10 @@ exports[`Fetcher 204 1`] = `
 }
 `;
 
-exports[`Fetcher 204 empty content ala AWS lambda function URL 1`] = `
+exports[`Fetcher > 204 empty content ala AWS lambda function URL 1`] = `
 {
   "body": null,
+  "headers": Headers {},
   "ok": true,
   "status": 204,
   "statusText": "No Content",
@@ -44,9 +48,10 @@ exports[`Fetcher 204 empty content ala AWS lambda function URL 1`] = `
 }
 `;
 
-exports[`Fetcher 404 1`] = `
+exports[`Fetcher > 404 1`] = `
 {
   "body": "<h1>Not Found</h1>",
+  "headers": Headers {},
   "ok": false,
   "status": 404,
   "statusText": "Not Found",
@@ -54,7 +59,7 @@ exports[`Fetcher 404 1`] = `
 }
 `;
 
-exports[`Fetcher Custom options iso fetcher 1`] = `
+exports[`Fetcher > Custom options iso fetcher 1`] = `
 {
   "body": {
     "accept": "*/*",
@@ -66,6 +71,7 @@ exports[`Fetcher Custom options iso fetcher 1`] = `
     "user-agent": "node",
     "x-fetcher": "custom",
   },
+  "headers": Headers {},
   "ok": true,
   "status": 200,
   "statusText": "OK",
@@ -73,13 +79,14 @@ exports[`Fetcher Custom options iso fetcher 1`] = `
 }
 `;
 
-exports[`Fetcher JSON Error 1`] = `
+exports[`Fetcher > JSON Error 1`] = `
 {
   "body": {
     "code": 9,
     "message": "Data should be array",
     "status": "FAILED_PRECONDITION",
   },
+  "headers": Headers {},
   "ok": false,
   "status": 400,
   "statusText": "Bad Request",
