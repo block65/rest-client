@@ -11,10 +11,10 @@ import {
 import { BillingCountry } from './fixtures/test1/types.js';
 
 async function thisAlwaysThrows<
-  CommandInput extends JsonifiableObject | undefined = never,
-  CommandOutput extends Jsonifiable | undefined = never,
-  CommandBody extends Jsonifiable | undefined = never,
-  CommandQuery extends JsonifiableObject | undefined = never,
+  CommandInput extends JsonifiableObject | undefined,
+  CommandOutput extends Jsonifiable | undefined,
+  CommandBody extends Jsonifiable | undefined,
+  CommandQuery extends JsonifiableObject | undefined,
 >(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _: Command<CommandInput, CommandOutput, CommandBody, CommandQuery>,

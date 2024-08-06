@@ -19,8 +19,8 @@ export type RestServiceClientConfig = {
 } & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
 
 export class RestServiceClient<
-  ClientInput extends JsonifiableObject | undefined = never,
-  ClientOutput extends Jsonifiable | undefined = never,
+  ClientInput extends JsonifiableObject | undefined,
+  ClientOutput extends Jsonifiable | undefined,
 > {
   readonly #base: URL;
 
