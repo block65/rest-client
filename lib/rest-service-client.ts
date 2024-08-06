@@ -64,10 +64,7 @@ export class RestServiceClient<
   public async response<
     InputType extends ClientInput,
     OutputType extends ClientOutput,
-  >(
-    command: Command<InputType, OutputType>,
-    runtimeOptions?: RuntimeOptions,
-  ) {
+  >(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
     const { method, pathname, query } = command;
 
     const url = new URL(`.${pathname}`, this.#base);
