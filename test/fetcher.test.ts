@@ -1,6 +1,7 @@
+/// <reference types="node" />
 import { createServer } from 'node:http';
-import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import getPort from 'get-port';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createIsomorphicNativeFetcher } from '../src/main.js';
 import { requestListener } from './server.js';
 
@@ -49,7 +50,7 @@ describe('Fetcher', () => {
     });
   });
 
-  //same but 204
+  // same but 204
   test('204 empty content ala AWS lambda function URL', async () => {
     const response = await isomorphicFetcher({
       method: 'delete',
@@ -135,8 +136,7 @@ describe('Fetcher', () => {
 
     expect(controller.signal.throwIfAborted).toThrowError();
   }, 150);
-
-  afterAll((done) => {
-    server.close(done);
-  });
+});
+afterAll(() => {
+  server.close();
 });

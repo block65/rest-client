@@ -1,7 +1,7 @@
 /* eslint-disable max-classes-per-file */
 import { createServer } from 'node:http';
-import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import getPort from 'get-port';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import {
   Command,
   RestServiceClient,
@@ -102,8 +102,8 @@ describe('Client', () => {
 
     expect(response).toMatchSnapshot();
   });
+});
 
-  afterAll((done) => {
-    server.close(done);
-  });
+afterAll(() => {
+  server.close();
 });

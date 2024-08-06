@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Fetcher 200 OK! 1`] = `
+exports[`Fetcher > 200 OK! 1`] = `
 {
   "body": [
     1,
@@ -14,7 +14,7 @@ exports[`Fetcher 200 OK! 1`] = `
 }
 `;
 
-exports[`Fetcher 200 empty content ala AWS lambda function URL 1`] = `
+exports[`Fetcher > 200 empty content ala AWS lambda function URL 1`] = `
 {
   "body": "",
   "ok": true,
@@ -24,7 +24,7 @@ exports[`Fetcher 200 empty content ala AWS lambda function URL 1`] = `
 }
 `;
 
-exports[`Fetcher 204 1`] = `
+exports[`Fetcher > 204 1`] = `
 {
   "body": null,
   "ok": true,
@@ -34,7 +34,7 @@ exports[`Fetcher 204 1`] = `
 }
 `;
 
-exports[`Fetcher 204 empty content ala AWS lambda function URL 1`] = `
+exports[`Fetcher > 204 empty content ala AWS lambda function URL 1`] = `
 {
   "body": null,
   "ok": true,
@@ -44,7 +44,7 @@ exports[`Fetcher 204 empty content ala AWS lambda function URL 1`] = `
 }
 `;
 
-exports[`Fetcher 404 1`] = `
+exports[`Fetcher > 404 1`] = `
 {
   "body": "<h1>Not Found</h1>",
   "ok": false,
@@ -54,7 +54,7 @@ exports[`Fetcher 404 1`] = `
 }
 `;
 
-exports[`Fetcher Custom options iso fetcher 1`] = `
+exports[`Fetcher > Custom options iso fetcher 1`] = `
 {
   "body": {
     "accept": "*/*",
@@ -73,7 +73,7 @@ exports[`Fetcher Custom options iso fetcher 1`] = `
 }
 `;
 
-exports[`Fetcher JSON Error 1`] = `
+exports[`Fetcher > JSON Error 1`] = `
 {
   "body": {
     "code": 9,
