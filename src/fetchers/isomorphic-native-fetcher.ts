@@ -88,7 +88,8 @@ export function createIsomorphicNativeFetcher(
             status: res.status,
             statusText: res.statusText,
             ok: res.ok,
-          }; // satisfies FetcherResponse<Jsonifiable | string>;
+            headers: res.headers,
+          } satisfies FetcherResponse<Jsonifiable | string>;
         }
 
         return {
@@ -97,7 +98,8 @@ export function createIsomorphicNativeFetcher(
           status: res.status,
           statusText: res.statusText,
           ok: res.ok,
-        }; // satisfies FetcherResponse<ReadableStream<Uint8Array> | null>;
+          headers: res.headers,
+        } satisfies FetcherResponse<ReadableStream<Uint8Array> | null>;
       },
       method === 'get'
         ? ({
