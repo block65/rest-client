@@ -10,10 +10,6 @@
     ".": {
       "types": "./dist/src/main.d.ts",
       "default": "./dist/src/main.js"
-    },
-    "./legacy": {
-      "types": "./dist/src/legacy.d.ts",
-      "default": "./dist/src/legacy.js"
     }
   },
   "files": [
