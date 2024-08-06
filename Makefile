@@ -15,7 +15,7 @@ distclean: clean
 	rm -rf node_modules
 
 .PHONY: test
-test: node_modules
+test: node_modules dist
 	pnpm exec vitest
 
 .PHONY: test.update
