@@ -77,7 +77,8 @@ export class RestServiceClient<
         ).toString()
       : '';
 
-    return this.#fetcher({
+    this.#log('req: %s %s', method.toUpperCase(), url, runtimeOptions);
+
       url,
       method,
       body:
