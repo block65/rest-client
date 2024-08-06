@@ -2,11 +2,12 @@
   "compilerOptions": {
     "moduleResolution": "node16",
     "target": "es2022",
-    "lib": ["es2022", "dom"],
+    "lib": ["es2022", "webworker"],
     "module": "node16",
     "incremental": true,
     "declaration": true,
     "strict": true,
+    "types": [],
     "outDir": "dist",
     "rootDir": ".",
     "preserveSymlinks": true,
@@ -24,6 +25,6 @@
     "allowArbitraryExtensions": true,
     "skipLibCheck": true
   },
-  "include": ["./src", "./__tests__", "./lib"],
+  "include": ["./src", "test", "./lib"],
   "exclude": ["./dist", "node_modules"]
 }
