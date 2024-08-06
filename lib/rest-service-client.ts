@@ -12,6 +12,8 @@ import type {
 import { isPlainObject } from './utils.js';
 import { createIsomorphicNativeFetcher } from '../src/main.js';
 
+export type RestServiceClientConfig = {
+  logger?: ((...args: unknown[]) => void) | undefined;
 export interface RestServiceClientConfig {
   fetcher?: FetcherMethod;
   headers?: ResolvableHeaders | undefined;
@@ -34,12 +36,18 @@ export class RestServiceClient<
   ) {
     this.#config = Object.freeze(config);
 
+  #logger: ((...args: unknown[]) => void) | undefined;
     if (config.fetcher) {
       this.#fetcher = config.fetcher;
     }
 
     this.#base = new URL(base);
 
+    this.#logger = config.logger;
+
+
+  #log(msg: string, ...args: unknown[]) {
+    this.#logger?.(`[rest-client] ${msg}`, ...args);
   }
 
   public async response<
@@ -76,7 +84,16 @@ export class RestServiceClient<
     });
   }
 
+    this.#log(
+      'res: %d %s %s %s',
+      res.status,
+      res.statusText,
+      res.headers.get('content-type') || '-',
+      res.headers.get('content-length') || '-',
+    );
 
+    return res;
+  }
 
   public async json<
     InputType extends ClientInput,
