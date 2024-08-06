@@ -95,15 +95,15 @@ export class RestServiceClient<
     }
 
     if (isPlainObject(res.body) && 'code' in res.body && 'status' in res.body) {
-      throw CustomError.fromJSON(res.body as unknown as CustomErrorSerialized).addDetail(
-        {
-          reason: `http-${res.status}`,
-          metadata: {
-            status: res.status.toString(),
-            statusText: res.statusText,
-          },
-        }
-      );
+      throw CustomError.fromJSON(
+        res.body as unknown as CustomErrorSerialized,
+      ).addDetail({
+        reason: `http-${res.status}`,
+        metadata: {
+          status: res.status.toString(),
+          statusText: res.statusText,
+        },
+      });
     }
     throw new ServiceError(res.statusText).debug({ res });
   }
