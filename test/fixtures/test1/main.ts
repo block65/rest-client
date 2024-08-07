@@ -6,7 +6,6 @@
  * Generated on 2024-07-20T05:47:35.352Z
  *
  */
-import { RestServiceClient } from '../../../src/main.js';
 import type {
   BillingAccount,
   BillingAccountList,
@@ -37,6 +36,7 @@ import type {
   UpdateBillingSubscriptionPromoCodeCommandInput,
   UpdatePaymentMethodCommandInput,
 } from './types.js';
+import { RestServiceClient } from '@block65/rest-client';
 
 type AllInputs =
   | CancelSubscriptionCommandInput
