@@ -14,21 +14,44 @@ const server = createServer(requestListener);
 
 const fetcher = createIsomorphicNativeFetcher();
 
-class Fake200Command extends Command {
+type Fake200CommandInput = {
+  hello: boolean;
+};
+type Fake200CommandOutput = unknown;
+
+class Fake200Command extends Command<
+  Fake200CommandInput,
+  Fake200CommandOutput
+> {
   public override method = 'get' as const;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  constructor(_body?: Record<string, unknown>) {
+  constructor(_body: Fake200CommandInput) {
     super('/200');
   }
 }
 
+type Fake404CommandInput = never;
+type Fake404CommandOutput = never;
+
 // 404
-class Fake404Command extends Command {
+class Fake404Command extends Command<
+  Fake404CommandInput,
+  Fake404CommandOutput
+> {
   public override method = 'get' as const;
 
   constructor() {
     super('/404');
+  }
+}
+
+// 500
+class Fake500Command extends Command {
+  public override method = 'get' as const;
+
+  constructor() {
+    super('/500');
   }
 }
 
@@ -41,13 +64,17 @@ class FakeJsonErrorCommand extends Command {
   }
 }
 
-type HeadersOutput = Record<string, string>;
+type FakeMyHeadersOutput = Record<string, string>;
 
-type Outputs = undefined | HeadersOutput;
+type Outputs =
+  | FakeMyHeadersOutput
+  | Fake404CommandOutput
+  | Fake200CommandOutput;
+
 type Inputs = never;
 
-// my headers
-class FakeMyHeadersCommand extends Command<Inputs, HeadersOutput> {
+// fake headers
+class FakeMyHeadersCommand extends Command<never, FakeMyHeadersOutput> {
   public override method = 'get' as const;
 
   constructor() {
@@ -84,6 +111,10 @@ describe('Client', () => {
 
   test('404', async () => {
     await expect(client.json(new Fake404Command())).rejects.toMatchSnapshot();
+  });
+
+  test('500', async () => {
+    await expect(client.json(new Fake500Command())).rejects.toMatchSnapshot();
   });
 
   test('JSON Error', async () => {
