@@ -8,7 +8,6 @@
  *
  */
 /** eslint-disable max-classes */
-import { Command } from '../../../src/main.js';
 import type {
   BillingAccount,
   BillingAccountList,
@@ -56,6 +55,7 @@ import type {
   UpdatePaymentMethodCommandBody,
   UpdatePaymentMethodCommandInput,
 } from './types.js';
+import { Command } from '@block65/rest-client';
 
 /**
  * GetOperationCommand

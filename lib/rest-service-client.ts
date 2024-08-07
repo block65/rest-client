@@ -19,8 +19,9 @@ export type RestServiceClientConfig = {
 } & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
 
 export class RestServiceClient<
-  ClientInput extends JsonifiableObject | undefined,
-  ClientOutput extends Jsonifiable | undefined,
+  // WARN: this must be kept compatible with the Command Input and Output types
+  ClientInput extends JsonifiableObject | unknown = unknown,
+  ClientOutput extends Jsonifiable | unknown = unknown,
 > {
   readonly #base: URL;
 

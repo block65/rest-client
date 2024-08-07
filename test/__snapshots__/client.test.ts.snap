@@ -10,6 +10,8 @@ exports[`Client > 200 OK! 1`] = `
 
 exports[`Client > 404 1`] = `[Error: Not Found]`;
 
+exports[`Client > 500 1`] = `[Error: Internal Server Error]`;
+
 exports[`Client > Headers 1`] = `
 {
   "accept": "*/*",

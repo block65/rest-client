@@ -2,7 +2,7 @@
   "compilerOptions": {
     "moduleResolution": "node16",
     "target": "es2022",
-    "lib": ["es2022", "webworker"],
+    "lib": ["es2022", "webworker", "Webworker.Iterable"],
     "module": "node16",
     "incremental": true,
     "declaration": true,
