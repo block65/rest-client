@@ -6,7 +6,13 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [24]
+        os: [ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -14,8 +20,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          registry-url: https://registry.npmjs.org/
+          node-version: ${{ matrix.version }}
           cache: 'pnpm'
-          node-version-file: .node-version
 
       - run: make test

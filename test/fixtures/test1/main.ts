@@ -35,7 +35,7 @@ import type {
   UpdateBillingSubscriptionCommandInput,
   UpdateBillingSubscriptionPromoCodeCommandInput,
   UpdatePaymentMethodCommandInput,
-} from './types.js';
+} from './types.ts';
 import { RestServiceClient } from '@block65/rest-client';
 
 type AllInputs =

@@ -1,48 +1,41 @@
 {
   "name": "@block65/rest-client",
-  "version": "11.0.3",
+  "version": "12.0.0",
   "private": false,
   "description": "Block65 REST client",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/block65/rest-client"
+  },
   "sideEffects": false,
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/src/main.d.ts",
-      "default": "./dist/src/main.js"
-    }
+    ".": "./src/main.ts"
   },
   "files": [
-    "dist/{src,lib}/**/*"
+    "./{src,lib}/**/*"
   ],
   "scripts": {
     "preversion": "make test"
   },
   "dependencies": {
-    "@block65/custom-error": "^12.2.0",
-    "@hapi/bourne": "^3.0.0",
-    "p-retry": "^6.2.0"
+    "@block65/custom-error": "^14.0.0",
+    "p-retry": "^7.1.1"
   },
   "devDependencies": {
-    "@block65/eslint-config": "^12.0.1",
-    "@hapi/bourne": "^3.0.0",
-    "@types/node": "^20.14.14",
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
-    "eslint": "^8.57.0",
-    "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-jsx-a11y": "^6.9.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "eslint-plugin-react": "^7.35.0",
-    "eslint-plugin-react-hooks": "^4.6.2",
+    "@tsconfig/node24": "^24.0.0",
+    "@tsconfig/strictest": "^2.0.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.0.0",
     "get-port": "^7.1.0",
-    "prettier": "^3.3.3",
-    "type-fest": "^4.23.0",
-    "typescript": "^5.5.4",
-    "vitest": "^2.0.5"
+    "type-fest": "^5.0.0",
+    "typescript": "^5.8.0",
+    "valibot": "^1.0.0",
+    "vitest": "^3.0.0"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24.0.0"
   },
-  "packageManager": "pnpm@9.6.0+sha512.38dc6fba8dba35b39340b9700112c2fe1e12f10b17134715a4aa98ccf7bb035e76fd981cf0bb384dfa98f8d6af5481c2bef2f4266a24bfa20c34eb7147ce0b5e"
+  "packageManager": "pnpm@10.30.3"
 }

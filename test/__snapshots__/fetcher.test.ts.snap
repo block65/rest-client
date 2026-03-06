@@ -7,21 +7,7 @@ exports[`Fetcher > 200 OK! 1`] = `
     2,
     3,
   ],
-  "headers": Headers {},
-  "ok": true,
-  "status": 200,
-  "statusText": "OK",
-  "url": Any<URL>,
-}
-`;
-
-exports[`Fetcher > 200 empty content ala AWS lambda function URL 1`] = `
-{
-  "body": "",
-  "headers": Headers {},
-  "ok": true,
-  "status": 200,
-  "statusText": "OK",
+  "res": Response {},
   "url": Any<URL>,
 }
 `;
@@ -29,32 +15,53 @@ exports[`Fetcher > 200 empty content ala AWS lambda function URL 1`] = `
 exports[`Fetcher > 204 1`] = `
 {
   "body": null,
-  "headers": Headers {},
-  "ok": true,
-  "status": 204,
-  "statusText": "No Content",
-  "url": Any<URL>,
-}
-`;
-
-exports[`Fetcher > 204 empty content ala AWS lambda function URL 1`] = `
-{
-  "body": null,
-  "headers": Headers {},
-  "ok": true,
-  "status": 204,
-  "statusText": "No Content",
+  "res": Response {},
   "url": Any<URL>,
 }
 `;
 
 exports[`Fetcher > 404 1`] = `
 {
-  "body": "<h1>Not Found</h1>",
-  "headers": Headers {},
-  "ok": false,
-  "status": 404,
-  "statusText": "Not Found",
+  "body": ReadableStream {
+    Symbol(kType): "ReadableStream",
+    Symbol(kState): {
+      "controller": ReadableByteStreamController {
+        Symbol(kType): "ReadableByteStreamController",
+        Symbol(kState): {
+          "autoAllocateChunkSize": undefined,
+          "byobRequest": null,
+          "cancelAlgorithm": [Function],
+          "closeRequested": false,
+          "highWaterMark": 0,
+          "pendingPullIntos": [],
+          "pullAgain": false,
+          "pullAlgorithm": [Function],
+          "pulling": false,
+          "queue": [],
+          "queueTotalSize": 0,
+          "started": true,
+          "stream": [Circular],
+        },
+      },
+      "disturbed": false,
+      "reader": undefined,
+      "state": "readable",
+      "storedError": undefined,
+      "transfer": {
+        "port1": undefined,
+        "port2": undefined,
+        "promise": undefined,
+        "writable": undefined,
+      },
+    },
+    Symbol(nodejs.webstream.isClosedPromise): {
+      "promise": Promise {},
+      "reject": [Function],
+      "resolve": [Function],
+    },
+    Symbol(nodejs.webstream.controllerErrorFunction): [Function],
+  },
+  "res": Response {},
   "url": Any<URL>,
 }
 `;
@@ -71,10 +78,7 @@ exports[`Fetcher > Custom options iso fetcher 1`] = `
     "user-agent": "node",
     "x-fetcher": "custom",
   },
-  "headers": Headers {},
-  "ok": true,
-  "status": 200,
-  "statusText": "OK",
+  "res": Response {},
   "url": Any<URL>,
 }
 `;
@@ -84,12 +88,9 @@ exports[`Fetcher > JSON Error 1`] = `
   "body": {
     "code": 9,
     "message": "Data should be array",
-    "status": "FAILED_PRECONDITION",
+    "name": "CustomError",
   },
-  "headers": Headers {},
-  "ok": false,
-  "status": 400,
-  "statusText": "Bad Request",
+  "res": Response {},
   "url": Any<URL>,
 }
 `;

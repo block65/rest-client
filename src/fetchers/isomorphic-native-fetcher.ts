@@ -1,4 +1,3 @@
-import { parse } from '@hapi/bourne';
 import pRetry, { AbortError } from 'p-retry';
 import type * as PRetry from 'p-retry';
 import type { Jsonifiable } from 'type-fest';
@@ -6,7 +5,7 @@ import type {
   FetcherMethod,
   FetcherParams,
   FetcherResponse,
-} from '../../lib/types.js';
+} from '../../lib/types.ts';
 
 function multiSignal(...signals: (AbortSignal | undefined)[]): AbortSignal {
   const controller = new AbortController();
@@ -37,74 +36,63 @@ export function createIsomorphicNativeFetcher(
 ): FetcherMethod {
   return async (params: FetcherParams) => {
     const { url, method, body = null, headers, credentials, signal } = params;
-    const { fetch = globalThis.fetch } = options;
+    const { fetch = globalThis.fetch, ...rest } = options;
 
     const combinedSignal = multiSignal(
       signal,
-      options.retry?.signal,
-      typeof options.timeout !== 'undefined'
-        ? AbortSignal.timeout(options.timeout)
+      rest.retry?.signal,
+      typeof rest.timeout !== 'undefined'
+        ? AbortSignal.timeout(rest.timeout)
         : undefined,
     );
 
     return pRetry(
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       async (_attempt: number) => {
+
+        const finalBody = body instanceof Uint8Array
+          ? body.slice().buffer
+          : body;           
+
         const res = await fetch(url, {
           // overridable
           ...(credentials && { credentials }),
-          ...options,
+          ...rest,
 
           // combined
           headers: {
-            ...options.headers,
+            ...rest.headers,
             ...headers,
           },
           signal: combinedSignal,
 
           // not overridable
           method,
-          body,
+          body:finalBody,
         });
 
         // if we are set up for retries and the response is not ok, throw
-        if (options.retry && !res.ok) {
+        if (rest.retry && !res.ok) {
           throw new AbortError(res.statusText);
         }
 
         const contentType = res.headers.get('content-type');
-        const contentLength = res.headers.get('content-length');
+        // const contentLength = res.headers.get('content-length');
 
-        // this can be replaced with any other way of detecting streaming
-        const streaming = !contentLength && contentType === 'text/event-stream';
-
-        // not streaming and also has content
-        if (!streaming && res.status !== 204) {
-          const responseText = await res.text();
-
-          // sanity check to ensure the body is not empty
-          // lambda function URLs can return an empty body and still indicate
-          // that content type is JSON.
-          const isJson =
-            responseText.length > 0 && contentType?.includes('/json');
-
+        // auto parse json
+        if (contentType?.includes('/json')) {
+          const responseJson = await res.json() as Jsonifiable;
           return {
-            body: isJson ? (parse(responseText) as Jsonifiable) : responseText,
-            url: new URL(res.url),
-            status: res.status,
-            statusText: res.statusText,
-            ok: res.ok,
-            headers: res.headers,
-          } satisfies FetcherResponse<Jsonifiable | string>;
+            body: responseJson,
+            url: res.url ? new URL(res.url) : url, 
+            res,
+          } satisfies FetcherResponse<Jsonifiable>;
         }
 
         return {
           body: res.body,
-          url: new URL(res.url),
-          status: res.status,
-          statusText: res.statusText,
-          ok: res.ok,
-          headers: res.headers,
+          url: res.url ? new URL(res.url) : url, 
+          res,
         } satisfies FetcherResponse<ReadableStream<Uint8Array> | null>;
       },
       method === 'get'
@@ -113,13 +101,12 @@ export function createIsomorphicNativeFetcher(
             onFailedAttempt() {
               combinedSignal.throwIfAborted();
             },
-            ...options.retry,
+            ...rest.retry,
             signal: combinedSignal,
           } as PRetry.Options)
         : ({
-            ...options.retry,
+            ...rest.retry,
             retries: 0,
-            forever: false,
             signal: combinedSignal,
           } as PRetry.Options),
     );

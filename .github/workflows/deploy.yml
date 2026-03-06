@@ -8,6 +8,10 @@ on:
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
 
@@ -15,12 +19,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
+          node-version: 24
           registry-url: https://registry.npmjs.org/
           cache: 'pnpm'
-          node-version-file: .node-version
 
       - run: make
 
-      - run: pnpm publish --access=public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+      - run: pnpm publish --access=public --no-git-checks --provenance

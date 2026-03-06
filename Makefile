@@ -1,21 +1,14 @@
-SRCS = $(wildcard src/**)
 
-all: dist
+SRCS = $(wildcard src/** lib/**)
 
-.PHONY: deps
-deps: node_modules
-
-.PHONY: clean
-clean:
-	pnpm exec tsc -b --clean
-	rm -rf dist
+all: typecheck
 
 .PHONY: distclean
-distclean: clean
+distclean:
 	rm -rf node_modules
 
 .PHONY: test
-test: node_modules dist
+test: node_modules
 	pnpm exec vitest
 
 .PHONY: test.update
@@ -25,14 +18,10 @@ test.update: node_modules
 node_modules: package.json
 	pnpm install
 
-dist: node_modules tsconfig.json $(SRCS)
+.PHONY: typecheck
+typecheck: node_modules tsconfig.json $(SRCS)
 	pnpm exec tsc
-
-.PHONY: dev
-dev: node_modules
-	pnpm exec tsc -w
 
 .PHONY: pretty
 pretty: node_modules
 	pnpm exec eslint --fix .
-	pnpm exec prettier --write .

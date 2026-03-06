@@ -1,4 +1,4 @@
-import type { Resolver } from './types.js';
+import type { Resolver } from './types.ts';
 
 export function isPlainObject<T extends Record<string, unknown>>(
   value: unknown | T,
