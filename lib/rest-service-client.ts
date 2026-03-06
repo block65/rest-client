@@ -1,160 +1,194 @@
-import { CustomError, type CustomErrorSerialized } from '@block65/custom-error';
+import { isStatusCode } from '@block65/custom-error';
+import type { SerializedError, StatusCode } from '@block65/custom-error';
 import type { Jsonifiable } from 'type-fest';
-import type { JsonifiableObject } from 'type-fest/source/jsonifiable.js';
-import { createIsomorphicNativeFetcher } from '../src/fetchers/isomorphic-native-fetcher.js';
-import type { Command } from './command.js';
-import { resolveHeaders } from './common.js';
-import { ServiceError } from './errors.js';
+import { createIsomorphicNativeFetcher } from '../src/fetchers/isomorphic-native-fetcher.ts';
+import type { Command } from './command.ts';
+import { resolveHeaders } from './common.ts';
+import { ServiceError, ServiceResponseError } from './errors.ts';
 import type {
-  FetcherMethod,
-  ResolvableHeaders,
-  RuntimeOptions,
-} from './types.js';
-import { isPlainObject } from './utils.js';
+	FetcherMethod,
+	JsonifiableObject,
+	ResolvableHeaders,
+	RuntimeOptions,
+} from './types.ts';
+import { isPlainObject } from './utils.ts';
 
 export type RestServiceClientConfig = {
-  logger?: ((...args: unknown[]) => void) | undefined;
-  headers?: ResolvableHeaders | undefined;
-  credentials?: 'include' | 'omit' | 'same-origin' | undefined;
+	logger?: ((msg: string, ...args: unknown[]) => void) | undefined;
+	headers?: ResolvableHeaders | undefined;
+	credentials?: 'include' | 'omit' | 'same-origin' | undefined;
 } & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
 
 export class RestServiceClient<
-  // WARN: this must be kept compatible with the Command Input and Output types
-  ClientInput extends JsonifiableObject | unknown = unknown,
-  ClientOutput extends Jsonifiable | unknown = unknown,
+	// WARN: this must be kept compatible with the Command Input and Output types
+	ClientInput extends JsonifiableObject | unknown = unknown,
+	ClientOutput extends Jsonifiable | unknown = unknown,
 > {
-  readonly #base: URL;
+	readonly #base: URL;
 
-  readonly #fetcher: FetcherMethod;
+	readonly #fetcher: FetcherMethod;
 
-  readonly #headers: ResolvableHeaders | undefined;
+	readonly #headers: ResolvableHeaders | undefined;
 
-  #logger: ((...args: unknown[]) => void) | undefined;
+	#logger: RestServiceClientConfig['logger'];
 
-  constructor(base: URL | string, config: RestServiceClientConfig = {}) {
-    this.#base = new URL(base);
-    this.#headers = Object.freeze(config.headers);
+	constructor(base: URL | string, config: RestServiceClientConfig = {}) {
+		this.#base = new URL(base);
+		this.#headers = Object.freeze(config.headers);
 
-    this.#logger = config.logger;
+		this.#logger = config.logger;
 
-    this.#fetcher =
-      'fetcher' in config
-        ? config.fetcher
-        : createIsomorphicNativeFetcher(
-            'fetch' in config
-              ? {
-                  fetch: config.fetch,
-                }
-              : {},
-          );
-  }
+		this.#fetcher =
+			'fetcher' in config
+				? config.fetcher
+				: createIsomorphicNativeFetcher(
+					'fetch' in config
+						? {
+							fetch: config.fetch,
+						}
+						: {},
+				);
+	}
 
-  #log(msg: string, ...args: unknown[]) {
-    this.#logger?.(`[rest-client] ${msg}`, ...args);
-  }
+	#log(msg: string, ...args: unknown[]) {
+		this.#logger?.(`[rest-client] ${msg}`, ...args);
+	}
 
-  public async response<
-    InputType extends ClientInput,
-    OutputType extends ClientOutput,
-  >(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
-    const { method, pathname, query } = command;
+	public async response<
+		InputType extends ClientInput,
+		OutputType extends ClientOutput,
+	>(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
+		const { method, pathname, query } = command;
 
-    const url = new URL(`.${pathname}`, this.#base);
-    url.search = query
-      ? new URLSearchParams(
-          Object.entries(query).map(([k, v]) => [k, v?.toString() || '']),
-        ).toString()
-      : '';
+		const url = new URL(`.${pathname}`, this.#base);
+		url.search = query
+			? new URLSearchParams(
+				Object.entries(query).map(([k, v]) => [k, v?.toString() || '']),
+			).toString()
+			: '';
 
-    this.#log('req: %s %s', method.toUpperCase(), url, runtimeOptions);
+		this.#log('req: %s %s', method.toUpperCase(), url, runtimeOptions);
 
-    const res = await this.#fetcher({
-      url,
-      method,
-      body:
-        command.body && runtimeOptions?.json
-          ? JSON.stringify(command.body)
-          : null,
-      headers: await resolveHeaders({
-        ...runtimeOptions?.headers,
-        ...this.#headers,
-        ...(runtimeOptions?.json && {
-          'content-type': 'application/json;charset=utf-8',
-        }),
-      }),
-      ...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),
-    });
+		const result = await this.#fetcher({
+			url,
+			method,
 
-    this.#log(
-      'res: %d %s %s %s',
-      res.status,
-      res.statusText,
-      res.headers.get('content-type') || '-',
-      res.headers.get('content-length') || '-',
-    );
+			...(command.body && {
+				body: command.body,
+			}),
 
-    return res;
-  }
+			headers: await resolveHeaders({
+				...this.#headers,
+				...runtimeOptions?.headers,
+			}),
+			...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),
+		});
 
-  public async json<
-    InputType extends ClientInput,
-    OutputType extends ClientOutput,
-  >(
-    command: Command<InputType, OutputType>,
-    runtimeOptions?: RuntimeOptions,
-  ): Promise<OutputType> {
-    const res = await this.response(command, {
-      ...runtimeOptions,
-      json: true,
-    });
 
-    if (res.status < 400) {
-      return res.body as OutputType;
-    }
+		this.#log(
+			'res: %d %s %s %s',
+			result.res.status,
+			result.res.statusText,
+			result.res.headers.get('content-type') || '-',
+			result.res.headers.get('content-length') || '-',
+		);
 
-    if (isPlainObject(res.body) && 'code' in res.body && 'status' in res.body) {
-      throw CustomError.fromJSON(
-        res.body as unknown as CustomErrorSerialized,
-      ).addDetail({
-        reason: `http-${res.status}`,
-        metadata: {
-          status: res.status.toString(),
-          statusText: res.statusText,
-        },
-      });
-    }
-    throw new ServiceError(res.statusText).debug({ res });
-  }
+		return result;
+	}
 
-  public async send<
-    InputType extends ClientInput,
-    OutputType extends ClientOutput,
-  >(
-    command: Command<InputType, OutputType>,
-    runtimeOptions?: RuntimeOptions,
-  ): Promise<OutputType> {
-    const res = await this.response(command, runtimeOptions);
+	public async json<
+		InputType extends ClientInput,
+		OutputType extends ClientOutput,
+	>(
+		command: Command<InputType, OutputType>,
+		runtimeOptions?: RuntimeOptions,
+	): Promise<OutputType> {
+		const { res, body } = await this.response(command, {
+			...runtimeOptions,
+			headers: {
+				...runtimeOptions?.headers,
+				'content-type': 'application/json;charset=utf-8',
+			},
+		});
 
-    if (res.status < 400) {
-      return res.body as OutputType;
-    }
+		if (res.status < 400) {
+			return body as OutputType;
+		}
 
-    throw new ServiceError(res.statusText).debug({ res });
-  }
+		if (isPlainObject(body) && 'code' in body) {
+			throw ServiceError.fromJSON(
+				body as unknown as SerializedError<StatusCode>,
+			).addDetail({
+				reason: `http-${res.status}`,
+				metadata: {
+					status: res.status.toString(),
+					statusText: res.statusText,
+				},
+			});
+		}
+		throw new ServiceError(res.statusText, res).debug({ res });
+	}
 
-  public async stream<
-    InputType extends ClientInput,
-    OutputType extends ClientOutput,
-  >(
-    command: Command<InputType, OutputType>,
-    runtimeOptions?: RuntimeOptions,
-  ): Promise<ReadableStreamDefaultReader<OutputType>> {
-    const body = await this.response(command, runtimeOptions);
+	public async send<
+		InputType extends ClientInput,
+		OutputType extends ClientOutput,
+	>(
+		command: Command<InputType, OutputType>,
+		runtimeOptions?: RuntimeOptions,
+	): Promise<OutputType> {
+		const { res, body } = await this.response(command, runtimeOptions);
 
-    if (body instanceof ReadableStream) {
-      const reader = body?.getReader();
-      return reader;
-    }
-    throw new ServiceError('Unstreamable response').debug({ body });
-  }
+		if (res.status < 400) {
+			return body as OutputType;
+		}
+
+		if (res.headers.get('content-type')?.includes('application/json')) {
+			if (isPlainObject(body) && 'message' in body) {
+				throw ServiceError.fromJSON(
+					{
+						code:
+						'code' in body && isStatusCode(body.code)
+							? body.code
+							: ServiceError.UNKNOWN,
+						message: String(body.message),
+						name: 'ServiceError',
+						details: [
+							{
+								reason: `http-${res.status}`,
+								metadata: {
+									status: res.status.toString(),
+									statusText: res.statusText,
+								},
+							}
+						]
+					}
+				);
+			}
+			throw new ServiceResponseError(res);
+		}
+
+		throw new ServiceResponseError(res);
+	}
+
+	public async stream<
+		InputType extends ClientInput,
+		OutputType extends ClientOutput,
+	>(
+		command: Command<InputType, OutputType>,
+		runtimeOptions?: RuntimeOptions,
+	): Promise<ReadableStream<OutputType>> {
+		const { body } = await this.response(command, runtimeOptions);
+
+		if (body instanceof ReadableStream) {
+			return body as ReadableStream<OutputType>;
+		}
+
+		return new ReadableStream<OutputType>({
+			start(controller) {
+				controller.enqueue(body as OutputType);
+				controller.close();
+			},
+		});
+
+	}
 }

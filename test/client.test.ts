@@ -6,8 +6,8 @@ import {
   Command,
   RestServiceClient,
   createIsomorphicNativeFetcher,
-} from '../src/main.js';
-import { requestListener } from './server.js';
+} from '../src/main.ts';
+import { requestListener } from './server.ts';
 
 const port = await getPort();
 const server = createServer(requestListener);

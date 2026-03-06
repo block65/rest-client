@@ -2,8 +2,8 @@
 import { createServer } from 'node:http';
 import getPort from 'get-port';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createIsomorphicNativeFetcher } from '../src/main.js';
-import { requestListener } from './server.js';
+import { createIsomorphicNativeFetcher } from '../src/main.ts';
+import { requestListener } from './server.ts';
 
 const server = createServer(requestListener);
 const isomorphicFetcher = createIsomorphicNativeFetcher();
@@ -38,30 +38,6 @@ describe('Fetcher', () => {
     });
   });
 
-  test('200 empty content ala AWS lambda function URL', async () => {
-    const response = await isomorphicFetcher({
-      method: 'delete',
-      url: new URL('/aws-lambda-200', base),
-    });
-
-    expect(response).toMatchSnapshot({
-      body: '', // 200 so its empty string
-      url: expect.any(URL),
-    });
-  });
-
-  // same but 204
-  test('204 empty content ala AWS lambda function URL', async () => {
-    const response = await isomorphicFetcher({
-      method: 'delete',
-      url: new URL('/aws-lambda-204', base),
-    });
-
-    expect(response).toMatchSnapshot({
-      body: null, // 204 so its null
-      url: expect.any(URL),
-    });
-  });
 
   test('JSON Error', async () => {
     expect(

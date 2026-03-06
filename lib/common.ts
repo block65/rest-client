@@ -1,4 +1,4 @@
-import type { ResolvableHeaders } from './types.js';
+import type { ResolvableHeaders } from './types.ts';
 
 export async function resolveHeaders(
   headers: ResolvableHeaders | undefined,

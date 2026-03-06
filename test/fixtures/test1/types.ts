@@ -6,240 +6,240 @@
  * Generated on 2024-07-20T05:47:35.352Z
  *
  */
-import type { Jsonify } from 'type-fest';
-import type { JsonifiableObject } from 'type-fest/source/jsonifiable.js';
+import type { Jsonify, Jsonifiable } from "type-fest";
+type JsonifiableObject = { [key: string]: Jsonifiable };
 
 export type PromoCode = string;
 export type StripeId = string;
 export type DateTime = Jsonify<Date>;
 
 export enum BillingSubscriptionStatus {
-  Active = 'active',
-  Inactive = 'inactive',
+	Active = "active",
+	Inactive = "inactive",
 }
 
 export enum BillingSubscriptionInterval {
-  Monthly = 'monthly',
-  Yearly = 'yearly',
+	Monthly = "monthly",
+	Yearly = "yearly",
 }
 
 export enum PlanSku {
-  Donotuse = 'donotuse',
-  Plasku1 = 'plasku1',
-  Plasku2 = 'plasku2',
-  Plasku3 = 'plasku3',
-  Plasku4 = 'plasku4',
+	Donotuse = "donotuse",
+	Plasku1 = "plasku1",
+	Plasku2 = "plasku2",
+	Plasku3 = "plasku3",
+	Plasku4 = "plasku4",
 }
 
 export type Id = string;
 export type BillingSubscriptionIdentifiers = {
-  billingAccountId: Id;
-  subscriptionId: Id;
+	billingAccountId: Id;
+	subscriptionId: Id;
 };
 export type BillingSubscription = BillingSubscriptionIdentifiers & {
-  accountId?: Id;
-  planSku: PlanSku;
-  interval: BillingSubscriptionInterval;
-  status: BillingSubscriptionStatus;
-  cycleTime: DateTime;
-  trialEndTime?: DateTime;
-  createdTime: DateTime;
-  updatedTime?: DateTime;
+	accountId?: Id;
+	planSku: PlanSku;
+	interval: BillingSubscriptionInterval;
+	status: BillingSubscriptionStatus;
+	cycleTime: DateTime;
+	trialEndTime?: DateTime;
+	createdTime: DateTime;
+	updatedTime?: DateTime;
 };
 export type BillingSubscriptions = BillingSubscription[];
 export type Uuid = string;
 export type LongRunningOperationFail = {
-  operationId: Uuid;
-  done: boolean;
-  result: {
-    error: number;
-  };
+	operationId: Uuid;
+	done: boolean;
+	result: {
+		error: number;
+	};
 };
 export type StringU8 = string;
 export type BillingSubscriptionPromoCodeLongRunningOperationSuccess = {
-  operationId: Uuid;
-  done: boolean;
-  result: {
-    response: {
-      promoCode: StringU8;
-    };
-  };
+	operationId: Uuid;
+	done: boolean;
+	result: {
+		response: {
+			promoCode: StringU8;
+		};
+	};
 };
 export type LongRunningOperationIndeterminate = {
-  operationId: Uuid;
-  done: boolean;
+	operationId: Uuid;
+	done: boolean;
 };
 export type BillingSubscriptionLro =
-  | LongRunningOperationIndeterminate
-  | BillingSubscriptionPromoCodeLongRunningOperationSuccess
-  | LongRunningOperationFail;
+	| LongRunningOperationIndeterminate
+	| BillingSubscriptionPromoCodeLongRunningOperationSuccess
+	| LongRunningOperationFail;
 export type UpdateBillingSubscriptionPromoCodeRequest = {
-  promoCode: StringU8 | null;
+	promoCode: StringU8 | null;
 };
 /** Reasonable string to be used as a name of a person, or an object */
 export type Name = string;
 export type UpdateBillingSubscriptionRequest = {
-  label?: Name;
-  trialEndTime?: DateTime;
+	label?: Name;
+	trialEndTime?: DateTime;
 };
 export type CreateBillingSubscriptionRequest = {
-  accountId: Id;
-  planSku: PlanSku;
-  interval: BillingSubscriptionInterval;
-  promoCode?: StringU8;
+	accountId: Id;
+	planSku: PlanSku;
+	interval: BillingSubscriptionInterval;
+	promoCode?: StringU8;
 };
 
 export enum PaymentMethodBrand {
-  Amex = 'amex',
-  Diners = 'diners',
-  Discover = 'discover',
-  Jcb = 'jcb',
-  Mastercard = 'mastercard',
-  Unionpay = 'unionpay',
-  Visa = 'visa',
-  Unknown = 'unknown',
+	Amex = "amex",
+	Diners = "diners",
+	Discover = "discover",
+	Jcb = "jcb",
+	Mastercard = "mastercard",
+	Unionpay = "unionpay",
+	Visa = "visa",
+	Unknown = "unknown",
 }
 
 export type PaymentMethodIdentifiers = {
-  billingAccountId: Id;
-  paymentMethodId: Id;
+	billingAccountId: Id;
+	paymentMethodId: Id;
 };
 export type PaymentMethod = PaymentMethodIdentifiers & {
-  label: Name;
-  expireTime: DateTime;
-  humanId: StringU8;
-  brand?: PaymentMethodBrand;
+	label: Name;
+	expireTime: DateTime;
+	humanId: StringU8;
+	brand?: PaymentMethodBrand;
 };
 export type PaymentMethods = PaymentMethod[];
 export type PaymentMethodDeletedLongRunningOperationSuccess = {
-  operationId: Uuid;
-  done: boolean;
-  result: {
-    response: {
-      ok: boolean;
-    };
-  };
+	operationId: Uuid;
+	done: boolean;
+	result: {
+		response: {
+			ok: boolean;
+		};
+	};
 };
 export type PaymentMethodDeletedLro =
-  | LongRunningOperationIndeterminate
-  | PaymentMethodDeletedLongRunningOperationSuccess
-  | LongRunningOperationFail;
+	| LongRunningOperationIndeterminate
+	| PaymentMethodDeletedLongRunningOperationSuccess
+	| LongRunningOperationFail;
 export type PaymentMethodLongRunningOperationSuccess = {
-  operationId: Uuid;
-  done: boolean;
-  result: {
-    response: {
-      clientSecret: string;
-    };
-  };
+	operationId: Uuid;
+	done: boolean;
+	result: {
+		response: {
+			clientSecret: string;
+		};
+	};
 };
 export type PaymentMethodIntendedLro =
-  | LongRunningOperationIndeterminate
-  | PaymentMethodLongRunningOperationSuccess
-  | LongRunningOperationFail;
+	| LongRunningOperationIndeterminate
+	| PaymentMethodLongRunningOperationSuccess
+	| LongRunningOperationFail;
 export type UpdatePaymentMethodRequest = {
-  label?: Name;
-  isDefault?: boolean;
+	label?: Name;
+	isDefault?: boolean;
 };
 export type LinkBillingAccountRequest = {
-  accountId: Id;
+	accountId: Id;
 };
 export type Url = string;
 export type BillingAccountPortal = {
-  url: Url;
+	url: Url;
 };
 export type Origin = string;
 export type BillingAccountPortalRequest = {
-  origin: Origin;
-  accountId: Id;
+	origin: Origin;
+	accountId: Id;
 };
 export type TimeZone = string;
 
 export enum BillingLocale {
-  En = 'en',
+	En = "en",
 }
 
 export enum BillingAccountType {
-  Standard = 'standard',
-  Agency = 'agency',
-  Reseller = 'reseller',
+	Standard = "standard",
+	Agency = "agency",
+	Reseller = "reseller",
 }
 
 export enum Currency {
-  Usd = 'usd',
-  Aud = 'aud',
-  Sgd = 'sgd',
-  Myr = 'myr',
-  Gbp = 'gbp',
+	Usd = "usd",
+	Aud = "aud",
+	Sgd = "sgd",
+	Myr = "myr",
+	Gbp = "gbp",
 }
 
 export enum BillingAccountStatus {
-  Nominal = 'nominal',
-  Delinquent = 'delinquent',
+	Nominal = "nominal",
+	Delinquent = "delinquent",
 }
 
 export enum BillingCountry {
-  Us = 'us',
-  Au = 'au',
-  Sg = 'sg',
-  My = 'my',
-  Gb = 'gb',
+	Us = "us",
+	Au = "au",
+	Sg = "sg",
+	My = "my",
+	Gb = "gb",
 }
 
 /** Valid email address with fully qualified public top-level domain */
 export type Email = string;
 export type BillingAccountIdentifiers = {
-  billingAccountId: Id;
+	billingAccountId: Id;
 };
 export type BillingAccount = BillingAccountIdentifiers & {
-  name: Name;
-  email: Email;
-  country: BillingCountry;
-  status: BillingAccountStatus;
-  currency: Currency;
-  type: BillingAccountType;
-  createdTime: DateTime;
-  updatedTime?: DateTime;
-  locale?: BillingLocale;
-  purchaseOrder?: StringU8;
-  taxId?: StringU8;
-  timeZone?: TimeZone;
-  defaultPaymentMethodId?: Id;
+	name: Name;
+	email: Email;
+	country: BillingCountry;
+	status: BillingAccountStatus;
+	currency: Currency;
+	type: BillingAccountType;
+	createdTime: DateTime;
+	updatedTime?: DateTime;
+	locale?: BillingLocale;
+	purchaseOrder?: StringU8;
+	taxId?: StringU8;
+	timeZone?: TimeZone;
+	defaultPaymentMethodId?: Id;
 };
 export type BillingAccountList = BillingAccount[];
 export type BillingAccountUpdateRequest = {
-  name?: Name;
-  email?: Email;
-  country?: BillingCountry;
-  timeZone?: TimeZone;
-  currency?: Currency;
-  locale?: BillingLocale | null;
-  purchaseOrder?: StringU8 | null;
-  taxId?: StringU8 | null;
+	name?: Name;
+	email?: Email;
+	country?: BillingCountry;
+	timeZone?: TimeZone;
+	currency?: Currency;
+	locale?: BillingLocale | null;
+	purchaseOrder?: StringU8 | null;
+	taxId?: StringU8 | null;
 };
 export type BillingAccountCreateRequest = {
-  name: Name;
-  email: Email;
-  country: BillingCountry;
-  timeZone: TimeZone;
-  currency: Currency;
-  locale?: BillingLocale | null;
-  purchaseOrder?: StringU8 | null;
-  taxId?: StringU8 | null;
+	name: Name;
+	email: Email;
+	country: BillingCountry;
+	timeZone: TimeZone;
+	currency: Currency;
+	locale?: BillingLocale | null;
+	purchaseOrder?: StringU8 | null;
+	taxId?: StringU8 | null;
 };
 export type LongRunningOperationSuccess = {
-  operationId: Uuid;
-  done: boolean;
-  result: {
-    response: JsonifiableObject;
-  };
+	operationId: Uuid;
+	done: boolean;
+	result: {
+		response: JsonifiableObject;
+	};
 };
 export type LongRunningOperation =
-  | LongRunningOperationIndeterminate
-  | LongRunningOperationFail
-  | LongRunningOperationSuccess;
+	| LongRunningOperationIndeterminate
+	| LongRunningOperationFail
+	| LongRunningOperationSuccess;
 export type GetOperationCommandParams = {
-  operationId: string;
+	operationId: string;
 };
 export type GetOperationCommandInput = GetOperationCommandParams;
 export type GetOperationCommandBody = never;
@@ -248,97 +248,97 @@ export type ListBillingAccountsCommandBody = never;
 export type CreateBillingAccountCommandInput = BillingAccountCreateRequest;
 export type CreateBillingAccountCommandBody = BillingAccountCreateRequest;
 export type GetBillingAccountCommandParams = {
-  billingAccountId: string;
+	billingAccountId: string;
 };
 export type GetBillingAccountCommandInput = GetBillingAccountCommandParams;
 export type GetBillingAccountCommandBody = never;
 export type UpdateBillingAccountCommandParams = {
-  billingAccountId: string;
+	billingAccountId: string;
 };
 export type UpdateBillingAccountCommandInput = BillingAccountUpdateRequest &
-  UpdateBillingAccountCommandParams;
+	UpdateBillingAccountCommandParams & { body: Uint8Array };
 export type UpdateBillingAccountCommandBody = BillingAccountUpdateRequest;
 export type GetBillingAccountPortalCommandParams = {
-  billingAccountId: string;
+	billingAccountId: string;
 };
 export type GetBillingAccountPortalCommandInput = BillingAccountPortalRequest &
-  GetBillingAccountPortalCommandParams;
+	GetBillingAccountPortalCommandParams;
 export type GetBillingAccountPortalCommandBody = BillingAccountPortalRequest;
 export type LinkBillingAccountCommandParams = {
-  billingAccountId: string;
+	billingAccountId: string;
 };
 export type LinkBillingAccountCommandInput = LinkBillingAccountRequest &
-  LinkBillingAccountCommandParams;
+	LinkBillingAccountCommandParams;
 export type LinkBillingAccountCommandBody = LinkBillingAccountRequest;
 export type ListPaymentMethodsCommandParams = {
-  billingAccountId: string;
+	billingAccountId: string;
 };
 export type ListPaymentMethodsCommandInput = ListPaymentMethodsCommandParams;
 export type ListPaymentMethodsCommandBody = never;
 export type CreatePaymentMethodCommandParams = {
-  billingAccountId: string;
+	billingAccountId: string;
 };
 export type CreatePaymentMethodCommandInput = CreatePaymentMethodCommandParams;
 export type CreatePaymentMethodCommandBody = never;
 export type GetPaymentMethodFromStripeCommandParams = {
-  billingAccountId: string;
-  stripePaymentMethodId: string;
+	billingAccountId: string;
+	stripePaymentMethodId: string;
 };
 export type GetPaymentMethodFromStripeCommandInput =
-  GetPaymentMethodFromStripeCommandParams;
+	GetPaymentMethodFromStripeCommandParams;
 export type GetPaymentMethodFromStripeCommandBody = never;
 export type GetPaymentMethodCommandParams = {
-  billingAccountId: string;
-  paymentMethodId: string;
+	billingAccountId: string;
+	paymentMethodId: string;
 };
 export type GetPaymentMethodCommandInput = GetPaymentMethodCommandParams;
 export type GetPaymentMethodCommandBody = never;
 export type UpdatePaymentMethodCommandParams = {
-  billingAccountId: string;
-  paymentMethodId: string;
+	billingAccountId: string;
+	paymentMethodId: string;
 };
 export type UpdatePaymentMethodCommandInput = UpdatePaymentMethodRequest &
-  UpdatePaymentMethodCommandParams;
+	UpdatePaymentMethodCommandParams;
 export type UpdatePaymentMethodCommandBody = UpdatePaymentMethodRequest;
 export type DeletePaymentMethodCommandParams = {
-  billingAccountId: string;
-  paymentMethodId: string;
+	billingAccountId: string;
+	paymentMethodId: string;
 };
 export type DeletePaymentMethodCommandInput = DeletePaymentMethodCommandParams;
 export type DeletePaymentMethodCommandBody = never;
 export type ListBillingSubscriptionsCommandParams = {
-  billingAccountId: string;
+	billingAccountId: string;
 };
 export type ListBillingSubscriptionsCommandInput =
-  ListBillingSubscriptionsCommandParams;
+	ListBillingSubscriptionsCommandParams;
 export type ListBillingSubscriptionsCommandBody = never;
 export type CreateBillingSubscriptionCommandParams = {
-  billingAccountId: string;
+	billingAccountId: string;
 };
 export type CreateBillingSubscriptionCommandInput =
-  CreateBillingSubscriptionRequest & CreateBillingSubscriptionCommandParams;
+	CreateBillingSubscriptionRequest & CreateBillingSubscriptionCommandParams;
 export type CreateBillingSubscriptionCommandBody =
-  CreateBillingSubscriptionRequest;
+	CreateBillingSubscriptionRequest;
 export type UpdateBillingSubscriptionCommandParams = {
-  billingAccountId: string;
-  subscriptionId: string;
+	billingAccountId: string;
+	subscriptionId: string;
 };
 export type UpdateBillingSubscriptionCommandInput =
-  UpdateBillingSubscriptionRequest & UpdateBillingSubscriptionCommandParams;
+	UpdateBillingSubscriptionRequest & UpdateBillingSubscriptionCommandParams;
 export type UpdateBillingSubscriptionCommandBody =
-  UpdateBillingSubscriptionRequest;
+	UpdateBillingSubscriptionRequest;
 export type CancelSubscriptionCommandParams = {
-  billingAccountId: string;
-  subscriptionId: string;
+	billingAccountId: string;
+	subscriptionId: string;
 };
 export type CancelSubscriptionCommandInput = CancelSubscriptionCommandParams;
 export type CancelSubscriptionCommandBody = never;
 export type UpdateBillingSubscriptionPromoCodeCommandParams = {
-  billingAccountId: string;
-  subscriptionId: string;
+	billingAccountId: string;
+	subscriptionId: string;
 };
 export type UpdateBillingSubscriptionPromoCodeCommandInput =
-  UpdateBillingSubscriptionPromoCodeRequest &
-    UpdateBillingSubscriptionPromoCodeCommandParams;
+	UpdateBillingSubscriptionPromoCodeRequest &
+		UpdateBillingSubscriptionPromoCodeCommandParams;
 export type UpdateBillingSubscriptionPromoCodeCommandBody =
-  UpdateBillingSubscriptionPromoCodeRequest;
+	UpdateBillingSubscriptionPromoCodeRequest;

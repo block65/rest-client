@@ -9,69 +9,68 @@
  */
 /** eslint-disable max-classes */
 import type {
-  BillingAccount,
-  BillingAccountList,
-  BillingAccountPortal,
-  BillingSubscriptionLro,
-  BillingSubscriptions,
-  CancelSubscriptionCommandBody,
-  CancelSubscriptionCommandInput,
-  CreateBillingAccountCommandBody,
-  CreateBillingAccountCommandInput,
-  CreateBillingSubscriptionCommandBody,
-  CreateBillingSubscriptionCommandInput,
-  CreatePaymentMethodCommandBody,
-  CreatePaymentMethodCommandInput,
-  DeletePaymentMethodCommandBody,
-  DeletePaymentMethodCommandInput,
-  GetBillingAccountCommandBody,
-  GetBillingAccountCommandInput,
-  GetBillingAccountPortalCommandBody,
-  GetBillingAccountPortalCommandInput,
-  GetOperationCommandBody,
-  GetOperationCommandInput,
-  GetPaymentMethodCommandBody,
-  GetPaymentMethodCommandInput,
-  GetPaymentMethodFromStripeCommandBody,
-  GetPaymentMethodFromStripeCommandInput,
-  LinkBillingAccountCommandBody,
-  LinkBillingAccountCommandInput,
-  ListBillingAccountsCommandBody,
-  ListBillingSubscriptionsCommandBody,
-  ListBillingSubscriptionsCommandInput,
-  ListPaymentMethodsCommandBody,
-  ListPaymentMethodsCommandInput,
-  LongRunningOperation,
-  PaymentMethod,
-  PaymentMethodDeletedLro,
-  PaymentMethodIntendedLro,
-  PaymentMethods,
-  UpdateBillingAccountCommandBody,
-  UpdateBillingAccountCommandInput,
-  UpdateBillingSubscriptionCommandBody,
-  UpdateBillingSubscriptionCommandInput,
-  UpdateBillingSubscriptionPromoCodeCommandBody,
-  UpdateBillingSubscriptionPromoCodeCommandInput,
-  UpdatePaymentMethodCommandBody,
-  UpdatePaymentMethodCommandInput,
-} from './types.js';
-import { Command } from '@block65/rest-client';
+	BillingAccount,
+	BillingAccountList,
+	BillingAccountPortal,
+	BillingSubscriptionLro,
+	BillingSubscriptions,
+	CancelSubscriptionCommandBody,
+	CancelSubscriptionCommandInput,
+	CreateBillingAccountCommandBody,
+	CreateBillingAccountCommandInput,
+	CreateBillingSubscriptionCommandBody,
+	CreateBillingSubscriptionCommandInput,
+	CreatePaymentMethodCommandBody,
+	CreatePaymentMethodCommandInput,
+	DeletePaymentMethodCommandBody,
+	DeletePaymentMethodCommandInput,
+	GetBillingAccountCommandBody,
+	GetBillingAccountCommandInput,
+	GetBillingAccountPortalCommandBody,
+	GetBillingAccountPortalCommandInput,
+	GetOperationCommandBody,
+	GetOperationCommandInput,
+	GetPaymentMethodCommandBody,
+	GetPaymentMethodCommandInput,
+	GetPaymentMethodFromStripeCommandBody,
+	GetPaymentMethodFromStripeCommandInput,
+	LinkBillingAccountCommandBody,
+	LinkBillingAccountCommandInput,
+	ListBillingAccountsCommandBody,
+	ListBillingSubscriptionsCommandBody,
+	ListBillingSubscriptionsCommandInput,
+	ListPaymentMethodsCommandBody,
+	ListPaymentMethodsCommandInput,
+	LongRunningOperation,
+	PaymentMethod,
+	PaymentMethodDeletedLro,
+	PaymentMethodIntendedLro,
+	PaymentMethods,
+	UpdateBillingAccountCommandInput,
+	UpdateBillingSubscriptionCommandBody,
+	UpdateBillingSubscriptionCommandInput,
+	UpdateBillingSubscriptionPromoCodeCommandBody,
+	UpdateBillingSubscriptionPromoCodeCommandInput,
+	UpdatePaymentMethodCommandBody,
+	UpdatePaymentMethodCommandInput,
+} from "./types.ts";
+import { Command } from "@block65/rest-client";
 
 /**
  * GetOperationCommand
  *
  */
 export class GetOperationCommand extends Command<
-  GetOperationCommandInput,
-  LongRunningOperation,
-  GetOperationCommandBody
+	GetOperationCommandInput,
+	LongRunningOperation,
+	GetOperationCommandBody
 > {
-  public override method = 'get' as const;
+	public override method = "get" as const;
 
-  constructor(input: GetOperationCommandInput) {
-    const { operationId } = input;
-    super(`/operations/${operationId}`);
-  }
+	constructor(input: GetOperationCommandInput) {
+		const { operationId } = input;
+		super(`/operations/${operationId}`);
+	}
 }
 
 /**
@@ -79,16 +78,16 @@ export class GetOperationCommand extends Command<
  *
  */
 export class ListBillingAccountsCommand extends Command<
-  never,
-  BillingAccountList,
-  ListBillingAccountsCommandBody
+	never,
+	BillingAccountList,
+	ListBillingAccountsCommandBody
 > {
-  public override method = 'get' as const;
+	public override method = "get" as const;
 
-  constructor() {
-    // no input parameters
-    super('/billing-accounts');
-  }
+	constructor() {
+		// no input parameters
+		super("/billing-accounts");
+	}
 }
 
 /**
@@ -96,16 +95,16 @@ export class ListBillingAccountsCommand extends Command<
  *
  */
 export class CreateBillingAccountCommand extends Command<
-  CreateBillingAccountCommandInput,
-  BillingAccount,
-  CreateBillingAccountCommandBody
+	CreateBillingAccountCommandInput,
+	BillingAccount,
+	CreateBillingAccountCommandBody
 > {
-  public override method = 'post' as const;
+	public override method = "post" as const;
 
-  constructor(input: CreateBillingAccountCommandInput) {
-    const body = input;
-    super('/billing-accounts', body);
-  }
+	constructor(input: CreateBillingAccountCommandInput) {
+		const body = input;
+		super("/billing-accounts", JSON.stringify(body));
+	}
 }
 
 /**
@@ -113,16 +112,16 @@ export class CreateBillingAccountCommand extends Command<
  *
  */
 export class GetBillingAccountCommand extends Command<
-  GetBillingAccountCommandInput,
-  BillingAccount,
-  GetBillingAccountCommandBody
+	GetBillingAccountCommandInput,
+	BillingAccount,
+	GetBillingAccountCommandBody
 > {
-  public override method = 'get' as const;
+	public override method = "get" as const;
 
-  constructor(input: GetBillingAccountCommandInput) {
-    const { billingAccountId } = input;
-    super(`/billing-accounts/${billingAccountId}`);
-  }
+	constructor(input: GetBillingAccountCommandInput) {
+		const { billingAccountId } = input;
+		super(`/billing-accounts/${billingAccountId}`);
+	}
 }
 
 /**
@@ -130,16 +129,15 @@ export class GetBillingAccountCommand extends Command<
  *
  */
 export class UpdateBillingAccountCommand extends Command<
-  UpdateBillingAccountCommandInput,
-  BillingAccount,
-  UpdateBillingAccountCommandBody
+	UpdateBillingAccountCommandInput,
+	BillingAccount
 > {
-  public override method = 'put' as const;
+	public override method = "put" as const;
 
-  constructor(input: UpdateBillingAccountCommandInput) {
-    const { billingAccountId, ...body } = input;
-    super(`/billing-accounts/${billingAccountId}`, body);
-  }
+	constructor(input: UpdateBillingAccountCommandInput) {
+		const { billingAccountId, body } = input;
+		super(`/billing-accounts/${billingAccountId}`, body);
+	}
 }
 
 /**
@@ -147,16 +145,16 @@ export class UpdateBillingAccountCommand extends Command<
  *
  */
 export class GetBillingAccountPortalCommand extends Command<
-  GetBillingAccountPortalCommandInput,
-  BillingAccountPortal,
-  GetBillingAccountPortalCommandBody
+	GetBillingAccountPortalCommandInput,
+	BillingAccountPortal,
+	GetBillingAccountPortalCommandBody
 > {
-  public override method = 'post' as const;
+	public override method = "post" as const;
 
-  constructor(input: GetBillingAccountPortalCommandInput) {
-    const { billingAccountId, ...body } = input;
-    super(`/billing-accounts/${billingAccountId}/portal`, body);
-  }
+	constructor(input: GetBillingAccountPortalCommandInput) {
+		const { billingAccountId, ...body } = input;
+		super(`/billing-accounts/${billingAccountId}/portal`, JSON.stringify(body));
+	}
 }
 
 /**
@@ -164,16 +162,16 @@ export class GetBillingAccountPortalCommand extends Command<
  *
  */
 export class LinkBillingAccountCommand extends Command<
-  LinkBillingAccountCommandInput,
-  never,
-  LinkBillingAccountCommandBody
+	LinkBillingAccountCommandInput,
+	never,
+	LinkBillingAccountCommandBody
 > {
-  public override method = 'post' as const;
+	public override method = "post" as const;
 
-  constructor(input: LinkBillingAccountCommandInput) {
-    const { billingAccountId, ...body } = input;
-    super(`/billing-accounts/${billingAccountId}/link`, body);
-  }
+	constructor(input: LinkBillingAccountCommandInput) {
+		const { billingAccountId, ...body } = input;
+		super(`/billing-accounts/${billingAccountId}/link`, JSON.stringify(body));
+	}
 }
 
 /**
@@ -181,16 +179,16 @@ export class LinkBillingAccountCommand extends Command<
  *
  */
 export class ListPaymentMethodsCommand extends Command<
-  ListPaymentMethodsCommandInput,
-  PaymentMethods,
-  ListPaymentMethodsCommandBody
+	ListPaymentMethodsCommandInput,
+	PaymentMethods,
+	ListPaymentMethodsCommandBody
 > {
-  public override method = 'get' as const;
+	public override method = "get" as const;
 
-  constructor(input: ListPaymentMethodsCommandInput) {
-    const { billingAccountId } = input;
-    super(`/billing-accounts/${billingAccountId}/payment-methods`);
-  }
+	constructor(input: ListPaymentMethodsCommandInput) {
+		const { billingAccountId } = input;
+		super(`/billing-accounts/${billingAccountId}/payment-methods`);
+	}
 }
 
 /**
@@ -198,16 +196,16 @@ export class ListPaymentMethodsCommand extends Command<
  *
  */
 export class CreatePaymentMethodCommand extends Command<
-  CreatePaymentMethodCommandInput,
-  PaymentMethodIntendedLro,
-  CreatePaymentMethodCommandBody
+	CreatePaymentMethodCommandInput,
+	PaymentMethodIntendedLro,
+	CreatePaymentMethodCommandBody
 > {
-  public override method = 'post' as const;
+	public override method = "post" as const;
 
-  constructor(input: CreatePaymentMethodCommandInput) {
-    const { billingAccountId } = input;
-    super(`/billing-accounts/${billingAccountId}/payment-methods`);
-  }
+	constructor(input: CreatePaymentMethodCommandInput) {
+		const { billingAccountId } = input;
+		super(`/billing-accounts/${billingAccountId}/payment-methods`);
+	}
 }
 
 /**
@@ -215,18 +213,18 @@ export class CreatePaymentMethodCommand extends Command<
  *
  */
 export class GetPaymentMethodFromStripeCommand extends Command<
-  GetPaymentMethodFromStripeCommandInput,
-  PaymentMethod,
-  GetPaymentMethodFromStripeCommandBody
+	GetPaymentMethodFromStripeCommandInput,
+	PaymentMethod,
+	GetPaymentMethodFromStripeCommandBody
 > {
-  public override method = 'get' as const;
+	public override method = "get" as const;
 
-  constructor(input: GetPaymentMethodFromStripeCommandInput) {
-    const { billingAccountId, stripePaymentMethodId } = input;
-    super(
-      `/billing-accounts/${billingAccountId}/payment-methods/stripe/${stripePaymentMethodId}`,
-    );
-  }
+	constructor(input: GetPaymentMethodFromStripeCommandInput) {
+		const { billingAccountId, stripePaymentMethodId } = input;
+		super(
+			`/billing-accounts/${billingAccountId}/payment-methods/stripe/${stripePaymentMethodId}`,
+		);
+	}
 }
 
 /**
@@ -234,18 +232,18 @@ export class GetPaymentMethodFromStripeCommand extends Command<
  *
  */
 export class GetPaymentMethodCommand extends Command<
-  GetPaymentMethodCommandInput,
-  PaymentMethod,
-  GetPaymentMethodCommandBody
+	GetPaymentMethodCommandInput,
+	PaymentMethod,
+	GetPaymentMethodCommandBody
 > {
-  public override method = 'get' as const;
+	public override method = "get" as const;
 
-  constructor(input: GetPaymentMethodCommandInput) {
-    const { billingAccountId, paymentMethodId } = input;
-    super(
-      `/billing-accounts/${billingAccountId}/payment-methods/${paymentMethodId}`,
-    );
-  }
+	constructor(input: GetPaymentMethodCommandInput) {
+		const { billingAccountId, paymentMethodId } = input;
+		super(
+			`/billing-accounts/${billingAccountId}/payment-methods/${paymentMethodId}`,
+		);
+	}
 }
 
 /**
@@ -253,19 +251,19 @@ export class GetPaymentMethodCommand extends Command<
  *
  */
 export class UpdatePaymentMethodCommand extends Command<
-  UpdatePaymentMethodCommandInput,
-  never,
-  UpdatePaymentMethodCommandBody
+	UpdatePaymentMethodCommandInput,
+	never,
+	UpdatePaymentMethodCommandBody
 > {
-  public override method = 'put' as const;
+	public override method = "put" as const;
 
-  constructor(input: UpdatePaymentMethodCommandInput) {
-    const { billingAccountId, paymentMethodId, ...body } = input;
-    super(
-      `/billing-accounts/${billingAccountId}/payment-methods/${paymentMethodId}`,
-      body,
-    );
-  }
+	constructor(input: UpdatePaymentMethodCommandInput) {
+		const { billingAccountId, paymentMethodId, ...body } = input;
+		super(
+			`/billing-accounts/${billingAccountId}/payment-methods/${paymentMethodId}`,
+			JSON.stringify(body),
+		);
+	}
 }
 
 /**
@@ -273,18 +271,18 @@ export class UpdatePaymentMethodCommand extends Command<
  *
  */
 export class DeletePaymentMethodCommand extends Command<
-  DeletePaymentMethodCommandInput,
-  PaymentMethodDeletedLro,
-  DeletePaymentMethodCommandBody
+	DeletePaymentMethodCommandInput,
+	PaymentMethodDeletedLro,
+	DeletePaymentMethodCommandBody
 > {
-  public override method = 'delete' as const;
+	public override method = "delete" as const;
 
-  constructor(input: DeletePaymentMethodCommandInput) {
-    const { billingAccountId, paymentMethodId } = input;
-    super(
-      `/billing-accounts/${billingAccountId}/payment-methods/${paymentMethodId}`,
-    );
-  }
+	constructor(input: DeletePaymentMethodCommandInput) {
+		const { billingAccountId, paymentMethodId } = input;
+		super(
+			`/billing-accounts/${billingAccountId}/payment-methods/${paymentMethodId}`,
+		);
+	}
 }
 
 /**
@@ -292,16 +290,16 @@ export class DeletePaymentMethodCommand extends Command<
  *
  */
 export class ListBillingSubscriptionsCommand extends Command<
-  ListBillingSubscriptionsCommandInput,
-  BillingSubscriptions,
-  ListBillingSubscriptionsCommandBody
+	ListBillingSubscriptionsCommandInput,
+	BillingSubscriptions,
+	ListBillingSubscriptionsCommandBody
 > {
-  public override method = 'get' as const;
+	public override method = "get" as const;
 
-  constructor(input: ListBillingSubscriptionsCommandInput) {
-    const { billingAccountId } = input;
-    super(`/billing-accounts/${billingAccountId}/subscriptions`);
-  }
+	constructor(input: ListBillingSubscriptionsCommandInput) {
+		const { billingAccountId } = input;
+		super(`/billing-accounts/${billingAccountId}/subscriptions`);
+	}
 }
 
 /**
@@ -309,16 +307,19 @@ export class ListBillingSubscriptionsCommand extends Command<
  *
  */
 export class CreateBillingSubscriptionCommand extends Command<
-  CreateBillingSubscriptionCommandInput,
-  BillingSubscriptionLro,
-  CreateBillingSubscriptionCommandBody
+	CreateBillingSubscriptionCommandInput,
+	BillingSubscriptionLro,
+	CreateBillingSubscriptionCommandBody
 > {
-  public override method = 'post' as const;
+	public override method = "post" as const;
 
-  constructor(input: CreateBillingSubscriptionCommandInput) {
-    const { billingAccountId, ...body } = input;
-    super(`/billing-accounts/${billingAccountId}/subscriptions`, body);
-  }
+	constructor(input: CreateBillingSubscriptionCommandInput) {
+		const { billingAccountId, ...body } = input;
+		super(
+			`/billing-accounts/${billingAccountId}/subscriptions`,
+			JSON.stringify(body),
+		);
+	}
 }
 
 /**
@@ -326,19 +327,19 @@ export class CreateBillingSubscriptionCommand extends Command<
  *
  */
 export class UpdateBillingSubscriptionCommand extends Command<
-  UpdateBillingSubscriptionCommandInput,
-  never,
-  UpdateBillingSubscriptionCommandBody
+	UpdateBillingSubscriptionCommandInput,
+	never,
+	UpdateBillingSubscriptionCommandBody
 > {
-  public override method = 'put' as const;
+	public override method = "put" as const;
 
-  constructor(input: UpdateBillingSubscriptionCommandInput) {
-    const { billingAccountId, subscriptionId, ...body } = input;
-    super(
-      `/billing-accounts/${billingAccountId}/subscriptions/${subscriptionId}`,
-      body,
-    );
-  }
+	constructor(input: UpdateBillingSubscriptionCommandInput) {
+		const { billingAccountId, subscriptionId, ...body } = input;
+		super(
+			`/billing-accounts/${billingAccountId}/subscriptions/${subscriptionId}`,
+			JSON.stringify(body),
+		);
+	}
 }
 
 /**
@@ -346,18 +347,18 @@ export class UpdateBillingSubscriptionCommand extends Command<
  *
  */
 export class CancelSubscriptionCommand extends Command<
-  CancelSubscriptionCommandInput,
-  never,
-  CancelSubscriptionCommandBody
+	CancelSubscriptionCommandInput,
+	never,
+	CancelSubscriptionCommandBody
 > {
-  public override method = 'delete' as const;
+	public override method = "delete" as const;
 
-  constructor(input: CancelSubscriptionCommandInput) {
-    const { billingAccountId, subscriptionId } = input;
-    super(
-      `/billing-accounts/${billingAccountId}/subscriptions/${subscriptionId}`,
-    );
-  }
+	constructor(input: CancelSubscriptionCommandInput) {
+		const { billingAccountId, subscriptionId } = input;
+		super(
+			`/billing-accounts/${billingAccountId}/subscriptions/${subscriptionId}`,
+		);
+	}
 }
 
 /**
@@ -365,17 +366,17 @@ export class CancelSubscriptionCommand extends Command<
  *
  */
 export class UpdateBillingSubscriptionPromoCodeCommand extends Command<
-  UpdateBillingSubscriptionPromoCodeCommandInput,
-  BillingSubscriptionLro,
-  UpdateBillingSubscriptionPromoCodeCommandBody
+	UpdateBillingSubscriptionPromoCodeCommandInput,
+	BillingSubscriptionLro,
+	UpdateBillingSubscriptionPromoCodeCommandBody
 > {
-  public override method = 'put' as const;
+	public override method = "put" as const;
 
-  constructor(input: UpdateBillingSubscriptionPromoCodeCommandInput) {
-    const { billingAccountId, subscriptionId, ...body } = input;
-    super(
-      `/billing-accounts/${billingAccountId}/subscriptions/${subscriptionId}/promo-code`,
-      body,
-    );
-  }
+	constructor(input: UpdateBillingSubscriptionPromoCodeCommandInput) {
+		const { billingAccountId, subscriptionId, ...body } = input;
+		super(
+			`/billing-accounts/${billingAccountId}/subscriptions/${subscriptionId}/promo-code`,
+			JSON.stringify(body),
+		);
+	}
 }

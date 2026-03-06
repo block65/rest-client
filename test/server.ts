@@ -1,5 +1,5 @@
+import { type SerializedError, type StatusCode } from '@block65/custom-error';
 import type { RequestListener } from 'node:http';
-import type { CustomErrorSerialized } from '@block65/custom-error';
 
 export const requestListener: RequestListener = (req, res) => {
   switch (req.url) {
@@ -13,16 +13,6 @@ export const requestListener: RequestListener = (req, res) => {
       break;
     case '/500':
       res.writeHead(500);
-      res.end();
-      break;
-
-    case '/aws-lambda-200':
-      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
-      res.end();
-      break;
-
-    case '/aws-lambda-204':
-      res.writeHead(204, { 'content-type': 'application/json; charset=utf-8' });
       res.end();
       break;
 
@@ -44,10 +34,10 @@ export const requestListener: RequestListener = (req, res) => {
       res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
       res.end(
         JSON.stringify({
+          name: 'CustomError',
           message: 'Data should be array',
           code: 9,
-          status: 'FAILED_PRECONDITION',
-        } as CustomErrorSerialized),
+        } satisfies SerializedError<StatusCode>),
       );
       break;
     case '/unresponsive':

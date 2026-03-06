@@ -1,30 +1,12 @@
 {
-  "compilerOptions": {
-    "moduleResolution": "node16",
-    "target": "es2022",
-    "lib": ["es2022", "webworker", "Webworker.Iterable"],
-    "module": "node16",
-    "incremental": true,
-    "declaration": true,
-    "strict": true,
-    "types": [],
-    "outDir": "dist",
-    "rootDir": ".",
-    "preserveSymlinks": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-    "exactOptionalPropertyTypes": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "verbatimModuleSyntax": true,
-    "allowArbitraryExtensions": true,
-    "skipLibCheck": true
-  },
-  "include": ["./src", "test", "./lib"],
-  "exclude": ["./dist", "node_modules"]
+	"extends": ["@tsconfig/node24", "@tsconfig/strictest"],
+	"compilerOptions": {
+		"erasableSyntaxOnly": false,
+		"allowImportingTsExtensions": true,
+		"noEmit": true,
+		"noPropertyAccessFromIndexSignature": false,
+		"lib": ["es2024", "webworker"]
+	},
+	"include": ["./src", "test", "./lib"],
+	"exclude": ["./dist", "node_modules"]
 }

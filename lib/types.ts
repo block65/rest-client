@@ -1,11 +1,13 @@
 import type { Jsonifiable } from 'type-fest';
 
+export type JsonifiableObject = {[Key in string]?: Jsonifiable} | {toJSON: () => Jsonifiable};
+
 export type Resolver<T = unknown> = () => T | Promise<T>;
 
 export type ResolvableHeaders = Record<string, string | Resolver<string>>;
 
 export type FetcherParams = {
-  body?: BodyInit | null;
+  body?: BodyInit | Uint8Array | null;
   url: URL;
   method: HttpMethod;
   headers?: Record<string, string>;
@@ -18,10 +20,7 @@ export type FetcherResponse<
 > = {
   body?: T;
   url: URL;
-  status: number;
-  statusText: string;
-  ok: boolean;
-  headers: Headers;
+  res: Response;
 };
 
 export type FetcherMethod = (
@@ -46,6 +45,7 @@ export type RequestParameters = {
 export type RuntimeOptions = {
   headers?: Record<string, string> | undefined;
   signal?: AbortSignal;
+  /** @deprecated ? */
   json?: boolean;
 };
 
