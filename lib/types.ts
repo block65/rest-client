@@ -7,7 +7,7 @@ export type Resolver<T = unknown> = () => T | Promise<T>;
 export type ResolvableHeaders = Record<string, string | Resolver<string>>;
 
 export type FetcherParams = {
-  body?: BodyInit | Uint8Array | null;
+  body?: RequestInit['body'] | Uint8Array | null;
   url: URL;
   method: HttpMethod;
   headers?: Record<string, string>;
