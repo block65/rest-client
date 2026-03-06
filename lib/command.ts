@@ -14,7 +14,7 @@ type Middleware<
 	CommandOutput extends Jsonifiable | unknown = unknown,
 > = (input: CommandInput, output: CommandOutput) => CommandOutput;
 
-type Body = BodyInit | null | Uint8Array
+type Body = RequestInit['body'] | null | Uint8Array
 
 export abstract class Command<
 	// WARN: this must be kept compatible with the Client Input and Output types
