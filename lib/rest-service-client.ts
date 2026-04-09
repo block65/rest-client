@@ -79,6 +79,7 @@ export class RestServiceClient<
 
 			headers: await resolveHeaders({
 				...this.#headers,
+				...command.headers,
 				...runtimeOptions?.headers,
 			}),
 			...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),
