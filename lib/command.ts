@@ -21,6 +21,7 @@ export abstract class Command<
 	CommandInput extends JsonifiableObject | unknown = unknown,
 	CommandOutput extends Jsonifiable | unknown = unknown,
 	CommandQuery extends JsonifiableObject | unknown = unknown,
+	CommandHeaders extends Record<string, string | number | boolean> = Record<string, string>,
 > {
 	public readonly method: HttpMethod = "get";
 
@@ -30,12 +31,15 @@ export abstract class Command<
 
 	public readonly query: CommandQuery | undefined;
 
+	public readonly headers: CommandHeaders | undefined;
+
 	protected middleware: Middleware<CommandInput, CommandOutput>[] = [];
 
-	constructor(pathname: string, body: Body | null = null, query?: CommandQuery) {
+	constructor(pathname: string, body: Body | null = null, query?: CommandQuery, headers?: CommandHeaders) {
 		this.pathname = pathname;
 		this.body = body;
 		this.query = maybeWithNullProto(query);
+		this.headers = headers;
 	}
 
 	public serialize() {
