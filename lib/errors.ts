@@ -4,6 +4,8 @@ import type * as v from 'valibot';
 
 export class ServiceError extends CustomError {
 
+	override code = CustomError.UNAVAILABLE;
+
   public response: Response;
 
   constructor(message: string, response: Response) {
@@ -14,6 +16,8 @@ export class ServiceError extends CustomError {
 
 export class ServiceResponseError extends CustomError {
 
+	override code = CustomError.UNAVAILABLE;
+
   public response: Response;
 
   constructor(response: Response) {
@@ -23,6 +27,9 @@ export class ServiceResponseError extends CustomError {
 }
 
 export class PublicValibotHonoError extends CustomError {
+
+	override code = CustomError.INVALID_ARGUMENT;
+
 	static from(
 		err: v.ValiError<
 			| v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>
