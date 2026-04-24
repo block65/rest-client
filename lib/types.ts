@@ -27,7 +27,7 @@ export type FetcherMethod = (
   params: FetcherParams,
 ) => Promise<FetcherResponse<ReadableStream<Uint8Array> | null | Jsonifiable>>;
 
-export type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'head';
+export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head';
 
 export type RequestMethod<T = any> = (
   params: RequestParameters,
