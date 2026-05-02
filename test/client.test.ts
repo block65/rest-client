@@ -1,8 +1,8 @@
 /* eslint-disable max-classes-per-file */
 import { createServer } from "node:http";
 import getPort from "get-port";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { Command, RestServiceClient, createIsomorphicNativeFetcher } from "../src/main.ts";
+import { afterAll, assert, beforeAll, describe, expect, test } from "vitest";
+import { Command, RestServiceClient, ServiceError, createIsomorphicNativeFetcher } from "../src/main.ts";
 import { requestListener } from "./server.ts";
 
 const port = await getPort();
@@ -116,6 +116,26 @@ describe("Client", () => {
     });
 
     expect(response).toMatchSnapshot();
+  });
+
+  test("runtime accept header overrides json() default", async () => {
+    const command = new FakeMyHeadersCommand();
+    const response = await client.json(command, {
+      headers: {
+        accept: "application/vnd.custom+json",
+      },
+    });
+
+    assert(response && typeof response === "object" && "accept" in response);
+    expect(response.accept).toBe("application/vnd.custom+json");
+  });
+
+  test("JSON error attaches response to thrown ServiceError", async () => {
+    const err = await client.json(new FakeJsonErrorCommand()).catch((e: unknown) => e);
+
+    assert(err instanceof ServiceError);
+    expect(err.response).toBeInstanceOf(Response);
+    expect(err.response.status).toBe(400);
   });
 });
 

@@ -2,7 +2,7 @@ import type { Simplify } from "type-fest";
 import { withNullProto } from "../lib/utils.ts";
 
 // for checking errors thrown
-export { ServiceError, ServiceResponseError, PublicValibotHonoError } from "../lib/errors.ts";
+export { ServiceError, PublicValibotHonoError } from "../lib/errors.ts";
 
 // types needed as peer dep for generated clients
 export * from "../lib/types.ts";

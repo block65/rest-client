@@ -1,26 +1,47 @@
 /* eslint-disable max-classes-per-file */
-import { CustomError } from "@block65/custom-error";
+import { CustomError, isStatusCode, type StatusCode } from "@block65/custom-error";
 import type * as v from "valibot";
+import { isPlainObject } from "./utils.ts";
 
 export class ServiceError extends CustomError {
-  override code = CustomError.UNAVAILABLE;
+  override code: StatusCode = CustomError.UNAVAILABLE;
 
   public response: Response;
 
-  constructor(message: string, response: Response) {
+  constructor(message: string, code: StatusCode, response: Response) {
     super(message);
+    this.code = code;
     this.response = response;
   }
-}
 
-export class ServiceResponseError extends CustomError {
-  override code = CustomError.UNAVAILABLE;
+  /**
+   * Reconstructs a ServiceError from a raw response body and the originating
+   * Response. Structured error bodies ({code?, message, details?}) are
+   * unpacked into the error's message, code, and details; otherwise falls
+   * back to `response.statusText` with an `http-<status>` detail.
+   */
+  public static fromResponse(response: Response, body: unknown) {
+    if (isPlainObject(body) && "message" in body) {
+      const err = new ServiceError(
+        typeof body.message === "string" ? body.message : response.statusText,
+        isStatusCode(body.code) ? body.code : CustomError.UNKNOWN,
+        response,
+      );
 
-  public response: Response;
+      if ("details" in body && Array.isArray(body.details)) {
+        err.addDetail(...body.details);
+      }
 
-  constructor(response: Response) {
-    super(response.statusText);
-    this.response = response;
+      return err;
+    } else {
+      return new ServiceError(response.statusText, CustomError.UNKNOWN, response).addDetail({
+        reason: `http-${response.status}`,
+        metadata: {
+          status: response.status.toString(),
+          statusText: response.statusText,
+        },
+      });
+    }
   }
 }
 

@@ -1,18 +1,15 @@
-import { isStatusCode } from "@block65/custom-error";
-import type { SerializedError, StatusCode } from "@block65/custom-error";
 import type { Jsonifiable } from "type-fest";
 import type { GenericSchema } from "valibot";
 import { createIsomorphicNativeFetcher } from "../src/fetchers/isomorphic-native-fetcher.ts";
 import type { Command } from "./command.ts";
 import { resolveHeaders } from "./common.ts";
-import { ServiceError, ServiceResponseError } from "./errors.ts";
+import { ServiceError } from "./errors.ts";
 import type {
   FetcherMethod,
   JsonifiableObject,
   ResolvableHeaders,
   RuntimeOptions,
 } from "./types.ts";
-import { isPlainObject } from "./utils.ts";
 
 type ValibotModule = typeof import("valibot");
 
@@ -147,6 +144,7 @@ export class RestServiceClient<
     const { res, body } = await this.response(command, {
       ...runtimeOptions,
       headers: {
+        accept: "application/json",
         ...runtimeOptions?.headers,
         "content-type": "application/json;charset=utf-8",
       },
@@ -156,16 +154,7 @@ export class RestServiceClient<
       return (await this.#maybeValidate(command, body)) as OutputType;
     }
 
-    if (isPlainObject(body) && "code" in body) {
-      throw ServiceError.fromJSON(body as unknown as SerializedError<StatusCode>).addDetail({
-        reason: `http-${res.status}`,
-        metadata: {
-          status: res.status.toString(),
-          statusText: res.statusText,
-        },
-      });
-    }
-    throw new ServiceError(res.statusText, res).debug({ res });
+    throw ServiceError.fromResponse(res, body);
   }
 
   public async send<InputType extends ClientInput, OutputType extends ClientOutput>(
@@ -178,27 +167,7 @@ export class RestServiceClient<
       return (await this.#maybeValidate(command, body)) as OutputType;
     }
 
-    if (res.headers.get("content-type")?.includes("application/json")) {
-      if (isPlainObject(body) && "message" in body) {
-        throw ServiceError.fromJSON({
-          code: "code" in body && isStatusCode(body.code) ? body.code : ServiceError.UNKNOWN,
-          message: String(body.message),
-          name: "ServiceError",
-          details: [
-            {
-              reason: `http-${res.status}`,
-              metadata: {
-                status: res.status.toString(),
-                statusText: res.statusText,
-              },
-            },
-          ],
-        });
-      }
-      throw new ServiceResponseError(res);
-    }
-
-    throw new ServiceResponseError(res);
+    throw ServiceError.fromResponse(res, body);
   }
 
   // public API for streaming responses
