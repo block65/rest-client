@@ -1,12 +1,17 @@
 {
-	"extends": ["@tsconfig/node24", "@tsconfig/strictest"],
-	"compilerOptions": {
-		"erasableSyntaxOnly": false,
-		"allowImportingTsExtensions": true,
-		"noEmit": true,
-		"noPropertyAccessFromIndexSignature": false,
-		"lib": ["es2024"]
-	},
-	"include": ["./src", "test", "./lib"],
-	"exclude": ["./dist", "node_modules"]
+  "extends": "@tsconfig/strictest",
+  "compilerOptions": {
+    "target": "es2024",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2024"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "erasableSyntaxOnly": false,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "noPropertyAccessFromIndexSignature": false
+  },
+  "include": ["./src", "test", "./lib"],
+  "exclude": ["./dist", "node_modules"]
 }

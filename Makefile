@@ -9,6 +9,7 @@ distclean:
 
 .PHONY: test
 test: node_modules
+	pnpm exec tsc
 	pnpm exec vitest
 
 .PHONY: test.update
@@ -22,6 +23,11 @@ node_modules: package.json
 typecheck: node_modules tsconfig.json $(SRCS)
 	pnpm exec tsc
 
+.PHONY: lint
+lint: node_modules
+	pnpm exec oxlint
+
 .PHONY: pretty
 pretty: node_modules
-	pnpm exec eslint --fix .
+	pnpm exec oxlint --fix
+	pnpm exec oxfmt --write .

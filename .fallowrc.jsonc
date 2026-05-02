@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/fallow/schema/fallowrc.json",
+  // Public API of @block65/rest-client. These classes are exported and consumed
+  // by downstream packages, so their public members appear unused locally.
+  "usedClassMembers": [
+    {
+      // `code` is required by the @block65/custom-error framework; `from` is a
+      // public static factory for converting valibot ValiError into a
+      // serialisable error.
+      "extends": "CustomError",
+      "members": ["code", "from"]
+    }
+  ]
+}
