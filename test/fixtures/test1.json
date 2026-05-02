@@ -172,15 +172,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "name",
-              "email",
-              "country",
-              "status",
-              "currency",
-              "type",
-              "createdTime"
-            ],
+            "required": ["name", "email", "country", "status", "currency", "type", "createdTime"],
             "additionalProperties": false,
             "properties": {
               "name": {
@@ -408,16 +400,7 @@
       },
       "PaymentMethodBrand": {
         "type": "string",
-        "enum": [
-          "amex",
-          "diners",
-          "discover",
-          "jcb",
-          "mastercard",
-          "unionpay",
-          "visa",
-          "unknown"
-        ]
+        "enum": ["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "unknown"]
       },
       "PaymentMethod": {
         "allOf": [
@@ -586,13 +569,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "planSku",
-              "interval",
-              "status",
-              "cycleTime",
-              "createdTime"
-            ],
+            "required": ["planSku", "interval", "status", "cycleTime", "createdTime"],
             "properties": {
               "accountId": {
                 "$ref": "#/components/schemas/Id"

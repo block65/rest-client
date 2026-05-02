@@ -1,17 +1,17 @@
-import type { Jsonifiable } from 'type-fest';
+import type { Jsonifiable } from "type-fest";
 
-export type JsonifiableObject = {[Key in string]?: Jsonifiable} | {toJSON: () => Jsonifiable};
+export type JsonifiableObject = { [Key in string]?: Jsonifiable } | { toJSON: () => Jsonifiable };
 
 export type Resolver<T = unknown> = () => T | Promise<T>;
 
 export type ResolvableHeaders = Record<string, string | Resolver<string>>;
 
 export type FetcherParams = {
-  body?: RequestInit['body'] | Uint8Array | null;
+  body?: RequestInit["body"] | Uint8Array | null;
   url: URL;
   method: HttpMethod;
   headers?: Record<string, string>;
-  credentials?: 'include' | 'omit' | 'same-origin';
+  credentials?: "include" | "omit" | "same-origin";
   signal?: AbortSignal;
 };
 
@@ -27,7 +27,7 @@ export type FetcherMethod = (
   params: FetcherParams,
 ) => Promise<FetcherResponse<ReadableStream<Uint8Array> | null | Jsonifiable>>;
 
-export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head';
+export type HttpMethod = "get" | "post" | "put" | "patch" | "delete" | "head";
 
 export type RequestMethod<T = any> = (
   params: RequestParameters,

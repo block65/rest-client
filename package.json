@@ -8,14 +8,14 @@
     "type": "git",
     "url": "https://github.com/block65/rest-client"
   },
-  "sideEffects": false,
-  "type": "module",
-  "exports": {
-    ".": "./src/main.ts"
-  },
   "files": [
     "./{src,lib}/**/*"
   ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/main.ts"
+  },
   "scripts": {
     "preversion": "make test"
   },
@@ -24,7 +24,6 @@
     "p-retry": "^8.0.0"
   },
   "devDependencies": {
-    "@tsconfig/node24": "^24.0.4",
     "@tsconfig/strictest": "^2.0.8",
     "@types/node": "^25.6.0",
     "get-port": "^7.2.0",

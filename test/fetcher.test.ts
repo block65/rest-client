@@ -1,14 +1,14 @@
 /// <reference types="node" />
-import { createServer } from 'node:http';
-import getPort from 'get-port';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createIsomorphicNativeFetcher } from '../src/main.ts';
-import { requestListener } from './server.ts';
+import { createServer } from "node:http";
+import getPort from "get-port";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { createIsomorphicNativeFetcher } from "../src/main.ts";
+import { requestListener } from "./server.ts";
 
 const server = createServer(requestListener);
 const isomorphicFetcher = createIsomorphicNativeFetcher();
 
-describe('Fetcher', () => {
+describe("Fetcher", () => {
   let base: URL;
   beforeAll(async () => {
     const port = await getPort();
@@ -16,10 +16,10 @@ describe('Fetcher', () => {
     base = new URL(`http://0.0.0.0:${port}`);
   });
 
-  test('200 OK!', async () => {
+  test("200 OK!", async () => {
     const response = await isomorphicFetcher({
-      method: 'get',
-      url: new URL('/200', base),
+      method: "get",
+      url: new URL("/200", base),
     });
 
     expect(response).toMatchSnapshot({
@@ -27,10 +27,10 @@ describe('Fetcher', () => {
     });
   });
 
-  test('204', async () => {
+  test("204", async () => {
     const response = await isomorphicFetcher({
-      method: 'get',
-      url: new URL('/204', base),
+      method: "get",
+      url: new URL("/204", base),
     });
 
     expect(response).toMatchSnapshot({
@@ -38,61 +38,60 @@ describe('Fetcher', () => {
     });
   });
 
-
-  test('JSON Error', async () => {
+  test("JSON Error", async () => {
     expect(
       await isomorphicFetcher({
-        method: 'get',
-        url: new URL('/json-error', base),
+        method: "get",
+        url: new URL("/json-error", base),
       }),
     ).toMatchSnapshot({
       url: expect.any(URL),
     });
   });
 
-  test('404', async () => {
+  test("404", async () => {
     expect(
       await isomorphicFetcher({
-        method: 'get',
-        url: new URL('/404', base),
+        method: "get",
+        url: new URL("/404", base),
       }),
     ).toMatchSnapshot({
       url: expect.any(URL),
     });
   });
 
-  test('Custom options iso fetcher', async () => {
+  test("Custom options iso fetcher", async () => {
     const fetcher = createIsomorphicNativeFetcher({
       headers: {
-        'x-fetcher': 'custom',
+        "x-fetcher": "custom",
       },
     });
 
     expect(
       await fetcher({
-        method: 'get',
-        url: new URL('/my-headers', base),
+        method: "get",
+        url: new URL("/my-headers", base),
       }),
     ).toMatchSnapshot({
       url: expect.any(URL),
     });
   });
 
-  test('Custom timeout iso fetcher', async () => {
+  test("Custom timeout iso fetcher", async () => {
     const fetcher = createIsomorphicNativeFetcher({
       timeout: 100,
     });
 
     const err = await fetcher({
-      method: 'get',
-      url: new URL('/unresponsive', base),
+      method: "get",
+      url: new URL("/unresponsive", base),
     }).catch((e) => e);
 
     expect(err).toBeInstanceOf(DOMException);
     expect(err.code).toBe(DOMException.TIMEOUT_ERR);
   }, 150);
 
-  test('User abort iso fetcher', async () => {
+  test("User abort iso fetcher", async () => {
     const fetcher = createIsomorphicNativeFetcher({
       timeout: 100,
     });
@@ -102,8 +101,8 @@ describe('Fetcher', () => {
     setTimeout(() => controller.abort(), 100);
 
     const err = await fetcher({
-      method: 'get',
-      url: new URL('/unresponsive', base),
+      method: "get",
+      url: new URL("/unresponsive", base),
       signal: controller.signal,
     }).catch((e) => e);
 

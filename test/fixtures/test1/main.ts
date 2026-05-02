@@ -35,8 +35,8 @@ import type {
   UpdateBillingSubscriptionCommandInput,
   UpdateBillingSubscriptionPromoCodeCommandInput,
   UpdatePaymentMethodCommandInput,
-} from './types.ts';
-import { RestServiceClient } from '@block65/rest-client';
+} from "./types.ts";
+import { RestServiceClient } from "@block65/rest-client";
 
 type AllInputs =
   | CancelSubscriptionCommandInput
@@ -69,7 +69,4 @@ type AllOutputs =
   | PaymentMethodIntendedLro
   | PaymentMethods;
 
-export class BillingServiceRestApiRestClient extends RestServiceClient<
-  AllInputs,
-  AllOutputs
-> {}
+export class BillingServiceRestApiRestClient extends RestServiceClient<AllInputs, AllOutputs> {}
