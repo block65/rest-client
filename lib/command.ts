@@ -19,7 +19,7 @@ export abstract class Command<
   CommandInput extends JsonifiableObject | unknown = unknown,
   CommandOutput extends Jsonifiable | unknown = unknown,
   CommandQuery extends JsonifiableObject | unknown = unknown,
-  CommandHeaders extends Record<string, string | number | boolean> = Record<string, string>,
+  CommandHeaders extends Record<string, string> = Record<string, string>,
 > {
   public readonly method: HttpMethod = "get";
 
