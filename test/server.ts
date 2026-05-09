@@ -44,6 +44,19 @@ export const requestListener: RequestListener = (req, res) => {
       // do nothing
       break;
     default:
+      if (req.url?.startsWith("/echo")) {
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+        res.end(
+          JSON.stringify({
+            method: req.method,
+            pathname: url.pathname,
+            search: url.search,
+            query: Object.fromEntries(url.searchParams),
+          }),
+        );
+        break;
+      }
       res.writeHead(404, { "content-type": "text/html" });
       res.end("<h1>Not Found</h1>");
       break;

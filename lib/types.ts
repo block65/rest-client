@@ -43,7 +43,14 @@ export type RequestParameters = {
 };
 
 export type RuntimeOptions = {
-  base?: URL | string | undefined;
+  /**
+   * Override the request URL for this call. Receives the URL the client would
+   * otherwise have used (base + pathname + query) and must return the final
+   * URL. The return value is used as-is — no further pathname or query
+   * processing is applied — which makes this suitable for one-off targets
+   * like presigned upload URLs.
+   */
+  url?: ((url: URL) => URL | string | Promise<URL | string>) | undefined;
   headers?: Record<string, string> | undefined;
   signal?: AbortSignal;
   /** @deprecated ? */

@@ -101,12 +101,16 @@ export class RestServiceClient<
   ) {
     const { method, pathname, query } = command;
 
-    const url = new URL(`.${pathname}`, runtimeOptions?.base ?? this.#base);
-    url.search = query
+    const defaultUrl = new URL(`.${pathname}`, this.#base);
+    defaultUrl.search = query
       ? new URLSearchParams(
           Object.entries(query).map(([k, v]): [string, string] => [k, v?.toString() ?? ""]),
         ).toString()
       : "";
+
+    const url = runtimeOptions?.url
+      ? new URL(await runtimeOptions.url(defaultUrl))
+      : defaultUrl;
 
     this.#log("req: %s %s", method.toUpperCase(), url, runtimeOptions);
 

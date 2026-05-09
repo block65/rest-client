@@ -137,6 +137,56 @@ describe("Client", () => {
     expect(err.response).toBeInstanceOf(Response);
     expect(err.response.status).toBe(400);
   });
+
+  describe("runtimeOptions.url", () => {
+    type EchoOutput = {
+      method: string;
+      pathname: string;
+      search: string;
+      query: Record<string, string>;
+    };
+
+    class EchoCommand extends Command<never, EchoOutput, { foo?: string }> {
+      public override method = "get" as const;
+
+      constructor(query?: { foo?: string }) {
+        super("/200", null, query);
+      }
+    }
+
+    test("function receives default-built URL; return value is fetched as-is (presigned-style takeover)", async () => {
+      const command = new EchoCommand({ foo: "bar" });
+
+      let received: URL | undefined;
+      const response = await client.json<never, EchoOutput>(command, {
+        url: (u) => {
+          received = u;
+          const next = new URL(`http://0.0.0.0:${port}/echo`);
+          next.searchParams.set("signed", "xyz");
+          return next;
+        },
+      });
+
+      assert(received);
+      expect(received.pathname).toBe("/200");
+      expect(received.searchParams.get("foo")).toBe("bar");
+      expect(response.pathname).toBe("/echo");
+      expect(response.query).toStrictEqual({ signed: "xyz" });
+    });
+
+    test("function may be async and return a string", async () => {
+      const command = new EchoCommand();
+
+      const response = await client.json<never, EchoOutput>(command, {
+        url: async () => {
+          await Promise.resolve();
+          return `http://0.0.0.0:${port}/echo?from=string`;
+        },
+      });
+
+      expect(response.query).toStrictEqual({ from: "string" });
+    });
+  });
 });
 
 afterAll(() => {
