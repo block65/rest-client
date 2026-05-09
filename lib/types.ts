@@ -43,6 +43,7 @@ export type RequestParameters = {
 };
 
 export type RuntimeOptions = {
+  base?: URL | string | undefined;
   headers?: Record<string, string> | undefined;
   signal?: AbortSignal;
   /** @deprecated ? */

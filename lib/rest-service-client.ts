@@ -101,7 +101,7 @@ export class RestServiceClient<
   ) {
     const { method, pathname, query } = command;
 
-    const url = new URL(`.${pathname}`, this.#base);
+    const url = new URL(`.${pathname}`, runtimeOptions?.base ?? this.#base);
     url.search = query
       ? new URLSearchParams(
           Object.entries(query).map(([k, v]): [string, string] => [k, v?.toString() ?? ""]),
