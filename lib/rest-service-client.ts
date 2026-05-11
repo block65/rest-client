@@ -38,7 +38,6 @@ export type RestServiceClientConfig = {
   logger?: ((msg: string, ...args: unknown[]) => void) | undefined;
   headers?: ResolvableHeaders | undefined;
   credentials?: "include" | "omit" | "same-origin" | undefined;
-  validateResponses?: boolean | undefined;
 } & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
 
 export class RestServiceClient<
@@ -52,8 +51,6 @@ export class RestServiceClient<
 
   readonly #headers: ResolvableHeaders | undefined;
 
-  readonly #validateResponses: boolean;
-
   #logger: RestServiceClientConfig["logger"];
 
   constructor(base: URL | string, config: RestServiceClientConfig = {}) {
@@ -61,8 +58,6 @@ export class RestServiceClient<
     this.#headers = Object.freeze(config.headers);
 
     this.#logger = config.logger;
-
-    this.#validateResponses = config.validateResponses ?? false;
 
     this.#fetcher =
       "fetcher" in config
@@ -80,10 +75,11 @@ export class RestServiceClient<
     this.#logger?.(`[rest-client] ${msg}`, ...args);
   }
 
+  // Schema presence on the Command is the sole validation trigger — consumers
+  // opt in by importing from the codegen's validated commands file (or via a
+  // bundler alias in dev). Lean imports skip schema attachment, valibot never
+  // loads, no bundle cost.
   async #maybeValidate(command: object, body: unknown): Promise<unknown> {
-    if (!this.#validateResponses) {
-      return body;
-    }
     const schema = getCommandResponseSchema(command);
     if (!schema) {
       return body;

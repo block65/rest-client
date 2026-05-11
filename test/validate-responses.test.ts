@@ -67,11 +67,10 @@ describe("jsonStringify", () => {
   });
 });
 
-describe("validateResponses", () => {
-  test("parses response through static responseSchema when enabled", async () => {
+describe("response validation (schema presence drives it)", () => {
+  test("parses response through static responseSchema when present", async () => {
     const client = new RestServiceClient(fakeUrl, {
       fetcher: makeFetcher({ id: "123", name: "Alice" }),
-      validateResponses: true,
     });
 
     const result = await client.json(new GetAccountCommand());
@@ -80,21 +79,9 @@ describe("validateResponses", () => {
     expect(result.name).toBe("Alice");
   });
 
-  test("passes body through unchanged when validateResponses is false (default)", async () => {
-    const client = new RestServiceClient(fakeUrl, {
-      fetcher: makeFetcher({ id: "123", name: "Alice" }),
-    });
-
-    const result = await client.json(new GetAccountCommand());
-
-    expect(result.id).toBe("123");
-    expect(result.name).toBe("Alice");
-  });
-
   test("passes body through unchanged when command has no responseSchema", async () => {
     const client = new RestServiceClient(fakeUrl, {
       fetcher: makeFetcher({ id: "123", name: "Alice" }),
-      validateResponses: true,
     });
 
     const result = await client.json(new GetAccountUnvalidatedCommand());
@@ -103,10 +90,9 @@ describe("validateResponses", () => {
     expect(result.name).toBe("Alice");
   });
 
-  test("throws on schema mismatch when validateResponses is enabled", async () => {
+  test("throws on schema mismatch", async () => {
     const client = new RestServiceClient(fakeUrl, {
       fetcher: makeFetcher({ id: 123, name: "Alice" }),
-      validateResponses: true,
     });
 
     await expect(client.json(new GetAccountCommand())).rejects.toThrow();
@@ -115,7 +101,6 @@ describe("validateResponses", () => {
   test("also validates send() responses", async () => {
     const client = new RestServiceClient(fakeUrl, {
       fetcher: makeFetcher({ id: "123", name: "Alice" }),
-      validateResponses: true,
     });
 
     const result = await client.send(new GetAccountCommand());
