@@ -1,0 +1,29 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"useTabs": true,
+	"printWidth": 80,
+	"ignorePatterns": [
+		// build output
+		"**/dist",
+		"**/build",
+
+		"**/node_modules"
+	],
+
+	"sortPackageJson": {
+		"sortScripts": true
+	},
+
+	"sortImports": {
+		"newlinesBetween": false
+	},
+
+	"overrides": [
+		{
+			"files": ["*.jsonc"],
+			"options": {
+				"trailingComma": "none"
+			}
+		}
+	]
+}
