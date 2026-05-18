@@ -1,7 +1,12 @@
 import type { Jsonifiable } from "type-fest";
 import * as v from "valibot";
-import { describe, expect, test } from "vitest";
-import { Command, RestServiceClient, jsonStringify } from "../src/main.ts";
+import { assert, describe, expect, test } from "vitest";
+import {
+  Command,
+  ResponseValidationError,
+  RestServiceClient,
+  jsonStringify,
+} from "../src/main.ts";
 
 const fakeUrl = new URL("https://192.0.2.1");
 
@@ -90,12 +95,19 @@ describe("response validation (schema presence drives it)", () => {
     expect(result.name).toBe("Alice");
   });
 
-  test("throws on schema mismatch", async () => {
+  test("throws ResponseValidationError carrying command + url + cause on schema mismatch", async () => {
     const client = new RestServiceClient(fakeUrl, {
       fetcher: makeFetcher({ id: 123, name: "Alice" }),
     });
 
-    await expect(client.json(new GetAccountCommand())).rejects.toThrow();
+    const command = new GetAccountCommand();
+    const err = await client.json(command).catch((e: unknown) => e);
+
+    assert(err instanceof ResponseValidationError);
+    expect(err.command).toBe(command);
+    expect(err.url.toString()).toContain("/account");
+    expect(err.message).toContain("GET");
+    expect(err.cause).toBeDefined();
   });
 
   test("also validates send() responses", async () => {

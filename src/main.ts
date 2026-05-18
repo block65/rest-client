@@ -1,8 +1,11 @@
 import type { Simplify } from "type-fest";
-import { withNullProto } from "../lib/utils.ts";
 
 // for checking errors thrown
-export { ServiceError, PublicValibotHonoError } from "../lib/errors.ts";
+export {
+  PublicValibotHonoError,
+  ResponseValidationError,
+  ServiceError,
+} from "../lib/errors.ts";
 
 // types needed as peer dep for generated clients
 export * from "../lib/types.ts";
@@ -24,10 +27,9 @@ export type OptionalToUndefined<T extends object> = {
   [P in keyof T]: undefined extends T[P] ? T[P] | undefined : T[P];
 };
 
-// this is a better version that uses Object.fromEntries
 export function stripUndefined<T extends object>(obj: OptionalToUndefined<T>) {
-  return withNullProto(
-    Object.fromEntries(Object.entries(obj).filter(([, v]) => typeof v !== "undefined")),
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => typeof v !== "undefined"),
   ) as WithoutUndefinedProperties<T>;
 }
 
