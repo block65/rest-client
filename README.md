@@ -63,24 +63,23 @@ new RestServiceClient(url, { fetcher: createIsomorphicNativeFetcher({ retry: { r
 
 The default fetcher retries idempotent (`GET`) requests and supports timeouts and merged abort signals.
 
-### `validateResponses` (opt-in)
+### Response validation via `responseSchema`
 
-When generated commands include a static `responseSchema` (a [valibot](https://valibot.dev) schema), the client can run the schema against successful responses — useful for coercing JSON-unsafe types like `int64` strings into `BigInt`.
+When a generated command class exposes a static `responseSchema` (a [valibot](https://valibot.dev) schema), the client automatically runs the schema against successful responses — useful for coercing JSON-unsafe types like `int64` strings into `BigInt`.
+
+Schema presence on the command is the sole trigger; there is no client-level flag. Consumers opt in by importing from the codegen's validated commands file (lean imports skip schema attachment, so `valibot` never loads and there's no bundle cost).
 
 ```ts
 import { RestServiceClient } from "@block65/rest-client";
 
-const client = new RestServiceClient(url, {
-  fetcher,
-  validateResponses: true, // default: false
-});
+const client = new RestServiceClient(url, { fetcher });
 
 // GetAccountCommand.responseSchema coerces { id: "123" } → { id: 123n }
 const account = await client.json(new GetAccountCommand());
 account.id; // bigint
 ```
 
-If `valibot` isn't installed, validation is silently skipped — the option is safe to leave on.
+If `valibot` isn't installed at runtime, validation is silently skipped. Validation failures throw `ResponseValidationError`.
 
 ### `BigInt`-aware `jsonStringify`
 
@@ -104,7 +103,7 @@ client → "123"   (jsonStringify back to wire)
 ## Errors
 
 ```ts
-import { ServiceError, ServiceResponseError } from "@block65/rest-client";
+import { ResponseValidationError, ServiceError } from "@block65/rest-client";
 
 try {
   await client.json(cmd);
