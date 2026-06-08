@@ -1,7 +1,24 @@
 import { type SerializedError, type StatusCode } from "@block65/custom-error";
 import type { RequestListener } from "node:http";
 
+// per-key attempt counters for the /flaky endpoint
+const flakyAttempts = new Map<string, number>();
+
 export const requestListener: RequestListener = (req, res) => {
+  if (req.url?.startsWith("/flaky")) {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const key = url.searchParams.get("key") ?? "default";
+    const failures = Number(url.searchParams.get("failures") ?? "0");
+    const attempt = (flakyAttempts.get(key) ?? 0) + 1;
+    flakyAttempts.set(key, attempt);
+
+    res.writeHead(attempt <= failures ? 503 : 200, {
+      "content-type": "application/json; charset=utf-8",
+    });
+    res.end(JSON.stringify({ attempt }));
+    return;
+  }
+
   switch (req.url) {
     case "/200":
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });

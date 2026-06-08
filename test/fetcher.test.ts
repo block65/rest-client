@@ -91,6 +91,66 @@ describe("Fetcher", () => {
     expect(err.code).toBe(DOMException.TIMEOUT_ERR);
   }, 150);
 
+  describe("retry semantics", () => {
+    const fastRetry = { minTimeout: 1, maxTimeout: 5 };
+
+    test("non-ok response returns even with retry config present", async () => {
+      const fetcher = createIsomorphicNativeFetcher({
+        retry: { ...fastRetry, retries: 0 },
+      });
+
+      const response = await fetcher({
+        method: "get",
+        url: new URL("/json-error", base),
+      });
+
+      expect(response.res.status).toBe(400);
+      expect(response.body).toMatchObject({ message: "Data should be array" });
+    });
+
+    test("transient status retries until success", async () => {
+      const fetcher = createIsomorphicNativeFetcher({
+        retry: { ...fastRetry, retries: 3 },
+      });
+
+      const response = await fetcher({
+        method: "get",
+        url: new URL("/flaky?key=succeeds&failures=2", base),
+      });
+
+      expect(response.res.status).toBe(200);
+      expect(response.body).toEqual({ attempt: 3 });
+    });
+
+    test("exhausted retries return the final non-ok response", async () => {
+      const fetcher = createIsomorphicNativeFetcher({
+        retry: { ...fastRetry, retries: 2 },
+      });
+
+      const response = await fetcher({
+        method: "get",
+        url: new URL("/flaky?key=exhausted&failures=99", base),
+      });
+
+      expect(response.res.status).toBe(503);
+      expect(response.body).toEqual({ attempt: 3 });
+    });
+
+    test("non-idempotent methods never retry", async () => {
+      const fetcher = createIsomorphicNativeFetcher({
+        retry: { ...fastRetry, retries: 5 },
+      });
+
+      const response = await fetcher({
+        method: "post",
+        url: new URL("/flaky?key=post&failures=99", base),
+      });
+
+      expect(response.res.status).toBe(503);
+      expect(response.body).toEqual({ attempt: 1 });
+    });
+  });
+
   test("User abort iso fetcher", async () => {
     const fetcher = createIsomorphicNativeFetcher({
       timeout: 100,

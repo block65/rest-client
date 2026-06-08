@@ -9,7 +9,8 @@ import { requestListener } from "./server.ts";
 const port = await getPort();
 const server = createServer(requestListener);
 
-const fetcher = createIsomorphicNativeFetcher();
+// fast retry backoff so the 5xx tests exercise real retries without real delays
+const fetcher = createIsomorphicNativeFetcher({ retry: { minTimeout: 1, maxTimeout: 5 } });
 
 type Fake200CommandInput = {
   hello: boolean;

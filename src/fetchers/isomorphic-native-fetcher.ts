@@ -1,4 +1,4 @@
-import pRetry, { AbortError } from "p-retry";
+import pRetry from "p-retry";
 import type * as PRetry from "p-retry";
 import type { Jsonifiable } from "type-fest";
 import type { FetcherMethod, FetcherParams, FetcherResponse } from "../../lib/types.ts";
@@ -21,6 +21,50 @@ function multiSignal(...signals: (AbortSignal | undefined)[]): AbortSignal {
   }
 
   return controller.signal;
+}
+
+type IsomorphicFetcherResponse =
+  | FetcherResponse<Jsonifiable>
+  | FetcherResponse<ReadableStream<Uint8Array> | null>;
+
+// transient statuses worth another attempt; everything else — ok or not —
+// returns to the caller so error semantics never depend on retry config
+const retryableStatuses = new Set([408, 425, 429]);
+
+function isRetryableStatus(status: number): boolean {
+  return status >= 500 || retryableStatuses.has(status);
+}
+
+// carries the parsed response through p-retry so exhausted retries can still
+// resolve with the final response instead of a context-free error
+class RetryableStatusError extends Error {
+  public readonly response: IsomorphicFetcherResponse;
+
+  constructor(response: IsomorphicFetcherResponse) {
+    super(response.res.statusText || `http-${response.res.status}`);
+    this.response = response;
+  }
+}
+
+async function intoFetcherResponse(res: Response, url: URL): Promise<IsomorphicFetcherResponse> {
+  const contentType = res.headers.get("content-type");
+  // const contentLength = res.headers.get('content-length');
+
+  // auto parse json
+  if (contentType?.includes("/json")) {
+    const responseJson = (await res.json()) as Jsonifiable;
+    return {
+      body: responseJson,
+      url: res.url ? new URL(res.url) : url,
+      res,
+    } satisfies FetcherResponse<Jsonifiable>;
+  }
+
+  return {
+    body: res.body,
+    url: res.url ? new URL(res.url) : url,
+    res,
+  } satisfies FetcherResponse<ReadableStream<Uint8Array> | null>;
 }
 
 export function createIsomorphicNativeFetcher(
@@ -62,29 +106,14 @@ export function createIsomorphicNativeFetcher(
           body: finalBody,
         });
 
-        // if we are set up for retries and the response is not ok, throw
-        if ('retry' in rest && !res.ok) {
-          throw new AbortError(res.statusText);
+        const response = await intoFetcherResponse(res, url);
+
+        // transient failures throw a plain error so p-retry re-attempts them
+        if (!res.ok && isRetryableStatus(res.status)) {
+          throw new RetryableStatusError(response);
         }
 
-        const contentType = res.headers.get("content-type");
-        // const contentLength = res.headers.get('content-length');
-
-        // auto parse json
-        if (contentType?.includes("/json")) {
-          const responseJson = (await res.json()) as Jsonifiable;
-          return {
-            body: responseJson,
-            url: res.url ? new URL(res.url) : url,
-            res,
-          } satisfies FetcherResponse<Jsonifiable>;
-        }
-
-        return {
-          body: res.body,
-          url: res.url ? new URL(res.url) : url,
-          res,
-        } satisfies FetcherResponse<ReadableStream<Uint8Array> | null>;
+        return response;
       },
       method === "get"
         ? ({
@@ -100,6 +129,13 @@ export function createIsomorphicNativeFetcher(
             retries: 0,
             signal: combinedSignal,
           } as PRetry.Options),
-    );
+    ).catch((err: unknown) => {
+      // retries exhausted — resolve with the final response so non-ok
+      // handling stays the caller's job, with or without retry config
+      if (err instanceof RetryableStatusError) {
+        return err.response;
+      }
+      throw err;
+    });
   };
 }
