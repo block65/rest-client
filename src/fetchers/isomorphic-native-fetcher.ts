@@ -63,7 +63,7 @@ export function createIsomorphicNativeFetcher(
         });
 
         // if we are set up for retries and the response is not ok, throw
-        if (rest.retry && !res.ok) {
+        if ('retry' in rest && !res.ok) {
           throw new AbortError(res.statusText);
         }
 
