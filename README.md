@@ -10,7 +10,7 @@ Runs in Node and browsers — uses platform `globalThis.fetch` and standard Web 
 pnpm add @block65/rest-client
 ```
 
-`valibot` is an optional peer dependency — install it only if you opt in to response validation:
+Response validation runs on any [Standard Schema](https://standardschema.dev) validator. `valibot` is an optional peer dependency — install it, or another spec-compliant validator, only if you opt in:
 
 ```sh
 pnpm add valibot
@@ -67,9 +67,9 @@ The default fetcher retries idempotent (`GET`) requests and supports timeouts an
 
 ### Response validation via `responseSchema`
 
-When a generated command class exposes a static `responseSchema` (a [valibot](https://valibot.dev) schema), the client automatically runs the schema against successful responses — useful for coercing JSON-unsafe types like `int64` strings into `BigInt`.
+When a generated command class exposes a static `responseSchema` (any [Standard Schema](https://standardschema.dev) validator, such as [valibot](https://valibot.dev)), the client automatically runs the schema against successful responses — useful for coercing JSON-unsafe types like `int64` strings into `BigInt`.
 
-Schema presence on the command is the sole trigger; there is no client-level flag. Consumers opt in by importing from the codegen's validated commands file (lean imports skip schema attachment, so `valibot` never loads and there's no bundle cost).
+Schema presence on the command is the sole trigger; there is no client-level flag. Consumers opt in by importing from the codegen's validated commands file (lean imports skip schema attachment, so no validator loads and there's no bundle cost).
 
 ```ts
 import { RestServiceClient } from "@block65/rest-client";
@@ -81,7 +81,7 @@ const account = await client.json(new GetAccountCommand());
 account.id; // bigint
 ```
 
-If `valibot` isn't installed at runtime, validation is silently skipped. Validation failures throw `ResponseValidationError`.
+Commands without a `responseSchema` pass the body through untouched. Validation failures throw `ResponseValidationError`, carrying the command, the url, and the schema's issues.
 
 ### `BigInt`-aware `jsonStringify`
 
