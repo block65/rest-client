@@ -1,6 +1,8 @@
 import type { Jsonifiable } from "type-fest";
 
-export type JsonifiableObject = { [Key in string]?: Jsonifiable } | { toJSON: () => Jsonifiable };
+export type JsonifiableObject =
+	| { [Key in string]?: Jsonifiable }
+	| { toJSON: () => Jsonifiable };
 
 export type Resolver<T = unknown> = () => T | Promise<T>;
 

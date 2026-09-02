@@ -58,7 +58,9 @@ Swap the underlying fetch implementation, or replace the whole fetcher pipeline:
 
 ```ts
 new RestServiceClient(url, { fetch: customFetch });
-new RestServiceClient(url, { fetcher: createIsomorphicNativeFetcher({ retry: { retries: 5 } }) });
+new RestServiceClient(url, {
+	fetcher: createIsomorphicNativeFetcher({ retry: { retries: 5 } }),
+});
 ```
 
 The default fetcher retries idempotent (`GET`) requests and supports timeouts and merged abort signals.

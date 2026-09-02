@@ -4,7 +4,7 @@ import {
 	isStatusCode,
 	type StatusCode,
 } from "@block65/custom-error";
-import type * as v from "valibot";
+import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { Command } from "./command.ts";
 import { isPlainObject } from "./utils.ts";
 
@@ -75,21 +75,28 @@ export class ResponseValidationError extends CustomError {
 	}
 }
 
-export class PublicValibotHonoError extends CustomError {
+/**
+ * A request-validation failure safe to surface to API callers, built from
+ * Standard Schema issues so it works with any spec-compliant validator.
+ */
+export class PublicValidationError extends CustomError {
 	override code = CustomError.INVALID_ARGUMENT;
 
-	static from(
-		err: v.ValiError<
-			| v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>
-			| v.BaseSchemaAsync<unknown, unknown, v.BaseIssue<unknown>>
-		>,
-	) {
-		return new PublicValibotHonoError(err.message, err).addDetail({
-			violations: err.issues.map((issue) => ({
-				field: issue.path?.[0]?.key?.toString() || "",
+	static fromIssues(issues: readonly StandardSchemaV1.Issue[]) {
+		const message = issues[0]?.message ?? "Validation failed";
+		return new PublicValidationError(message).addDetail({
+			violations: issues.map((issue) => ({
+				field:
+					issue.path
+						?.map((segment) =>
+							typeof segment === "object"
+								? String(segment.key)
+								: String(segment),
+						)
+						.join(".") || "",
 				description: issue.message,
 			})),
-			description: err.message,
+			description: message,
 		});
 	}
 }

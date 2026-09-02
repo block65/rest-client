@@ -1,7 +1,11 @@
 import pRetry from "p-retry";
 import type * as PRetry from "p-retry";
 import type { Jsonifiable } from "type-fest";
-import type { FetcherMethod, FetcherParams, FetcherResponse } from "../../lib/types.ts";
+import type {
+	FetcherMethod,
+	FetcherParams,
+	FetcherResponse,
+} from "../../lib/types.ts";
 
 function multiSignal(...signals: (AbortSignal | undefined)[]): AbortSignal {
 	const controller = new AbortController();
@@ -46,25 +50,28 @@ class RetryableStatusError extends Error {
 	}
 }
 
-async function intoFetcherResponse(res: Response, url: URL): Promise<IsomorphicFetcherResponse> {
-  const contentType = res.headers.get("content-type");
-  // const contentLength = res.headers.get('content-length');
+async function intoFetcherResponse(
+	res: Response,
+	url: URL,
+): Promise<IsomorphicFetcherResponse> {
+	const contentType = res.headers.get("content-type");
+	// const contentLength = res.headers.get('content-length');
 
-  // auto parse json
-  if (contentType?.includes("/json")) {
-    const responseJson = (await res.json()) as Jsonifiable;
-    return {
-      body: responseJson,
-      url: res.url ? new URL(res.url) : url,
-      res,
-    } satisfies FetcherResponse<Jsonifiable>;
-  }
+	// auto parse json
+	if (contentType?.includes("/json")) {
+		const responseJson = (await res.json()) as Jsonifiable;
+		return {
+			body: responseJson,
+			url: res.url ? new URL(res.url) : url,
+			res,
+		} satisfies FetcherResponse<Jsonifiable>;
+	}
 
-  return {
-    body: res.body,
-    url: res.url ? new URL(res.url) : url,
-    res,
-  } satisfies FetcherResponse<ReadableStream<Uint8Array> | null>;
+	return {
+		body: res.body,
+		url: res.url ? new URL(res.url) : url,
+		res,
+	} satisfies FetcherResponse<ReadableStream<Uint8Array> | null>;
 }
 
 export function createIsomorphicNativeFetcher(

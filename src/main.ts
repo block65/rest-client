@@ -2,7 +2,7 @@ import type { Simplify } from "type-fest";
 
 // for checking errors thrown
 export {
-	PublicValibotHonoError,
+	PublicValidationError,
 	ResponseValidationError,
 	ServiceError,
 } from "../lib/errors.ts";
@@ -15,9 +15,7 @@ export { Command } from "../lib/command.ts";
 // a good standard/basic fetcher factory
 export { createIsomorphicNativeFetcher } from "./fetchers/isomorphic-native-fetcher.ts";
 
-export function jsonStringify(value: unknown): string {
-  return JSON.stringify(value, (_key, val) => (typeof val === "bigint" ? val.toString() : val));
-}
+export { jsonStringify } from "../lib/utils.ts";
 
 export type WithoutUndefinedProperties<T extends object> = Simplify<{
 	[P in keyof T]: Exclude<T[P], undefined>;
@@ -34,4 +32,7 @@ export function stripUndefined<T extends object>(obj: OptionalToUndefined<T>) {
 }
 
 // the client
-export { RestServiceClient, type RestServiceClientConfig } from "../lib/rest-service-client.ts";
+export {
+	RestServiceClient,
+	type RestServiceClientConfig,
+} from "../lib/rest-service-client.ts";

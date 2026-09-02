@@ -1,39 +1,34 @@
+import type * as s from "@standard-schema/spec";
 import type { Jsonifiable } from "type-fest";
-import type { GenericSchema } from "valibot";
 import { createIsomorphicNativeFetcher } from "../src/fetchers/isomorphic-native-fetcher.ts";
 import type { Command } from "./command.ts";
-import { resolveHeaders } from "./common.ts";
-import { ResponseValidationError, ServiceError } from "./errors.ts";
+import {
+	PublicValidationError,
+	ResponseValidationError,
+	ServiceError,
+} from "./errors.ts";
 import type {
 	FetcherMethod,
 	JsonifiableObject,
 	ResolvableHeaders,
 	RuntimeOptions,
 } from "./types.ts";
+import { isPlainObject } from "./utils.ts";
 
-type ValibotModule = typeof import("valibot");
-
-let valibotPromise: Promise<ValibotModule | null> | undefined;
-
-function loadValibot(): Promise<ValibotModule | null> {
-	if (!valibotPromise) {
-		valibotPromise = import("valibot").catch(() => null);
-	}
-	return valibotPromise;
+function isStandardSchema<TInput, TOutput>(
+	schema: unknown,
+): schema is s.StandardSchemaV1<TInput, TOutput> {
+	return isPlainObject(schema) && "~standard" in schema;
 }
 
-function isValibotSchema(value: unknown): value is GenericSchema {
-	return (
-		typeof value === "object" &&
-		value !== null &&
-		"kind" in value &&
-		"~standard" in value
-	);
-}
-
-function getCommandResponseSchema(command: object): GenericSchema | undefined {
+function getCommandResponseSchema<TInput, TOutput>(
+	command: Command<TInput, TOutput>,
+) {
 	const ctor = command.constructor;
-	if ("responseSchema" in ctor && isValibotSchema(ctor.responseSchema)) {
+	if (
+		"responseSchema" in ctor &&
+		isStandardSchema<TInput, TOutput>(ctor.responseSchema)
+	) {
 		return ctor.responseSchema;
 	}
 	return undefined;
@@ -43,6 +38,7 @@ export type RestServiceClientConfig = {
 	logger?: ((msg: string, ...args: unknown[]) => void) | undefined;
 	headers?: ResolvableHeaders | undefined;
 	credentials?: "include" | "omit" | "same-origin" | undefined;
+	responseValidator?: ((response: unknown) => boolean) | undefined;
 } & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
 
 export class RestServiceClient<
@@ -56,13 +52,16 @@ export class RestServiceClient<
 
 	readonly #headers: ResolvableHeaders | undefined;
 
-	#logger: RestServiceClientConfig["logger"];
+	readonly #responseValidator: RestServiceClientConfig["responseValidator"];
+
+	readonly #logger: RestServiceClientConfig["logger"];
 
 	constructor(base: URL | string, config: RestServiceClientConfig = {}) {
 		this.#base = new URL(base);
 		this.#headers = Object.freeze(config.headers);
 
 		this.#logger = config.logger;
+		this.#responseValidator = config.responseValidator;
 
 		this.#fetcher =
 			"fetcher" in config
@@ -84,24 +83,42 @@ export class RestServiceClient<
 	// opt in by importing from the codegen's validated commands file (or via a
 	// bundler alias in dev). Lean imports skip schema attachment, valibot never
 	// loads, no bundle cost.
-	async #maybeValidate(
-		command: Command,
+	async #maybeValidate<
+		TInput extends ClientInput,
+		TOutput extends ClientOutput,
+	>(
+		command: Command<TInput, TOutput>,
 		body: unknown,
 		url: URL,
-	): Promise<unknown> {
-		const schema = getCommandResponseSchema(command);
+	): Promise<TOutput> {
+		const schema = getCommandResponseSchema<TInput, TOutput>(command);
+
 		if (!schema) {
-			return body;
+			return body as TOutput;
 		}
-		const valibot = await loadValibot();
-		if (!valibot) {
-			return body;
+
+		this.#log("validating response with schema");
+
+		if (this.#responseValidator && !this.#responseValidator(body)) {
+			throw new ResponseValidationError(
+				command,
+				url,
+				new Error("Response validation failed"),
+			);
 		}
-		try {
-			return valibot.parse(schema, body);
-		} catch (cause) {
-			throw new ResponseValidationError(command, url, cause);
+
+		// the schema may transform, so the parsed value replaces the raw body
+		const result = await schema["~standard"].validate(body);
+
+		if (result.issues) {
+			throw new ResponseValidationError(
+				command,
+				url,
+				PublicValidationError.fromIssues(result.issues),
+			);
 		}
+
+		return result.value;
 	}
 
 	public async response<
@@ -125,6 +142,8 @@ export class RestServiceClient<
 
 		this.#log("req: %s %s", method.toUpperCase(), url, runtimeOptions);
 
+		const headers = await this.#resolveHeaders(command, runtimeOptions);
+
 		const result = await this.#fetcher({
 			url,
 			method,
@@ -133,11 +152,8 @@ export class RestServiceClient<
 				body: command.body,
 			}),
 
-			headers: await resolveHeaders({
-				...this.#headers,
-				...command.headers,
-				...runtimeOptions?.headers,
-			}),
+			headers,
+
 			...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),
 		});
 
@@ -150,6 +166,33 @@ export class RestServiceClient<
 		);
 
 		return { ...result, url };
+	}
+
+	async #resolveHeaders(command: Command, runtimeOptions?: RuntimeOptions) {
+		if (!this.#headers) {
+			return {};
+		}
+		const additionalHeaders = Object.fromEntries(
+			await Promise.all(
+				Object.entries(this.#headers).map(
+					async ([key, valueOrResolver]): Promise<[string, string]> => {
+						if (valueOrResolver instanceof Function) {
+							const resolver = valueOrResolver.bind(this);
+							return [key, await resolver()];
+						}
+
+						const value = valueOrResolver;
+						return [key, value];
+					},
+				),
+			),
+		);
+
+		return {
+			...command.headers,
+			...additionalHeaders,
+			...runtimeOptions?.headers,
+		};
 	}
 
 	public async json<
@@ -169,7 +212,7 @@ export class RestServiceClient<
 		});
 
 		if (res.status < 400) {
-			return (await this.#maybeValidate(command, body, url)) as OutputType;
+			return this.#maybeValidate(command, body, url);
 		}
 
 		throw ServiceError.fromResponse(res, body);
@@ -185,7 +228,7 @@ export class RestServiceClient<
 		const { res, body, url } = await this.response(command, runtimeOptions);
 
 		if (res.status < 400) {
-			return (await this.#maybeValidate(command, body, url)) as OutputType;
+			return this.#maybeValidate(command, body, url);
 		}
 
 		throw ServiceError.fromResponse(res, body);

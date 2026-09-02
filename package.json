@@ -1,47 +1,48 @@
 {
-  "name": "@block65/rest-client",
-  "version": "13.1.0",
-  "private": false,
-  "description": "Block65 REST client",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/block65/rest-client"
-  },
-  "files": [
-    "./{src,lib}/**/*"
-  ],
-  "type": "module",
-  "sideEffects": false,
-  "exports": {
-    ".": "./src/main.ts"
-  },
-  "scripts": {
-    "preversion": "make test"
-  },
-  "dependencies": {
-    "@block65/custom-error": "^14.1.0",
-    "p-retry": "^8.0.0"
-  },
-  "devDependencies": {
-    "@tsconfig/strictest": "^2.0.8",
-    "@types/node": "^25.9.2",
-    "get-port": "^7.2.0",
-    "oxfmt": "^0.53.0",
-    "oxlint": "^1.68.0",
-    "type-fest": "^5.7.0",
-    "typescript": "^6.0.3",
-    "valibot": "^1.4.1",
-    "vite": "^8.0.16",
-    "vitest": "^4.1.8"
-  },
-  "peerDependencies": {
-    "valibot": "^1.4.1"
-  },
-  "peerDependenciesMeta": {
-    "valibot": {
-      "optional": true
-    }
-  },
-  "packageManager": "pnpm@11.5.2"
+	"name": "@block65/rest-client",
+	"version": "13.1.0",
+	"private": false,
+	"description": "Block65 REST client",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/block65/rest-client"
+	},
+	"files": [
+		"./{src,lib}/**/*"
+	],
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": "./src/main.ts"
+	},
+	"scripts": {
+		"preversion": "make test"
+	},
+	"dependencies": {
+		"@block65/custom-error": "^14.1.0",
+		"@standard-schema/spec": "^1.1.0",
+		"p-retry": "^8.0.0"
+	},
+	"devDependencies": {
+		"@tsconfig/strictest": "^2.0.8",
+		"@types/node": "^26.4.0",
+		"get-port": "^7.2.0",
+		"oxfmt": "^0.65.0",
+		"oxlint": "^1.80.0",
+		"type-fest": "^5.9.0",
+		"typescript": "^7.0.2",
+		"valibot": "^1.4.2",
+		"vite": "^8.2.2",
+		"vitest": "^4.1.11"
+	},
+	"peerDependencies": {
+		"valibot": "^1.4.1"
+	},
+	"peerDependenciesMeta": {
+		"valibot": {
+			"optional": true
+		}
+	},
+	"packageManager": "pnpm@11.5.2"
 }

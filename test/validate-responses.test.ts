@@ -54,25 +54,25 @@ function makeFetcher(body: Jsonifiable) {
 }
 
 describe("jsonStringify", () => {
-  test("serializes BigInt values to strings", () => {
-    expect(jsonStringify({ amount: BigInt(123) })).toBe('{"amount":"123"}');
-  });
+	test("serializes BigInt values to strings", () => {
+		expect(jsonStringify({ amount: BigInt(123) })).toBe('{"amount":"123"}');
+	});
 
-  test("serializes nested BigInt values", () => {
-    expect(jsonStringify({ a: [BigInt(1), BigInt(2)], b: { c: BigInt(3) } })).toBe(
-      '{"a":["1","2"],"b":{"c":"3"}}',
-    );
-  });
+	test("serializes nested BigInt values", () => {
+		expect(
+			jsonStringify({ a: [BigInt(1), BigInt(2)], b: { c: BigInt(3) } }),
+		).toBe('{"a":["1","2"],"b":{"c":"3"}}');
+	});
 
-  test("passes through non-BigInt values unchanged", () => {
-    expect(jsonStringify({ s: "hi", n: 1, b: true, nul: null })).toBe(
-      '{"s":"hi","n":1,"b":true,"nul":null}',
-    );
-  });
+	test("passes through non-BigInt values unchanged", () => {
+		expect(jsonStringify({ s: "hi", n: 1, b: true, nul: null })).toBe(
+			'{"s":"hi","n":1,"b":true,"nul":null}',
+		);
+	});
 
-  test("handles top-level BigInt", () => {
-    expect(jsonStringify(BigInt(42))).toBe('"42"');
-  });
+	test("handles top-level BigInt", () => {
+		expect(jsonStringify(BigInt(42))).toBe('"42"');
+	});
 });
 
 describe("response validation (schema presence drives it)", () => {

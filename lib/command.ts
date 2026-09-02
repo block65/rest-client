@@ -26,9 +26,8 @@ export abstract class Command<
 
 	// Without these, unused generics make Command<A, X> ≡ Command<B, X>
 	// and the cross-client guard silently disappears.
-	declare readonly __input?: CommandInput;
-
-	declare readonly __output?: CommandOutput;
+	declare readonly "~input"?: CommandInput;
+	declare readonly "~output"?: CommandOutput;
 
 	public readonly headers: CommandHeaders | undefined;
 
