@@ -26,4 +26,4 @@ jobs:
           node-version: ${{ matrix.version }}
           cache: "pnpm"
 
-      - run: make test typecheck
+      - run: make test typecheck lint pretty.check

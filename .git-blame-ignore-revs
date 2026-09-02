@@ -1,0 +1,6 @@
+# Revisions listed here are skipped by `git blame`.
+# Enable locally with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style: reformat with oxfmt, drop .editorconfig
+8d3fbf8716fb1c4c66e0b2825e00fd51a064cc9f

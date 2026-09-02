@@ -31,3 +31,7 @@ lint: node_modules
 pretty: node_modules
 	pnpm exec oxlint --fix
 	pnpm exec oxfmt --write .
+
+.PHONY: pretty.check
+pretty.check: node_modules
+	pnpm exec oxfmt --check .
