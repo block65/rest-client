@@ -50,13 +50,18 @@ describe("Fetcher", () => {
 	});
 
 	test("404", async () => {
-		expect(
-			await isomorphicFetcher({
-				method: "get",
-				url: new URL("/404", base),
-			}),
-		).toMatchSnapshot({
+		const response = await isomorphicFetcher({
+			method: "get",
+			url: new URL("/404", base),
+		});
+
+		expect(response.res.status).toBe(404);
+
+		// body is an unread stream here; snapshotting it captures Node's stream
+		// internals, which differ between Node versions
+		expect(response).toMatchSnapshot({
 			url: expect.any(URL),
+			body: expect.any(ReadableStream),
 		});
 	});
 
