@@ -1,6 +1,8 @@
 name: Unit Tests (PR)
 
 on:
+  push:
+    branches: ["canary", "master"]
   pull_request:
     branches: ["canary", "master"]
 
