@@ -13,47 +13,53 @@ const server = createServer(requestListener);
 const fetcher = createIsomorphicNativeFetcher({ retry: { minTimeout: 1, maxTimeout: 5 } });
 
 type Fake200CommandInput = {
-  hello: boolean;
+	hello: boolean;
 };
 type Fake200CommandOutput = unknown;
 
-class Fake200Command extends Command<Fake200CommandInput, Fake200CommandOutput> {
-  public override method = "get" as const;
+class Fake200Command extends Command<
+	Fake200CommandInput,
+	Fake200CommandOutput
+> {
+	public override method = "get" as const;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  constructor(_body: Fake200CommandInput) {
-    super("/200");
-  }
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	constructor(_body: Fake200CommandInput) {
+		super("/200");
+	}
 }
 
 type Fake404CommandInput = never;
 type Fake404CommandOutput = never;
 
 // 404
-class Fake404Command extends Command<Fake404CommandInput, Fake404CommandOutput> {
-  public override method = "get" as const;
+class Fake404Command extends Command<
+	Fake404CommandInput,
+	Fake404CommandOutput
+> {
+	public override method = "get" as const;
 
-  constructor() {
-    super("/404");
-  }
+	constructor() {
+		super("/404");
+	}
 }
 
 // 500
 class Fake500Command extends Command {
-  public override method = "get" as const;
+	public override method = "get" as const;
 
-  constructor() {
-    super("/500");
-  }
+	constructor() {
+		super("/500");
+	}
 }
 
 // json-error
 class FakeJsonErrorCommand extends Command {
-  public override method = "get" as const;
+	public override method = "get" as const;
 
-  constructor() {
-    super("/json-error");
-  }
+	constructor() {
+		super("/json-error");
+	}
 }
 
 type FakeMyHeadersOutput = Record<string, string>;
@@ -66,11 +72,11 @@ type Inputs = unknown;
 
 // fake headers
 class FakeMyHeadersCommand extends Command<never, FakeMyHeadersOutput> {
-  public override method = "get" as const;
+	public override method = "get" as const;
 
-  constructor() {
-    super("/my-headers");
-  }
+	constructor() {
+		super("/my-headers");
+	}
 }
 
 describe("Client", () => {
@@ -248,5 +254,5 @@ describe("Client", () => {
 });
 
 afterAll(() => {
-  server.close();
+	server.close();
 });

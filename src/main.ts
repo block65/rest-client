@@ -2,9 +2,9 @@ import type { Simplify } from "type-fest";
 
 // for checking errors thrown
 export {
-  PublicValibotHonoError,
-  ResponseValidationError,
-  ServiceError,
+	PublicValibotHonoError,
+	ResponseValidationError,
+	ServiceError,
 } from "../lib/errors.ts";
 
 // types needed as peer dep for generated clients
@@ -20,17 +20,17 @@ export function jsonStringify(value: unknown): string {
 }
 
 export type WithoutUndefinedProperties<T extends object> = Simplify<{
-  [P in keyof T]: Exclude<T[P], undefined>;
+	[P in keyof T]: Exclude<T[P], undefined>;
 }>;
 
 export type OptionalToUndefined<T extends object> = {
-  [P in keyof T]: undefined extends T[P] ? T[P] | undefined : T[P];
+	[P in keyof T]: undefined extends T[P] ? T[P] | undefined : T[P];
 };
 
 export function stripUndefined<T extends object>(obj: OptionalToUndefined<T>) {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([, v]) => typeof v !== "undefined"),
-  ) as WithoutUndefinedProperties<T>;
+	return Object.fromEntries(
+		Object.entries(obj).filter(([, v]) => typeof v !== "undefined"),
+	) as WithoutUndefinedProperties<T>;
 }
 
 // the client

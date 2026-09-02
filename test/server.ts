@@ -5,47 +5,47 @@ import type { RequestListener } from "node:http";
 const flakyAttempts = new Map<string, number>();
 
 export const requestListener: RequestListener = (req, res) => {
-  if (req.url?.startsWith("/flaky")) {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const key = url.searchParams.get("key") ?? "default";
-    const failures = Number(url.searchParams.get("failures") ?? "0");
-    const attempt = (flakyAttempts.get(key) ?? 0) + 1;
-    flakyAttempts.set(key, attempt);
+	if (req.url?.startsWith("/flaky")) {
+		const url = new URL(req.url, `http://${req.headers.host}`);
+		const key = url.searchParams.get("key") ?? "default";
+		const failures = Number(url.searchParams.get("failures") ?? "0");
+		const attempt = (flakyAttempts.get(key) ?? 0) + 1;
+		flakyAttempts.set(key, attempt);
 
-    res.writeHead(attempt <= failures ? 503 : 200, {
-      "content-type": "application/json; charset=utf-8",
-    });
-    res.end(JSON.stringify({ attempt }));
-    return;
-  }
+		res.writeHead(attempt <= failures ? 503 : 200, {
+			"content-type": "application/json; charset=utf-8",
+		});
+		res.end(JSON.stringify({ attempt }));
+		return;
+	}
 
-  switch (req.url) {
-    case "/200":
-      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify([1, 2, 3]));
-      break;
-    case "/204":
-      res.writeHead(204);
-      res.end();
-      break;
-    case "/500":
-      res.writeHead(500);
-      res.end();
-      break;
+	switch (req.url) {
+		case "/200":
+			res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+			res.end(JSON.stringify([1, 2, 3]));
+			break;
+		case "/204":
+			res.writeHead(204);
+			res.end();
+			break;
+		case "/500":
+			res.writeHead(500);
+			res.end();
+			break;
 
-    case "/my-headers":
-      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
-      res.end(
-        JSON.stringify({
-          ...req.headers,
-          host: "redacted", // redacted as it changes every test run
-        }),
-      );
-      break;
-    case "/index.html":
-      res.writeHead(200, { "content-type": "text/html" });
-      res.end("<h1>Hello</h1>");
-      break;
+		case "/my-headers":
+			res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+			res.end(
+				JSON.stringify({
+					...req.headers,
+					host: "redacted", // redacted as it changes every test run
+				}),
+			);
+			break;
+		case "/index.html":
+			res.writeHead(200, { "content-type": "text/html" });
+			res.end("<h1>Hello</h1>");
+			break;
 
     case "/json-error":
       res.writeHead(400, { "content-type": "application/json; charset=utf-8" });

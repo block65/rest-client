@@ -12,7 +12,8 @@ export abstract class Command<
 	// WARN: this must be kept compatible with the Client Input and Output types
 	CommandInput extends JsonifiableObject | unknown = unknown,
 	CommandOutput extends Jsonifiable | unknown = unknown,
-	CommandQuery extends UndefinedOnPartialDeep<JsonObject> = UndefinedOnPartialDeep<JsonObject>,
+	CommandQuery extends UndefinedOnPartialDeep<JsonObject> =
+		UndefinedOnPartialDeep<JsonObject>,
 	CommandHeaders extends Record<string, string> = Record<string, string>,
 > {
 	public readonly method: HttpMethod = "get";

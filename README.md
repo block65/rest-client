@@ -23,10 +23,10 @@ import { RestServiceClient } from "@block65/rest-client";
 import { GetAccountCommand } from "./generated/commands.ts";
 
 const client = new RestServiceClient("https://api.example.com", {
-  headers: {
-    "x-build-id": "abc123",
-    authorization: () => Promise.resolve(`Bearer ${await getToken()}`),
-  },
+	headers: {
+		"x-build-id": "abc123",
+		authorization: () => Promise.resolve(`Bearer ${await getToken()}`),
+	},
 });
 
 const account = await client.json(new GetAccountCommand({ accountId: "1234" }));
@@ -46,9 +46,9 @@ Header values can be functions or async functions, resolved per-request:
 
 ```ts
 new RestServiceClient(url, {
-  headers: {
-    authorization: async () => `Bearer ${await refreshToken()}`,
-  },
+	headers: {
+		authorization: async () => `Bearer ${await refreshToken()}`,
+	},
 });
 ```
 
@@ -106,12 +106,12 @@ client → "123"   (jsonStringify back to wire)
 import { ResponseValidationError, ServiceError } from "@block65/rest-client";
 
 try {
-  await client.json(cmd);
+	await client.json(cmd);
 } catch (err) {
-  if (err instanceof ServiceError) {
-    err.code; // status code from @block65/custom-error
-    err.response; // original Response
-  }
+	if (err instanceof ServiceError) {
+		err.code; // status code from @block65/custom-error
+		err.response; // original Response
+	}
 }
 ```
 
