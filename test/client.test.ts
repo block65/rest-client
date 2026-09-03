@@ -86,6 +86,23 @@ class FakeMyHeadersCommand extends Command<never, FakeMyHeadersOutput> {
 	}
 }
 
+class FakeCommandHeadersCommand extends Command<never, FakeMyHeadersOutput> {
+	public override method = "get" as const;
+
+	constructor() {
+		super("/my-headers", null, undefined, { "x-from-command": "command" });
+	}
+}
+
+// collides with the test client's own x-build-id header
+class FakeOverrideCommand extends Command<never, FakeMyHeadersOutput> {
+	public override method = "get" as const;
+
+	constructor() {
+		super("/my-headers", null, undefined, { "x-build-id": "from-command" });
+	}
+}
+
 describe("Client", () => {
 	const client = new RestServiceClient<Inputs, Outputs>(
 		new URL(`http://0.0.0.0:${port}`),
@@ -276,6 +293,53 @@ describe("Client", () => {
 				])}`,
 			);
 		});
+	});
+
+	// 0f03f56 guarded the whole merge on this.#headers, so a client configured
+	// without headers sent none at all — not even json()'s own content-type.
+	describe("client configured without headers", () => {
+		const bareClient = new RestServiceClient<Inputs, Outputs>(
+			new URL(`http://0.0.0.0:${port}`),
+			{ fetcher },
+		);
+
+		test("json() still sends its content-type and accept defaults", async () => {
+			const response = await bareClient.json(new FakeMyHeadersCommand());
+
+			assert(response && typeof response === "object");
+			expect(response).toMatchObject({
+				accept: "application/json",
+				"content-type": "application/json;charset=utf-8",
+			});
+		});
+
+		test("command and runtime headers still reach the request", async () => {
+			const response = await bareClient.json(new FakeCommandHeadersCommand(), {
+				headers: { "x-runtime": "runtime" },
+			});
+
+			assert(response && typeof response === "object");
+			expect(response).toMatchObject({
+				"x-from-command": "command",
+				"x-runtime": "runtime",
+			});
+		});
+	});
+
+	test("command headers override client headers", async () => {
+		const response = await client.json(new FakeOverrideCommand());
+
+		assert(response && typeof response === "object");
+		expect(response).toMatchObject({ "x-build-id": "from-command" });
+	});
+
+	test("runtime headers override command headers", async () => {
+		const response = await client.json(new FakeCommandHeadersCommand(), {
+			headers: { "x-from-command": "from-runtime" },
+		});
+
+		assert(response && typeof response === "object");
+		expect(response).toMatchObject({ "x-from-command": "from-runtime" });
 	});
 });
 

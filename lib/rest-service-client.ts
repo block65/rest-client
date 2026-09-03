@@ -169,12 +169,9 @@ export class RestServiceClient<
 	}
 
 	async #resolveHeaders(command: Command, runtimeOptions?: RuntimeOptions) {
-		if (!this.#headers) {
-			return {};
-		}
-		const additionalHeaders = Object.fromEntries(
+		const clientHeaders = Object.fromEntries(
 			await Promise.all(
-				Object.entries(this.#headers).map(
+				Object.entries(this.#headers ?? {}).map(
 					async ([key, valueOrResolver]): Promise<[string, string]> => {
 						if (valueOrResolver instanceof Function) {
 							const resolver = valueOrResolver.bind(this);
@@ -189,8 +186,8 @@ export class RestServiceClient<
 		);
 
 		return {
+			...clientHeaders,
 			...command.headers,
-			...additionalHeaders,
 			...runtimeOptions?.headers,
 		};
 	}
