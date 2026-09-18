@@ -12,6 +12,6 @@
 		"noEmit": true,
 		"noPropertyAccessFromIndexSignature": false
 	},
-	"include": ["./src", "test", "./lib"],
+	"include": ["./src", "test", "./lib", "./oxlint.config.ts"],
 	"exclude": ["node_modules"]
 }

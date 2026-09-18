@@ -25,11 +25,13 @@
 		"p-retry": "^8.0.0"
 	},
 	"devDependencies": {
+		"@block65/shared-config": "^0.3.0",
 		"@tsconfig/strictest": "^2.0.8",
 		"@types/node": "^26.4.0",
 		"get-port": "^7.2.0",
 		"oxfmt": "^0.65.0",
-		"oxlint": "^1.80.0",
+		"oxlint": "^1.82.0",
+		"oxlint-tsgolint": "^7.0.2001",
 		"type-fest": "^5.9.0",
 		"typescript": "^7.0.2",
 		"valibot": "^1.4.2",
