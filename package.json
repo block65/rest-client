@@ -45,6 +45,5 @@
 		"valibot": {
 			"optional": true
 		}
-	},
-	"packageManager": "pnpm@11.5.2"
+	}
 }
