@@ -1,5 +1,4 @@
 import type * as s from "@standard-schema/spec";
-import type { Jsonifiable } from "type-fest";
 import { createIsomorphicNativeFetcher } from "../src/fetchers/isomorphic-native-fetcher.ts";
 import type { Command } from "./command.ts";
 import {
@@ -9,7 +8,6 @@ import {
 } from "./errors.ts";
 import type {
 	FetcherMethod,
-	JsonifiableObject,
 	QueryStyles,
 	ResolvableHeaders,
 	RuntimeOptions,
@@ -177,8 +175,8 @@ export type RestServiceClientConfig = {
 
 export class RestServiceClient<
 	// WARN: this must be kept compatible with the Command Input and Output types
-	ClientInput extends JsonifiableObject | unknown = unknown,
-	ClientOutput extends Jsonifiable | unknown = unknown,
+	ClientInput = unknown,
+	ClientOutput = unknown,
 > {
 	readonly #base: URL;
 

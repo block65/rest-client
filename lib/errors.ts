@@ -12,24 +12,24 @@ export class ServiceError extends CustomError {
 
 	public response: Response;
 
-	constructor(message: string, code: StatusCode, response: Response) {
+	constructor(message: string, code: StatusCode, res: Response) {
 		super(message);
 		this.code = code;
-		this.response = response;
+		this.response = res;
 	}
 
 	/**
 	 * Reconstructs a ServiceError from a raw response body and the originating
 	 * Response. Structured error bodies ({code?, message, details?}) are
 	 * unpacked into the error's message, code, and details; otherwise falls
-	 * back to `response.statusText` with an `http-<status>` detail
+	 * back to `res.statusText` with an `http-<status>` detail
 	 */
-	public static fromResponse(response: Response, body: unknown) {
+	public static fromResponse(res: Response, body: unknown) {
 		if (isPlainObject(body) && "message" in body) {
 			const err = new ServiceError(
-				typeof body.message === "string" ? body.message : response.statusText,
+				typeof body.message === "string" ? body.message : res.statusText,
 				isStatusCode(body.code) ? body.code : CustomError.UNKNOWN,
-				response,
+				res,
 			);
 
 			if ("details" in body && Array.isArray(body.details)) {
@@ -38,17 +38,15 @@ export class ServiceError extends CustomError {
 
 			return err;
 		}
-		return new ServiceError(
-			response.statusText,
-			CustomError.UNKNOWN,
-			response,
-		).addDetail({
-			reason: `http-${response.status}`,
-			metadata: {
-				status: response.status.toString(),
-				statusText: response.statusText,
+		return new ServiceError(res.statusText, CustomError.UNKNOWN, res).addDetail(
+			{
+				reason: `http-${res.status}`,
+				metadata: {
+					status: res.status.toString(),
+					statusText: res.statusText,
+				},
 			},
-		});
+		);
 	}
 }
 

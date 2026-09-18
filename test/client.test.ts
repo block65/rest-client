@@ -496,6 +496,7 @@ describe("Client", () => {
 		// no enumerable own properties), and its toString is a timezone-dependent
 		// locale string ("Thu Jan 01 1970 08:00:00 GMT+0800 (...)")
 		test("a Date serializes via toJSON as ISO, not a locale string", async () => {
+			// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop is the subject
 			const when = new Date(0);
 			const url = await captureUrl({ when } as never);
 
@@ -508,6 +509,7 @@ describe("Client", () => {
 		// that way. toJSON answers null, which the null rule already omits
 		test("an invalid Date is omitted rather than throwing", async () => {
 			const url = await captureUrl({
+				// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Temporal throws on construction, so it cannot express this
 				when: new Date(Number.NaN),
 				keep: "yes",
 			} as never);

@@ -1,17 +1,14 @@
-import type { Jsonifiable, JsonValue, UndefinedOnPartialDeep } from "type-fest";
+import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
 import type { HttpMethod, QueryStyles } from "./types.ts";
 
-type JsonifiableObject =
-	| { [Key in string]?: Jsonifiable }
-	| { toJSON: () => Jsonifiable };
 type JsonObject = { [Key in string]?: JsonValue };
 
 type Body = RequestInit["body"] | null | Uint8Array;
 
 export abstract class Command<
 	// WARN: this must be kept compatible with the Client Input and Output types
-	CommandInput extends JsonifiableObject | unknown = unknown,
-	CommandOutput extends Jsonifiable | unknown = unknown,
+	CommandInput = unknown,
+	CommandOutput = unknown,
 	CommandQuery extends UndefinedOnPartialDeep<JsonObject> =
 		UndefinedOnPartialDeep<JsonObject>,
 	CommandHeaders extends Record<string, string> = Record<string, string>,

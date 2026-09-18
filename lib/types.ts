@@ -17,9 +17,7 @@ export type FetcherParams = {
 	signal?: AbortSignal;
 };
 
-export type FetcherResponse<
-	T extends ReadableStream<Uint8Array> | null | unknown | string = unknown,
-> = {
+export type FetcherResponse<T = unknown> = {
 	body?: T;
 	url: URL;
 	res: Response;

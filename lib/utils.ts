@@ -1,5 +1,5 @@
 export function isPlainObject<T extends Record<string, unknown>>(
-	value: unknown | T,
+	value: unknown,
 ): value is T {
 	if (Object.prototype.toString.call(value) !== "[object Object]") {
 		return false;

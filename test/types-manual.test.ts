@@ -92,14 +92,14 @@ test("command with a nested query object", () => {
 
 test("stripUndefined hands back non-plain values untouched", () => {
 	const blob = new Blob(["hi"]);
-	const date = new Date(0);
+	const url = new URL("https://192.0.2.1/x");
 	const list = ["a", "b"];
 	const nested = { gt: "1", lte: undefined };
 
-	const result = stripUndefined({ blob, date, list, nested, gone: undefined });
+	const result = stripUndefined({ blob, url, list, nested, gone: undefined });
 
 	expect(result.blob).toBe(blob);
-	expect(result.date).toBe(date);
+	expect(result.url).toBe(url);
 	expect(result.list).toBe(list);
 	expect(result.nested).toBe(nested);
 	expect(result).not.toHaveProperty("gone");

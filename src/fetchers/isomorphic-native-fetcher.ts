@@ -58,11 +58,11 @@ function isRetryableStatus(status: number): boolean {
 // carries the parsed response through p-retry so exhausted retries can still
 // resolve with the final response instead of a context-free error
 class RetryableStatusError extends Error {
-	public readonly response: IsomorphicFetcherResponse;
+	public readonly res: IsomorphicFetcherResponse;
 
-	constructor(response: IsomorphicFetcherResponse) {
-		super(response.res.statusText || `http-${response.res.status}`);
-		this.response = response;
+	constructor(res: IsomorphicFetcherResponse) {
+		super(res.res.statusText || `http-${res.res.status}`);
+		this.res = res;
 	}
 }
 
@@ -129,14 +129,14 @@ export function createIsomorphicNativeFetcher(
 					body: finalBody,
 				});
 
-				const response = await intoFetcherResponse(res, url);
+				const res2 = await intoFetcherResponse(res, url);
 
 				// transient failures throw a plain error so p-retry re-attempts them
 				if (!res.ok && isRetryableStatus(res.status)) {
-					throw new RetryableStatusError(response);
+					throw new RetryableStatusError(res2);
 				}
 
-				return response;
+				return res2;
 			},
 			method === "get"
 				? {
@@ -156,7 +156,7 @@ export function createIsomorphicNativeFetcher(
 			// retries exhausted — resolve with the final response so non-ok
 			// handling stays the caller's job, with or without retry config
 			if (err instanceof RetryableStatusError) {
-				return err.response;
+				return err.res;
 			}
 			throw err;
 		});
