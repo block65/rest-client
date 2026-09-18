@@ -17,49 +17,49 @@ describe("Fetcher", () => {
 	});
 
 	test("200 OK!", async () => {
-		const response = await isomorphicFetcher({
+		const res = await isomorphicFetcher({
 			method: "get",
 			url: new URL("/200", base),
 		});
 
-		expect(response).toMatchSnapshot({
+		expect(res).toMatchSnapshot({
 			url: expect.any(URL),
 		});
 	});
 
 	test("204", async () => {
-		const response = await isomorphicFetcher({
+		const res = await isomorphicFetcher({
 			method: "get",
 			url: new URL("/204", base),
 		});
 
-		expect(response).toMatchSnapshot({
+		expect(res).toMatchSnapshot({
 			url: expect.any(URL),
 		});
 	});
 
 	test("JSON Error", async () => {
-		expect(
-			await isomorphicFetcher({
-				method: "get",
-				url: new URL("/json-error", base),
-			}),
-		).toMatchSnapshot({
+		const res = await isomorphicFetcher({
+			method: "get",
+			url: new URL("/json-error", base),
+		});
+
+		expect(res).toMatchSnapshot({
 			url: expect.any(URL),
 		});
 	});
 
 	test("404", async () => {
-		const response = await isomorphicFetcher({
+		const res = await isomorphicFetcher({
 			method: "get",
 			url: new URL("/404", base),
 		});
 
-		expect(response.res.status).toBe(404);
+		expect(res.res.status).toBe(404);
 
 		// body is an unread stream here; snapshotting it captures Node's stream
 		// internals, which differ between Node versions
-		expect(response).toMatchSnapshot({
+		expect(res).toMatchSnapshot({
 			url: expect.any(URL),
 			body: expect.any(ReadableStream),
 		});
@@ -72,14 +72,54 @@ describe("Fetcher", () => {
 			},
 		});
 
-		expect(
-			await fetcher({
-				method: "get",
-				url: new URL("/my-headers", base),
-			}),
-		).toMatchSnapshot({
+		const res = await fetcher({
+			method: "get",
+			url: new URL("/my-headers", base),
+		});
+
+		expect(res).toMatchSnapshot({
 			url: expect.any(URL),
 		});
+	});
+
+	test("a Headers default survives the merge", async () => {
+		const fetcher = createIsomorphicNativeFetcher({
+			headers: new Headers({ "x-fetcher": "from-headers" }),
+		});
+
+		const res = await fetcher({
+			method: "get",
+			url: new URL("/my-headers", base),
+		});
+
+		expect(res.body).toMatchObject({ "x-fetcher": "from-headers" });
+	});
+
+	test("an array of pairs survives the merge", async () => {
+		const fetcher = createIsomorphicNativeFetcher({
+			headers: [["x-fetcher", "from-pairs"]],
+		});
+
+		const res = await fetcher({
+			method: "get",
+			url: new URL("/my-headers", base),
+		});
+
+		expect(res.body).toMatchObject({ "x-fetcher": "from-pairs" });
+	});
+
+	test("a per-request header overrides a default spelled in another case", async () => {
+		const fetcher = createIsomorphicNativeFetcher({
+			headers: { "X-Fetcher": "default" },
+		});
+
+		const res = await fetcher({
+			method: "get",
+			url: new URL("/my-headers", base),
+			headers: { "x-fetcher": "override" },
+		});
+
+		expect(res.body).toMatchObject({ "x-fetcher": "override" });
 	});
 
 	test("Custom timeout iso fetcher", async () => {
@@ -104,13 +144,13 @@ describe("Fetcher", () => {
 				retry: { ...fastRetry, retries: 0 },
 			});
 
-			const response = await fetcher({
+			const res = await fetcher({
 				method: "get",
 				url: new URL("/json-error", base),
 			});
 
-			expect(response.res.status).toBe(400);
-			expect(response.body).toMatchObject({ message: "Data should be array" });
+			expect(res.res.status).toBe(400);
+			expect(res.body).toMatchObject({ message: "Data should be array" });
 		});
 
 		test("transient status retries until success", async () => {
@@ -118,13 +158,13 @@ describe("Fetcher", () => {
 				retry: { ...fastRetry, retries: 3 },
 			});
 
-			const response = await fetcher({
+			const res = await fetcher({
 				method: "get",
 				url: new URL("/flaky?key=succeeds&failures=2", base),
 			});
 
-			expect(response.res.status).toBe(200);
-			expect(response.body).toEqual({ attempt: 3 });
+			expect(res.res.status).toBe(200);
+			expect(res.body).toEqual({ attempt: 3 });
 		});
 
 		test("exhausted retries return the final non-ok response", async () => {
@@ -132,13 +172,13 @@ describe("Fetcher", () => {
 				retry: { ...fastRetry, retries: 2 },
 			});
 
-			const response = await fetcher({
+			const res = await fetcher({
 				method: "get",
 				url: new URL("/flaky?key=exhausted&failures=99", base),
 			});
 
-			expect(response.res.status).toBe(503);
-			expect(response.body).toEqual({ attempt: 3 });
+			expect(res.res.status).toBe(503);
+			expect(res.body).toEqual({ attempt: 3 });
 		});
 
 		test("non-idempotent methods never retry", async () => {
@@ -146,13 +186,13 @@ describe("Fetcher", () => {
 				retry: { ...fastRetry, retries: 5 },
 			});
 
-			const response = await fetcher({
+			const res = await fetcher({
 				method: "post",
 				url: new URL("/flaky?key=post&failures=99", base),
 			});
 
-			expect(response.res.status).toBe(503);
-			expect(response.body).toEqual({ attempt: 1 });
+			expect(res.res.status).toBe(503);
+			expect(res.body).toEqual({ attempt: 1 });
 		});
 	});
 
@@ -174,7 +214,7 @@ describe("Fetcher", () => {
 		expect(err).toBeInstanceOf(DOMException);
 		expect(err.code).toBe(DOMException.ABORT_ERR);
 
-		expect(controller.signal.throwIfAborted).toThrowError();
+		expect(() => controller.signal.throwIfAborted()).toThrowError(DOMException);
 	}, 150);
 });
 afterAll(() => {

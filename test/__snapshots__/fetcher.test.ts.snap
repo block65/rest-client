@@ -36,7 +36,6 @@ exports[`Fetcher > Custom options iso fetcher 1`] = `
     "accept-language": "*",
     "connection": "keep-alive",
     "host": "redacted",
-    "sec-fetch-mode": "cors",
     "user-agent": "node",
     "x-fetcher": "custom",
   },

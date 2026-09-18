@@ -7,10 +7,26 @@ import type {
 	FetcherResponse,
 } from "../../lib/types.ts";
 
+// `RequestInit.headers` accepts a Headers, an array of pairs or a plain
+// object, and only the last of those survives an object spread. Normalising
+// through Headers keeps all three, and `set` overrides a default whatever case
+// either side spells the name in
+function mergedHeaders(
+	defaults: RequestInit["headers"],
+	overrides: Record<string, string> | undefined,
+): Headers {
+	const merged = new Headers(defaults);
+
+	for (const [name, value] of Object.entries(overrides ?? {})) {
+		merged.set(name, value);
+	}
+
+	return merged;
+}
+
 function multiSignal(...signals: (AbortSignal | undefined)[]): AbortSignal {
 	const controller = new AbortController();
 
-	// eslint-disable-next-line no-restricted-syntax
 	for (const signal of signals) {
 		if (signal) {
 			if (signal.aborted) {
@@ -55,9 +71,10 @@ async function intoFetcherResponse(
 	url: URL,
 ): Promise<IsomorphicFetcherResponse> {
 	const contentType = res.headers.get("content-type");
+
 	// const contentLength = res.headers.get('content-length');
 
-	// auto parse json
+	// auto parse JSON
 	if (contentType?.includes("/json")) {
 		const responseJson = (await res.json()) as Jsonifiable;
 		return {
@@ -88,13 +105,12 @@ export function createIsomorphicNativeFetcher(
 		const combinedSignal = multiSignal(
 			signal,
 			rest.retry?.signal,
-			typeof rest.timeout !== "undefined"
+			rest.timeout !== undefined
 				? AbortSignal.timeout(rest.timeout)
 				: undefined,
 		);
 
 		return pRetry(
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			async (_attempt: number) => {
 				const finalBody =
 					body instanceof Uint8Array ? body.slice().buffer : body;
@@ -105,10 +121,7 @@ export function createIsomorphicNativeFetcher(
 					...rest,
 
 					// combined
-					headers: {
-						...rest.headers,
-						...headers,
-					},
+					headers: mergedHeaders(rest.headers, headers),
 					signal: combinedSignal,
 
 					// not overridable
@@ -126,19 +139,19 @@ export function createIsomorphicNativeFetcher(
 				return response;
 			},
 			method === "get"
-				? ({
+				? {
 						retries: 3, // default
 						onFailedAttempt() {
 							combinedSignal.throwIfAborted();
 						},
 						...rest.retry,
 						signal: combinedSignal,
-					} as PRetry.Options)
-				: ({
+					}
+				: {
 						...rest.retry,
 						retries: 0,
 						signal: combinedSignal,
-					} as PRetry.Options),
+					},
 		).catch((err: unknown) => {
 			// retries exhausted — resolve with the final response so non-ok
 			// handling stays the caller's job, with or without retry config
