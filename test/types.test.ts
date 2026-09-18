@@ -23,7 +23,7 @@ const client = new BillingServiceRestApiRestClient(fakeApiUrl, {
 				"x-is-fake": "yep",
 			}),
 		}),
-		// json: expectedApiReturnValue,
+		// json: expectedApiReturnValue
 	}),
 });
 

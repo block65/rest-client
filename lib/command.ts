@@ -1,5 +1,5 @@
 import type { Jsonifiable, JsonValue, UndefinedOnPartialDeep } from "type-fest";
-import type { HttpMethod } from "./types.ts";
+import type { HttpMethod, QueryStyles } from "./types.ts";
 
 type JsonifiableObject =
 	| { [Key in string]?: Jsonifiable }
@@ -22,10 +22,18 @@ export abstract class Command<
 
 	public readonly body: Body | null;
 
-	public readonly query: CommandQuery | undefined;
+	// Callers build the query from an UndefinedOnPartialDeep input, so any
+	// optional member — including one nested inside a deepObject parameter —
+	// can arrive explicitly undefined. stripUndefined only clears the top
+	// level, so the deep-widened type is what is actually held
+	public readonly query: UndefinedOnPartialDeep<CommandQuery> | undefined;
+
+	// Lists the parameters where the document states something other than the
+	// OAS default. An unlisted parameter uses that default
+	public readonly queryStyles: QueryStyles | undefined;
 
 	// Without these, unused generics make Command<A, X> ≡ Command<B, X>
-	// and the cross-client guard silently disappears.
+	// and the cross-client guard silently disappears
 	declare readonly "~input"?: CommandInput;
 	declare readonly "~output"?: CommandOutput;
 
@@ -34,7 +42,7 @@ export abstract class Command<
 	constructor(
 		pathname: string,
 		body: Body | null = null,
-		query?: CommandQuery,
+		query?: UndefinedOnPartialDeep<CommandQuery>,
 		headers?: CommandHeaders,
 	) {
 		this.pathname = pathname;

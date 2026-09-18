@@ -31,6 +31,25 @@ export type FetcherMethod = (
 
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete" | "head";
 
+/**
+ * How a query parameter is written into a query string, from the `style` and
+ * `explode` the OpenAPI document states for it. A generated command lists a
+ * parameter here when its document departs from the OAS default of `form` with
+ * `explode: true`. An unlisted parameter uses that default
+ */
+export type QueryParameterStyle =
+	| "form"
+	| "spaceDelimited"
+	| "pipeDelimited"
+	| "deepObject";
+
+export type QueryParameterEncoding = {
+	style: QueryParameterStyle;
+	explode: boolean;
+};
+
+export type QueryStyles = Readonly<Record<string, QueryParameterEncoding>>;
+
 export type RequestMethod<T = any> = (
 	params: RequestParameters,
 	options?: RuntimeOptions,
@@ -50,12 +69,12 @@ export type RuntimeOptions = {
 	 * otherwise have used (base + pathname + query) and must return the final
 	 * URL. The return value is used as-is — no further pathname or query
 	 * processing is applied — which makes this suitable for one-off targets
-	 * like presigned upload URLs.
+	 * like presigned upload URLs
 	 */
 	url?: ((url: URL) => URL | string | Promise<URL | string>) | undefined;
 	headers?: Record<string, string> | undefined;
 	signal?: AbortSignal;
-	/** @deprecated ? */
+	/** @deprecated  */
 	json?: boolean;
 };
 

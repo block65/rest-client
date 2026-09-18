@@ -1,11 +1,10 @@
-/* eslint-disable max-classes-per-file */
 import {
 	CustomError,
 	isStatusCode,
 	type StatusCode,
 } from "@block65/custom-error";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
-import { Command } from "./command.ts";
+import type { Command } from "./command.ts";
 import { isPlainObject } from "./utils.ts";
 
 export class ServiceError extends CustomError {
@@ -23,7 +22,7 @@ export class ServiceError extends CustomError {
 	 * Reconstructs a ServiceError from a raw response body and the originating
 	 * Response. Structured error bodies ({code?, message, details?}) are
 	 * unpacked into the error's message, code, and details; otherwise falls
-	 * back to `response.statusText` with an `http-<status>` detail.
+	 * back to `response.statusText` with an `http-<status>` detail
 	 */
 	public static fromResponse(response: Response, body: unknown) {
 		if (isPlainObject(body) && "message" in body) {
@@ -38,25 +37,24 @@ export class ServiceError extends CustomError {
 			}
 
 			return err;
-		} else {
-			return new ServiceError(
-				response.statusText,
-				CustomError.UNKNOWN,
-				response,
-			).addDetail({
-				reason: `http-${response.status}`,
-				metadata: {
-					status: response.status.toString(),
-					statusText: response.statusText,
-				},
-			});
 		}
+		return new ServiceError(
+			response.statusText,
+			CustomError.UNKNOWN,
+			response,
+		).addDetail({
+			reason: `http-${response.status}`,
+			metadata: {
+				status: response.status.toString(),
+				statusText: response.statusText,
+			},
+		});
 	}
 }
 
 /**
  * Wraps a response-validation failure with the command/URL context — the bare
- * ValiError on its own doesn't tell you which request produced the bad body.
+ * ValiError on its own doesn't tell you which request produced the bad body
  */
 export class ResponseValidationError extends CustomError {
 	override code = CustomError.INVALID_ARGUMENT;
@@ -77,7 +75,7 @@ export class ResponseValidationError extends CustomError {
 
 /**
  * A request-validation failure safe to surface to API callers, built from
- * Standard Schema issues so it works with any spec-compliant validator.
+ * Standard Schema issues so it works with any spec-compliant validator
  */
 export class PublicValidationError extends CustomError {
 	override code = CustomError.INVALID_ARGUMENT;

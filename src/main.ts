@@ -27,7 +27,7 @@ export type OptionalToUndefined<T extends object> = {
 
 export function stripUndefined<T extends object>(obj: OptionalToUndefined<T>) {
 	return Object.fromEntries(
-		Object.entries(obj).filter(([, v]) => typeof v !== "undefined"),
+		Object.entries(obj).filter(([, v]) => v !== undefined),
 	) as WithoutUndefinedProperties<T>;
 }
 

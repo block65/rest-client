@@ -10,10 +10,11 @@ import {
 import type {
 	FetcherMethod,
 	JsonifiableObject,
+	QueryStyles,
 	ResolvableHeaders,
 	RuntimeOptions,
 } from "./types.ts";
-import { isPlainObject } from "./utils.ts";
+import { isPlainObject, toJsonValue } from "./utils.ts";
 
 function isStandardSchema<TInput, TOutput>(
 	schema: unknown,
@@ -31,7 +32,140 @@ function getCommandResponseSchema<TInput, TOutput>(
 	) {
 		return ctor.responseSchema;
 	}
-	return undefined;
+	return;
+}
+
+// Consulted once, where JSON.stringify consults it, so a toJSON that returns
+// `this` terminates. A plain object skips it, because `toJSON` is a legal
+// member name in a query object
+function resolveQueryValue(input: unknown): unknown {
+	return isPlainObject(input) ? input : toJsonValue(input);
+}
+
+// Each parameter follows the `style` and `explode` its OpenAPI document states
+// for it, per the Style Examples table in OAS 3.2 §4.12.6. `queryStyles` lists
+// the parameters that depart from the OAS default of form with explode; the
+// rest use that default. Under the default an object loses its parent name, so
+// two object parameters sharing a member name arrive identical. The generator
+// warns about that, and about the pairs §4.12.6 marks n/a
+function appendSearchParams(
+	target: URLSearchParams,
+	query: Record<string, unknown> | undefined,
+	styles: QueryStyles | undefined,
+) {
+	// A Blob, a ReadableStream, or a class instance lacking toJSON reaches here,
+	// and each one supplies its toString
+	function appendScalar(name: string, value: unknown) {
+		target.append(name, String(value));
+	}
+
+	// Every member and item takes a key of its own. An object uses its member
+	// names, an array repeats the parameter name. A nested object is hoisted
+	// again, which reaches past what the spec covers
+	function appendExploded(name: string, input: unknown) {
+		const value = resolveQueryValue(input);
+
+		// an invalid Date reaches here, because its toJSON answers null
+		if (value === null || value === undefined) {
+			return;
+		}
+
+		if (Array.isArray(value)) {
+			for (const item of value) {
+				appendExploded(name, item);
+			}
+
+			return;
+		}
+
+		if (isPlainObject(value)) {
+			for (const [member, memberValue] of Object.entries(value)) {
+				appendExploded(member, memberValue);
+			}
+
+			return;
+		}
+
+		appendScalar(name, value);
+	}
+
+	// explode: false puts the parameter in one value. An array joins its items,
+	// an object joins alternating member name and member value. A parameter left
+	// with zero usable parts is skipped
+	function appendJoined(name: string, input: unknown, delimiter: string) {
+		const value = resolveQueryValue(input);
+
+		if (value === null || value === undefined) {
+			return;
+		}
+
+		let parts: unknown[] = [value];
+
+		if (Array.isArray(value)) {
+			parts = value;
+		} else if (isPlainObject(value)) {
+			parts = Object.entries(value).flat();
+		}
+
+		const usable = parts.filter((part) => part !== null && part !== undefined);
+
+		if (usable.length > 0) {
+			appendScalar(
+				name,
+				usable.map((part) => String(resolveQueryValue(part))).join(delimiter),
+			);
+		}
+	}
+
+	// deepObject brackets each member under the parent name, giving ?at[gt]=1 as
+	// in the §4.12.6 row. §4.12.3 covers objects with scalar properties and says
+	// "the representation of array or object properties is not defined", so
+	// anything below one level here extends the spec. Indices appear only where
+	// repeated keys lose the shape, since a[b]=1&a[b]=2 reads back as one object
+	// with a list at b
+	function appendDeep(name: string, input: unknown, nestedInArray: boolean) {
+		const value = resolveQueryValue(input);
+
+		if (value === null || value === undefined) {
+			return;
+		}
+
+		if (Array.isArray(value)) {
+			const indexed =
+				nestedInArray ||
+				value.some((item) => isPlainObject(item) || Array.isArray(item));
+
+			value.forEach((item, index) => {
+				appendDeep(indexed ? `${name}[${index}]` : name, item, true);
+			});
+
+			return;
+		}
+
+		if (isPlainObject(value)) {
+			for (const [member, memberValue] of Object.entries(value)) {
+				appendDeep(`${name}[${member}]`, memberValue, false);
+			}
+
+			return;
+		}
+
+		appendScalar(name, value);
+	}
+
+	const delimiters = { spaceDelimited: " ", pipeDelimited: "|" } as const;
+
+	for (const [name, value] of Object.entries(query ?? {})) {
+		const { style = "form", explode = true } = styles?.[name] ?? {};
+
+		if (style === "deepObject") {
+			appendDeep(name, value, false);
+		} else if (explode) {
+			appendExploded(name, value);
+		} else {
+			appendJoined(name, value, style === "form" ? "," : delimiters[style]);
+		}
+	}
 }
 
 export type RestServiceClientConfig = {
@@ -82,7 +216,7 @@ export class RestServiceClient<
 	// Schema presence on the Command is the sole validation trigger — consumers
 	// opt in by importing from the codegen's validated commands file (or via a
 	// bundler alias in dev). Lean imports skip schema attachment, valibot never
-	// loads, no bundle cost.
+	// loads, no bundle cost
 	async #maybeValidate<
 		TInput extends ClientInput,
 		TOutput extends ClientOutput,
@@ -125,16 +259,10 @@ export class RestServiceClient<
 		InputType extends ClientInput,
 		OutputType extends ClientOutput,
 	>(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
-		const { method, pathname, query } = command;
+		const { method, pathname, query, queryStyles } = command;
 
 		const defaultUrl = new URL(`.${pathname}`, this.#base);
-		for (const [k, v] of Object.entries(query ?? {})) {
-			for (const item of Array.isArray(v) ? v : [v]) {
-				if (item !== null && item !== undefined) {
-					defaultUrl.searchParams.append(k, item.toString());
-				}
-			}
-		}
+		appendSearchParams(defaultUrl.searchParams, query, queryStyles);
 
 		const url = runtimeOptions?.url
 			? new URL(await runtimeOptions.url(defaultUrl))
@@ -169,21 +297,21 @@ export class RestServiceClient<
 	}
 
 	async #resolveHeaders(command: Command, runtimeOptions?: RuntimeOptions) {
-		const clientHeaders = Object.fromEntries(
-			await Promise.all(
-				Object.entries(this.#headers ?? {}).map(
-					async ([key, valueOrResolver]): Promise<[string, string]> => {
-						if (valueOrResolver instanceof Function) {
-							const resolver = valueOrResolver.bind(this);
-							return [key, await resolver()];
-						}
+		const resolved = await Promise.all(
+			Object.entries(this.#headers ?? {}).map(
+				async ([key, valueOrResolver]): Promise<[string, string]> => {
+					if (valueOrResolver instanceof Function) {
+						const resolver = valueOrResolver.bind(this);
+						return [key, await resolver()];
+					}
 
-						const value = valueOrResolver;
-						return [key, value];
-					},
-				),
+					const value = valueOrResolver;
+					return [key, value];
+				},
 			),
 		);
+
+		const clientHeaders = Object.fromEntries(resolved);
 
 		return {
 			...clientHeaders,

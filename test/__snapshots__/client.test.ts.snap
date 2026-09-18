@@ -20,7 +20,6 @@ exports[`Client > Headers 1`] = `
   "connection": "keep-alive",
   "content-type": "application/json;charset=utf-8",
   "host": "redacted",
-  "sec-fetch-mode": "cors",
   "user-agent": "node",
   "x-async": "Bearer 1234567890",
   "x-build-id": "test/123",
