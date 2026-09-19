@@ -6,7 +6,7 @@ type JsonObject = { [Key in string]?: JsonValue };
 type Body = RequestInit["body"] | null | Uint8Array;
 
 export abstract class Command<
-	// WARN: this must be kept compatible with the Client Input and Output types
+	// must stay compatible with the Client Input and Output types
 	CommandInput = unknown,
 	CommandOutput = unknown,
 	CommandQuery extends UndefinedOnPartialDeep<JsonObject> =
@@ -52,7 +52,7 @@ export abstract class Command<
 		return JSON.stringify(this.toJSON());
 	}
 
-	// public API; standard Object.prototype.toString override
+	// public API, overriding Object.prototype.toString
 	public toString() {
 		return this.serialize();
 	}

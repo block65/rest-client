@@ -1,6 +1,6 @@
-export function isPlainObject<T extends Record<string, unknown>>(
+export function isPlainObject(
 	value: unknown,
-): value is T {
+): value is Record<string, unknown> {
 	if (Object.prototype.toString.call(value) !== "[object Object]") {
 		return false;
 	}
@@ -10,21 +10,18 @@ export function isPlainObject<T extends Record<string, unknown>>(
 }
 
 /**
- * The hook JSON.stringify itself honours, applied the same way: a value that
- * knows its own wire form supplies it, and the caller then encodes what comes
- * back. Consulted once per position - never again on the result - so a toJSON
- * that hands back `this` terminates, exactly as JSON.stringify's does.
+ * Applies the toJSON hook the way JSON.stringify does. A value defining
+ * toJSON supplies its wire form, and the caller encodes the result. Runs
+ * once per position, so a toJSON returning `this` terminates
  */
 export function toJsonValue(value: unknown): unknown {
-	if (value === null || typeof value !== "object") {
+	if (value === null || typeof value !== "object" || !("toJSON" in value)) {
 		return value;
 	}
 
-	const { toJSON } = value as { toJSON?: unknown };
+	const { toJSON } = value;
 
-	return typeof toJSON === "function"
-		? (toJSON as (this: unknown) => unknown).call(value)
-		: value;
+	return typeof toJSON === "function" ? toJSON.call(value) : value;
 }
 
 export function jsonStringify(value: unknown): string {

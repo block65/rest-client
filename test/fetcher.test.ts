@@ -57,8 +57,8 @@ describe("Fetcher", () => {
 
 		expect(res.res.status).toBe(404);
 
-		// body is an unread stream here; snapshotting it captures Node's stream
-		// internals, which differ between Node versions
+		// body is an unread stream, so a snapshot of it captures Node stream
+		// internals that differ between Node versions
 		expect(res).toMatchSnapshot({
 			url: expect.any(URL),
 			body: expect.any(ReadableStream),
