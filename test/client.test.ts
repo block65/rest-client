@@ -67,10 +67,6 @@ class FakeJsonErrorCommand extends Command {
 
 type FakeMyHeadersOutput = Record<string, string>;
 
-// Fake500Command/FakeJsonErrorCommand extend Command with a default `unknown`
-// input, so the test client has to accept that too
-type Inputs = unknown;
-
 // fake headers
 class FakeMyHeadersCommand extends Command<never, FakeMyHeadersOutput> {
 	public override method = "get" as const;
@@ -88,7 +84,7 @@ class FakeCommandHeadersCommand extends Command<never, FakeMyHeadersOutput> {
 	}
 }
 
-// collides with the test client's own x-build-id header
+// sets the same header name the test client sets
 class FakeOverrideCommand extends Command<never, FakeMyHeadersOutput> {
 	public override method = "get" as const;
 
@@ -97,16 +93,15 @@ class FakeOverrideCommand extends Command<never, FakeMyHeadersOutput> {
 	}
 }
 
-function expected(entries: [string, string][]): string {
+function expected(entries: [string, string][]) {
 	return new URLSearchParams(entries).toString();
 }
 
-// one entry per name, a list where the name repeats, which is all a server
-// knows without the document
-function flatten(url: URL): Record<string, string | string[]> {
+// reduces a URL to the shape a server receives, one entry per name
+function flatten(url: URL) {
 	return Object.fromEntries(
 		[...new Set(url.searchParams.keys())].map((name) => {
-			// getAll answers at least one value for a name the keys listed
+			// getAll returns at least one value for a name the keys listed
 			const [first = "", ...rest] = url.searchParams.getAll(name);
 
 			return [name, rest.length > 0 ? [first, ...rest] : first];
@@ -115,17 +110,14 @@ function flatten(url: URL): Record<string, string | string[]> {
 }
 
 describe("Client", () => {
-	const client = new RestServiceClient<Inputs>(
-		new URL(`http://0.0.0.0:${port}`),
-		{
-			fetcher,
-			headers: {
-				"x-build-id": "test/123",
-				"x-async": () => Promise.resolve("Bearer 1234567890"),
-				"x-func": () => "hello",
-			},
+	const client = new RestServiceClient(new URL(`http://0.0.0.0:${port}`), {
+		fetcher,
+		headers: {
+			"x-build-id": "test/123",
+			"x-async": () => Promise.resolve("Bearer 1234567890"),
+			"x-func": () => "hello",
 		},
-	);
+	});
 
 	beforeAll(() => {
 		server.listen(port);
@@ -155,10 +147,9 @@ describe("Client", () => {
 		).rejects.toThrowErrorMatchingSnapshot('"Data should be array"');
 	});
 
-	// The snapshot carries no sec-fetch-* headers: undici only appends fetch
-	// metadata for a potentially trustworthy URL, and the test server is on
-	// http://0.0.0.0, which is neither localhost nor in 127.0.0.0/8. They
-	// reappear if this ever moves to 127.0.0.1
+	// undici appends sec-fetch-* metadata for a potentially trustworthy URL
+	// alone, and the test server runs on http://0.0.0.0. Moving it to
+	// 127.0.0.1 puts those headers in the snapshot
 	test("Headers", async () => {
 		const command = new FakeMyHeadersCommand();
 		const res = await client.json(command, {
@@ -246,10 +237,7 @@ describe("Client", () => {
 	describe("query string building", () => {
 		type Query = UndefinedOnPartialDeep<{ [k in string]?: JsonValue }>;
 
-		async function captureUrl(
-			query: Query,
-			styles?: QueryStyles,
-		): Promise<URL> {
+		const captureUrl = async (query: Query, styles?: QueryStyles) => {
 			class QueryCommand extends Command<never, unknown, Query> {
 				public override method = "get" as const;
 				public override queryStyles = styles;
@@ -268,7 +256,14 @@ describe("Client", () => {
 			assert(received);
 
 			return received;
-		}
+		};
+
+		// TYPESAFETY: the serializer tests below drive values `Query` excludes by
+		// design, and appendSearchParams takes unknown values. One cast here
+		// serves all of them
+		const captureAnyUrl = (query: Record<string, unknown>) =>
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion
+			captureUrl(query as Query);
 
 		test("array values become repeated keys (OpenAPI form/explode default)", async () => {
 			const url = await captureUrl({ tags: ["cat", "dog"] });
@@ -311,14 +306,11 @@ describe("Client", () => {
 			);
 		});
 
-		// The document says how a query parameter is encoded. Nothing in the
-		// corpus we generate from declares `deepObject`, so the default below is
-		// what almost every generated command gets, and the styled cases are
-		// driven by the `queryStyles` a command carries
+		// almost every generated command lands on this default, and the styled
+		// cases below run from a command's own `queryStyles`
 		describe("form, explode: true (the OAS default)", () => {
-			// OpenAI's ListAuditLogs effective_at declares no style, so this is
-			// formally what it asks for. Without the hoisting the object reaches
-			// toString() and goes out as "[object Object]"
+			// OpenAI's ListAuditLogs effective_at states this style by omission,
+			// and an unhoisted object would go out as "[object Object]"
 			test("object members are hoisted and the parent name is dropped", async () => {
 				const url = await captureUrl({
 					effective_at: { gt: 1700000000, lte: 1700000100 },
@@ -338,9 +330,8 @@ describe("Client", () => {
 				expect(url.search).not.toContain("object+Object");
 			});
 
-			// the lossiness the style carries: the spec has no way to express this
-			// pair, which is why the generator warns when a document leaves an
-			// object-valued parameter's style unstated
+			// the style is lossy here, so the generator warns when a document
+			// leaves an object-valued parameter's style unstated
 			test("two object params sharing a member name collide, by construction", async () => {
 				const url = await captureUrl({ a: { gt: 1 }, b: { gt: 2 } });
 				expect(url.search).toBe(
@@ -370,9 +361,9 @@ describe("Client", () => {
 				// exactOptionalPropertyTypes makes an explicitly-undefined member
 				// inexpressible here, but stripUndefined only clears the top level, so
 				// one really does reach serialization at runtime
-				const url = await captureUrl({
+				const url = await captureAnyUrl({
 					range: { gt: 1, skipNull: null, skipUndefined: undefined },
-				} as never);
+				});
 				expect(url.search).toBe(`?${expected([["gt", "1"]])}`);
 			});
 
@@ -466,8 +457,8 @@ describe("Client", () => {
 				);
 			});
 
-			// repeated keys cannot express this - a[b]=1&a[b]=2 reads back as a single
-			// object whose b is a list - so the array takes indices here and only here
+			// a[b]=1&a[b]=2 reads back as one object with a list at b, so an array
+			// of objects takes indices instead
 			test("objects inside an array are indexed", async () => {
 				const url = await captureUrl({ a: [{ b: 1 }, { b: 2 }] }, deep);
 				expect(url.search).toBe(
@@ -478,9 +469,8 @@ describe("Client", () => {
 				);
 			});
 
-			// the second inner array is the load-bearing one: indexing only the outer
-			// level would send a[1]=3, which reads back as the scalar "3" rather
-			// than ["3"]
+			// indexing the outer level alone would send a[1]=3, and that reads back
+			// as the scalar "3" instead of ["3"]
 			test("nested arrays are indexed rather than comma-joined", async () => {
 				const url = await captureUrl({ a: [[1, 2], [3]] }, deep);
 				expect(url.search).toBe(
@@ -506,28 +496,26 @@ describe("Client", () => {
 			});
 		});
 
-		// A Date gets no special case: it is just the best-known implementor of
-		// toJSON. Walking it as a bag of members would give nothing at all (it has
-		// no enumerable own properties), and its toString is a timezone-dependent
-		// locale string ("Thu Jan 01 1970 08:00:00 GMT+0800 (...)")
+		// A Date reaches the serializer as an ordinary toJSON implementor. Its
+		// enumerable members are empty and toString gives a timezone dependent
+		// locale string, leaving toJSON as the usable form
 		test("a Date serializes via toJSON as ISO, not a locale string", async () => {
 			// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop is the subject
 			const when = new Date(0);
-			const url = await captureUrl({ when } as never);
+			const url = await captureAnyUrl({ when });
 
 			expect(url.searchParams.get("when")).toBe("1970-01-01T00:00:00.000Z");
 			expect([...url.searchParams.keys()]).toStrictEqual(["when"]);
 		});
 
-		// the reason toJSON is preferred over a Date special case: toISOString
-		// throws RangeError here, and a serializer that cannot throw should stay
-		// that way. toJSON answers null, which the null rule already omits
+		// toISOString throws RangeError on an invalid Date, and this serializer
+		// stays throw-free. toJSON returns null, which the null rule omits
 		test("an invalid Date is omitted rather than throwing", async () => {
-			const url = await captureUrl({
+			const url = await captureAnyUrl({
 				// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Temporal throws on construction, so it cannot express this
 				when: new Date(Number.NaN),
 				keep: "yes",
-			} as never);
+			});
 
 			expect(url.search).toBe(`?${expected([["keep", "yes"]])}`);
 		});
@@ -539,12 +527,12 @@ describe("Client", () => {
 				}
 			}
 
-			const url = await captureUrl({ price: new Money() } as never);
+			const url = await captureAnyUrl({ price: new Money() });
 			expect(url.searchParams.get("price")).toBe("5 USD");
 		});
 
-		// toJSON may legally return anything, so its result goes back through the
-		// normal rules rather than being stringified
+		// toJSON may legally return anything, so its result re-enters the normal
+		// rules instead of being stringified
 		test("a toJSON returning an object follows the object rules", async () => {
 			class Range {
 				public toJSON() {
@@ -552,7 +540,7 @@ describe("Client", () => {
 				}
 			}
 
-			const url = await captureUrl({ at: new Range() } as never);
+			const url = await captureAnyUrl({ at: new Range() });
 			expect(url.search).toBe(
 				`?${expected([
 					["gt", "1"],
@@ -568,7 +556,7 @@ describe("Client", () => {
 				}
 			}
 
-			const url = await captureUrl({ tags: new Tags() } as never);
+			const url = await captureAnyUrl({ tags: new Tags() });
 			expect(url.search).toBe(
 				`?${expected([
 					["tags", "cat"],
@@ -600,21 +588,20 @@ describe("Client", () => {
 				}
 			}
 
-			const url = await captureUrl({ p: new Point() } as never);
+			const url = await captureAnyUrl({ p: new Point() });
 			expect(url.searchParams.get("p")).toBe("1,2");
 		});
 
-		// a built-in whose toJSON and toString agree - unchanged by the switch
+		// a built-in where toJSON and toString agree, unchanged by the switch
 		test("a URL still serializes as its href", async () => {
-			const url = await captureUrl({
-				u: new URL("https://example.test/x"),
-			} as never);
-			expect(url.searchParams.get("u")).toBe("https://example.test/x");
+			const url = await captureAnyUrl({
+				u: new URL("https://example.com/x"),
+			});
+			expect(url.searchParams.get("u")).toBe("https://example.com/x");
 		});
 
-		// scalars and scalar arrays are what almost every generated query is made
-		// of, and the default style leaves them exactly where they were, so this
-		// asserts the exact bytes rather than the shape
+		// almost every generated query is scalars and scalar arrays, and the
+		// default style leaves those bytes untouched, so assert the bytes
 		test("scalars and scalar arrays are byte-identical to the old encoding", async () => {
 			const url = await captureUrl({
 				id: 42,
@@ -631,14 +618,17 @@ describe("Client", () => {
 		// and decoding it has to give the value back. A receiver sees strings, so
 		// the expectation is the input with every scalar stringified
 		describe("round trip through parseQuery", () => {
-			async function roundTrip(query: Query, specs: readonly QueryParamSpec[]) {
+			const roundTrip = async (
+				query: Query,
+				specs: readonly QueryParamSpec[],
+			) => {
 				const styles = Object.fromEntries(
 					specs.map(({ name, style, explode }) => [name, { style, explode }]),
 				);
 				const url = await captureUrl(query, styles);
 
 				return parseQuery(flatten(url), specs);
-			}
+			};
 
 			test("an array survives the default style", async () => {
 				const result = await roundTrip({ tags: ["cat", "dog"] }, [
@@ -769,10 +759,10 @@ describe("Client", () => {
 		});
 	});
 
-	// 0f03f56 guarded the whole merge on this.#headers, so a client configured
-	// without headers sent none at all — not even json()'s own content-type
+	// 0f03f56 guarded the whole merge on this.#headers, so a headerless client
+	// sent an empty set, dropping the content-type json() adds
 	describe("client configured without headers", () => {
-		const bareClient = new RestServiceClient<Inputs>(
+		const bareClient = new RestServiceClient(
 			new URL(`http://0.0.0.0:${port}`),
 			{ fetcher },
 		);
