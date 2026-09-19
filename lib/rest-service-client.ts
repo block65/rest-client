@@ -33,37 +33,27 @@ function getCommandResponseSchema<TInput, TOutput>(
 	return;
 }
 
-// Consulted once, where JSON.stringify consults it, so a toJSON that returns
-// `this` terminates. A plain object skips it, because `toJSON` is a legal
-// member name in a query object
-function resolveQueryValue(input: unknown): unknown {
+// a plain object skips toJSON, which is a legal member name in a query object
+function resolveQueryValue(input: unknown) {
 	return isPlainObject(input) ? input : toJsonValue(input);
 }
 
-// Each parameter follows the `style` and `explode` its OpenAPI document states
-// for it, per the Style Examples table in OAS 3.2 §4.12.6. `queryStyles` lists
-// the parameters that depart from the OAS default of form with explode; the
-// rest use that default. Under the default an object loses its parent name, so
-// two object parameters sharing a member name arrive identical. The generator
-// warns about that, and about the pairs §4.12.6 marks n/a
+// each parameter takes the style and explode of OAS 3.2 §4.12.6
 function appendSearchParams(
 	target: URLSearchParams,
 	query: Record<string, unknown> | undefined,
 	styles: QueryStyles | undefined,
 ) {
-	// A Blob, a ReadableStream, or a class instance lacking toJSON reaches here,
-	// and each one supplies its toString
-	function appendScalar(name: string, value: unknown) {
+	// a Blob, a ReadableStream or a toJSON-less class instance supplies toString
+	const appendScalar = (name: string, value: unknown) => {
 		target.append(name, String(value));
-	}
+	};
 
-	// Every member and item takes a key of its own. An object uses its member
-	// names, an array repeats the parameter name. A nested object is hoisted
-	// again, which reaches past what the spec covers
-	function appendExploded(name: string, input: unknown) {
+	// one key per member or item, hoisting a nested object past what OAS covers
+	const appendExploded = (name: string, input: unknown) => {
 		const value = resolveQueryValue(input);
 
-		// an invalid Date reaches here, because its toJSON answers null
+		// an invalid Date reaches here, its toJSON having returned null
 		if (value === null || value === undefined) {
 			return;
 		}
@@ -85,12 +75,10 @@ function appendSearchParams(
 		}
 
 		appendScalar(name, value);
-	}
+	};
 
-	// explode: false puts the parameter in one value. An array joins its items,
-	// an object joins alternating member name and member value. A parameter left
-	// with zero usable parts is skipped
-	function appendJoined(name: string, input: unknown, delimiter: string) {
+	// one value holds an array's items, or an object's alternating name and value
+	const appendJoined = (name: string, input: unknown, delimiter: string) => {
 		const value = resolveQueryValue(input);
 
 		if (value === null || value === undefined) {
@@ -113,15 +101,10 @@ function appendSearchParams(
 				usable.map((part) => String(resolveQueryValue(part))).join(delimiter),
 			);
 		}
-	}
+	};
 
-	// deepObject brackets each member under the parent name, giving ?at[gt]=1 as
-	// in the §4.12.6 row. §4.12.3 covers objects with scalar properties and says
-	// "the representation of array or object properties is not defined", so
-	// anything below one level here extends the spec. Indices appear only where
-	// repeated keys lose the shape, since a[b]=1&a[b]=2 reads back as one object
-	// with a list at b
-	function appendDeep(name: string, input: unknown, nestedInArray: boolean) {
+	// deepObject brackets each member under the parent name, as ?at[gt]=1
+	const appendDeep = (name: string, input: unknown, nestedInArray: boolean) => {
 		const value = resolveQueryValue(input);
 
 		if (value === null || value === undefined) {
@@ -149,7 +132,7 @@ function appendSearchParams(
 		}
 
 		appendScalar(name, value);
-	}
+	};
 
 	const delimiters = { spaceDelimited: " ", pipeDelimited: "|" } as const;
 
@@ -174,7 +157,7 @@ export type RestServiceClientConfig = {
 } & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
 
 export class RestServiceClient<
-	// WARN: this must be kept compatible with the Command Input and Output types
+	// must stay compatible with the Command Input and Output types
 	ClientInput = unknown,
 	ClientOutput = unknown,
 > {
@@ -211,21 +194,17 @@ export class RestServiceClient<
 		this.#logger?.(`[rest-client] ${msg}`, ...args);
 	}
 
-	// Schema presence on the Command is the sole validation trigger — consumers
-	// opt in by importing from the codegen's validated commands file (or via a
-	// bundler alias in dev). Lean imports skip schema attachment, valibot never
-	// loads, no bundle cost
+	// a schema on the Command is what triggers validation and loads valibot
 	async #maybeValidate<
 		TInput extends ClientInput,
 		TOutput extends ClientOutput,
-	>(
-		command: Command<TInput, TOutput>,
-		body: unknown,
-		url: URL,
-	): Promise<TOutput> {
+	>(command: Command<TInput, TOutput>, body: unknown, url: URL) {
 		const schema = getCommandResponseSchema<TInput, TOutput>(command);
 
 		if (!schema) {
+			// TYPESAFETY: validation runs only against a schema on the Command, so
+			// an absent one leaves the caller's declared TOutput standing
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 			return body as TOutput;
 		}
 
@@ -297,10 +276,10 @@ export class RestServiceClient<
 	async #resolveHeaders(command: Command, runtimeOptions?: RuntimeOptions) {
 		const resolved = await Promise.all(
 			Object.entries(this.#headers ?? {}).map(
-				async ([key, valueOrResolver]): Promise<[string, string]> => {
-					if (valueOrResolver instanceof Function) {
+				async ([key, valueOrResolver]) => {
+					if (typeof valueOrResolver === "function") {
 						const resolver = valueOrResolver.bind(this);
-						return [key, await resolver()];
+						return [key, await resolver()] as const;
 					}
 
 					const value = valueOrResolver;
@@ -368,11 +347,17 @@ export class RestServiceClient<
 		const { body } = await this.response(command, runtimeOptions);
 
 		if (body instanceof ReadableStream) {
+			// TYPESAFETY: the fetcher yields the response body stream untyped, and
+			// OutputType is what the caller declared its chunks to be
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 			return body as ReadableStream<OutputType>;
 		}
 
 		return new ReadableStream<OutputType>({
 			start(controller) {
+				// TYPESAFETY: a non-stream body is the parsed response, which the
+				// caller declared as OutputType
+				// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 				controller.enqueue(body as OutputType);
 				controller.close();
 			},
