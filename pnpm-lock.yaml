@@ -183,9 +183,9 @@ importers:
       '@block65/shared-config':
         specifier: ^0.3.0
         version: 0.3.0(@block65/oxlint-tsgolint@7.0.2001)(@block65/oxlint@1.82.0(@block65/oxlint-tsgolint@7.0.2001))(eslint@10.10.0)(oxfmt@0.68.0)
-      '@tsconfig/strictest':
-        specifier: ^2.0.8
-        version: 2.0.8
+      '@block65/tsconfig':
+        specifier: ^0.3.1
+        version: 0.3.1
       '@types/node':
         specifier: ^26.6.1
         version: 26.6.1
@@ -286,6 +286,9 @@ packages:
         optional: true
       oxlint-tsgolint:
         optional: true
+
+  '@block65/tsconfig@0.3.1':
+    resolution: {integrity: sha512-eDuYELFtiXrjYo/V6N6UQbBx4MKOJD2FZ/mzy2fuypyoNNPRxIaf5FxTl/xavO5y4+5FN2h5kQs81B+ko8MUWw==}
 
   '@cacheable/memory@2.2.0':
     resolution: {integrity: sha512-CTLKqLItRCEixEAewD3/j9DB3/o96gpTPD4eJ1v+DGOlxZRZncRQkGYqqnAGCscYd6RNeXfGeiuCphsPtqyIfQ==}
@@ -592,9 +595,6 @@ packages:
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
-
-  '@tsconfig/strictest@2.0.8':
-    resolution: {integrity: sha512-XnQ7vNz5HRN0r88GYf1J9JJjqtZPiHt2woGJOo2dYqyHGGcd6OLGqSlBB6p1j9mpzja6Oe5BoPqWmeDx6X9rLw==}
 
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
@@ -1460,6 +1460,8 @@ snapshots:
     transitivePeerDependencies:
       - eslint
 
+  '@block65/tsconfig@0.3.1': {}
+
   '@cacheable/memory@2.2.0':
     dependencies:
       '@cacheable/utils': 2.5.0
@@ -1647,8 +1649,6 @@ snapshots:
   '@rolldown/pluginutils@1.0.1': {}
 
   '@standard-schema/spec@1.1.0': {}
-
-  '@tsconfig/strictest@2.0.8': {}
 
   '@types/chai@5.2.3':
     dependencies:
