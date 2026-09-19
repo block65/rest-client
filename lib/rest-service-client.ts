@@ -236,10 +236,15 @@ export class RestServiceClient<
 		InputType extends ClientInput,
 		OutputType extends ClientOutput,
 	>(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
-		const { method, pathname, query, queryStyles } = command;
+		const { method, pathname, query, querySerializer, queryStyles } = command;
 
 		const defaultUrl = new URL(`.${pathname}`, this.#base);
-		appendSearchParams(defaultUrl.searchParams, query, queryStyles);
+
+		if (querySerializer && query) {
+			defaultUrl.search = querySerializer(query);
+		} else {
+			appendSearchParams(defaultUrl.searchParams, query, queryStyles);
+		}
 
 		const url = runtimeOptions?.url
 			? new URL(await runtimeOptions.url(defaultUrl))

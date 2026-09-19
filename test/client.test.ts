@@ -4,10 +4,12 @@ import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
 import { afterAll, assert, beforeAll, describe, expect, test } from "vitest";
 import {
 	Command,
+	type QuerySerializer,
 	type QueryStyles,
 	RestServiceClient,
 	ServiceError,
 	createIsomorphicNativeFetcher,
+	createQueryStringSerializer,
 } from "../src/main.ts";
 import { requestListener } from "./server.ts";
 
@@ -244,12 +246,44 @@ describe("Client", () => {
 			return received;
 		};
 
+		const captureSerialized = async (
+			query: Query,
+			serializer: QuerySerializer,
+		) => {
+			class SerializedCommand extends Command<never, unknown, Query> {
+				public override method = "get" as const;
+				public override querySerializer = serializer;
+				constructor(q: Query) {
+					super("/200", null, q);
+				}
+			}
+
+			let received: URL | undefined;
+			await client.json(new SerializedCommand(query), {
+				url: (u) => {
+					received = u;
+					return new URL(`http://0.0.0.0:${port}/200`);
+				},
+			});
+			assert(received);
+
+			return received;
+		};
+
 		// TYPESAFETY: the serializer tests below drive values `Query` excludes by
 		// design, and appendSearchParams takes unknown values. One cast here
 		// serves all of them
 		const captureAnyUrl = (query: Record<string, unknown>) =>
 			// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 			captureUrl(query as Query);
+
+		// TYPESAFETY: the same, for the serializer harness
+		const captureAnySerialized = (
+			query: Record<string, unknown>,
+			serializer: QuerySerializer,
+		) =>
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion
+			captureSerialized(query as Query, serializer);
 
 		test("array values become repeated keys (OpenAPI form/explode default)", async () => {
 			const url = await captureUrl({ tags: ["cat", "dog"] });
@@ -598,6 +632,56 @@ describe("Client", () => {
 
 			expect(url.search).toBe("?id=42&flag=true&name=alice&tags=cat&tags=dog");
 			expect(url.search).not.toContain("%5B");
+		});
+
+		describe("a command's own serializer", () => {
+			test("it replaces the default", async () => {
+				const url = await captureSerialized(
+					{ tags: ["cat", "dog"] },
+					() => "fixed=1",
+				);
+
+				expect(url.search).toBe("?fixed=1");
+			});
+
+			test("query-string writes the arrayFormat a repeated key cannot", async () => {
+				const url = await captureSerialized(
+					{ tags: ["cat", "dog"] },
+					createQueryStringSerializer({ arrayFormat: "comma" }),
+				);
+
+				expect(url.searchParams.get("tags")).toBe("cat,dog");
+			});
+
+			// query-string sorts its keys unless told not to, which would reorder
+			// every query the client already sends
+			test("query-string keeps insertion order", async () => {
+				const url = await captureSerialized(
+					{ z: 1, a: 2 },
+					createQueryStringSerializer(),
+				);
+
+				expect(url.search).toBe("?z=1&a=2");
+			});
+
+			test("query-string drops null and undefined as the default does", async () => {
+				const url = await captureSerialized(
+					{ a: null, b: undefined, c: "keep" },
+					createQueryStringSerializer(),
+				);
+
+				expect(url.search).toBe("?c=keep");
+			});
+
+			test("query-string applies toJSON before encoding", async () => {
+				const url = await captureAnySerialized(
+					// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop is the subject
+					{ when: new Date(0) },
+					createQueryStringSerializer(),
+				);
+
+				expect(url.searchParams.get("when")).toBe("1970-01-01T00:00:00.000Z");
+			});
 		});
 	});
 

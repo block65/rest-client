@@ -1,5 +1,5 @@
 import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
-import type { HttpMethod, QueryStyles } from "./types.ts";
+import type { HttpMethod, QuerySerializer, QueryStyles } from "./types.ts";
 
 type JsonObject = { [Key in string]?: JsonValue };
 
@@ -28,6 +28,10 @@ export abstract class Command<
 	// Lists the parameters where the document states something other than the
 	// OAS default. An unlisted parameter uses that default
 	public readonly queryStyles: QueryStyles | undefined;
+
+	// Replaces the styles above for the whole query, for a server the OAS
+	// styles cannot describe
+	public readonly querySerializer: QuerySerializer | undefined;
 
 	// Without these, unused generics make Command<A, X> ≡ Command<B, X>
 	// and the cross-client guard silently disappears

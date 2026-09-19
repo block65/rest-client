@@ -17,6 +17,12 @@ export { createIsomorphicNativeFetcher } from "./fetchers/isomorphic-native-fetc
 
 export { jsonStringify } from "../lib/utils.ts";
 
+// the query serializers a command can pick from
+export {
+	createQueryStringSerializer,
+	defaultQuerySerializer,
+} from "../lib/query-serializer.ts";
+
 export type WithoutUndefinedProperties<T extends object> = Simplify<{
 	[P in keyof T]: Exclude<T[P], undefined>;
 }>;
