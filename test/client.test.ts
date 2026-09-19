@@ -8,6 +8,7 @@ import {
 	RestServiceClient,
 	ServiceError,
 	createIsomorphicNativeFetcher,
+	createQueryStringSerializer,
 } from "../src/main.ts";
 import { requestListener } from "./server.ts";
 
@@ -386,6 +387,45 @@ describe("Client", () => {
 				const url = await captureUrl({ tags: ["cat", "dog"] }, () => "fixed=1");
 
 				expect(url.search).toBe("?fixed=1");
+			});
+
+			test("query-string writes the arrayFormat a repeated key cannot", async () => {
+				const url = await captureUrl(
+					{ tags: ["cat", "dog"] },
+					createQueryStringSerializer({ arrayFormat: "comma" }),
+				);
+
+				expect(url.searchParams.get("tags")).toBe("cat,dog");
+			});
+
+			// query-string sorts its keys unless told not to, which would reorder
+			// every query the client already sends
+			test("query-string keeps insertion order", async () => {
+				const url = await captureUrl(
+					{ z: 1, a: 2 },
+					createQueryStringSerializer(),
+				);
+
+				expect(url.search).toBe("?z=1&a=2");
+			});
+
+			test("query-string drops null and undefined as the default does", async () => {
+				const url = await captureUrl(
+					{ a: null, b: undefined, c: "keep" },
+					createQueryStringSerializer(),
+				);
+
+				expect(url.search).toBe("?c=keep");
+			});
+
+			test("query-string applies toJSON before encoding", async () => {
+				const url = await captureAnyUrl(
+					// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop is the subject
+					{ when: new Date(0) },
+					createQueryStringSerializer(),
+				);
+
+				expect(url.searchParams.get("when")).toBe("1970-01-01T00:00:00.000Z");
 			});
 		});
 	});

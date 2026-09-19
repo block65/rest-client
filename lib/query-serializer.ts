@@ -1,3 +1,4 @@
+import queryString from "query-string";
 import type { QuerySerializer } from "./types.ts";
 import { toJsonValue } from "./utils.ts";
 
@@ -27,3 +28,21 @@ export const defaultQuerySerializer: QuerySerializer = (query) => {
 
 	return params.toString();
 };
+
+/**
+ * Serializes with query-string. Its `arrayFormat` covers the shapes a repeated
+ * key cannot, among them `comma`, `bracket` and `separator`
+ */
+export function createQueryStringSerializer(
+	options?: queryString.StringifyOptions,
+): QuerySerializer {
+	return (query) =>
+		queryString.stringify(
+			Object.fromEntries(
+				Object.entries(query).map(([name, value]) => [name, resolve(value)]),
+			),
+			// query-string sorts its keys by default, and that reorders every
+			// query the client already sends
+			{ skipNull: true, sort: false, ...options },
+		);
+}
