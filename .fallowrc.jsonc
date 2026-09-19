@@ -1,5 +1,5 @@
 {
-	"extends": ["npm:@block65/shared-config/fallow.jsonc"],
+	"extends": ["npm:@block65/shared-config/lib/fallow/fallow.jsonc"],
 
 	"entry": ["src/main.ts", "oxfmt.config.ts", "oxlint.config.ts"],
 
