@@ -1,31 +1,22 @@
-# https://just.systems
+check: typecheck lint fmt-check test
 
-_default: typecheck
-
-# typecheck with tsc
 typecheck:
-	pnpm exec tsc
+	pnpm exec oxlint --type-aware --type-check
 
-# lint
 lint:
 	pnpm exec oxlint
 
-# typecheck, then run the test suite
-test: typecheck
-	pnpm exec vitest run
-
-# apply lint fixes, then format
-pretty:
-	pnpm exec oxlint --fix
+fmt:
 	pnpm exec oxfmt
 
-# report formatting that pretty would change
-pretty-check:
+fmt-check:
 	pnpm exec oxfmt --check
 
-# what CI runs
-check: typecheck lint pretty-check test
+test:
+	pnpm exec vitest run
 
-# remove installed dependencies
-dist-clean:
+clean:
 	rm -rf node_modules
+
+# no build, so just alias and keep the standard
+dist-clean: clean

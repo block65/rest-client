@@ -17,7 +17,7 @@
 		".": "./src/main.ts"
 	},
 	"scripts": {
-		"preversion": "just test"
+		"preversion": "just check"
 	},
 	"dependencies": {
 		"@block65/custom-error": "^14.1.0",
