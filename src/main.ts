@@ -17,7 +17,7 @@ export { createIsomorphicNativeFetcher } from "./fetchers/isomorphic-native-fetc
 
 export { jsonStringify } from "../lib/utils.ts";
 
-// the receiving end of the query styles a generated command carries
+// decodes the query styles a generated command declares
 export { parseQuery } from "../lib/query-decoder.ts";
 
 export type WithoutUndefinedProperties<T extends object> = Simplify<{
@@ -29,6 +29,10 @@ export type OptionalToUndefined<T extends object> = {
 };
 
 export function stripUndefined<T extends object>(obj: OptionalToUndefined<T>) {
+	// TYPESAFETY: the filter drops exactly the undefined-valued keys that
+	// WithoutUndefinedProperties removes from T. Object.fromEntries types its
+	// result as a string index signature and cannot express the mapped type
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 	return Object.fromEntries(
 		Object.entries(obj).filter(([, v]) => v !== undefined),
 	) as WithoutUndefinedProperties<T>;

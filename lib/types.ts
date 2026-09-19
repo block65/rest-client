@@ -49,14 +49,11 @@ export type QueryParameterEncoding = {
 export type QueryStyles = Readonly<Record<string, QueryParameterEncoding>>;
 
 /**
- * What a receiver needs to read a query parameter back, which is the encoding
- * plus the two things only the document knows. `type` decides whether one
- * joined value is an array's items or an object's members, and `members` is the
- * only way back from `form` with `explode`, which drops the parent name from
- * the wire entirely.
- *
- * A scalar parameter has no spec. It arrives as the string it was sent as under
- * every style
+ * What a receiver needs to read a query parameter back. `type` selects
+ * between an array's items and an object's members when one joined value
+ * holds both. `members` names the parts to collect for `form` with
+ * `explode`, which omits the parent name from the wire. Object and array
+ * parameters take a spec
  */
 export type QueryParamSpec = QueryParameterEncoding & {
 	readonly name: string;
@@ -79,11 +76,9 @@ export type RequestParameters = {
 
 export type RuntimeOptions = {
 	/**
-	 * Override the request URL for this call. Receives the URL the client would
-	 * otherwise have used (base + pathname + query) and must return the final
-	 * URL. The return value is used as-is — no further pathname or query
-	 * processing is applied — which makes this suitable for one-off targets
-	 * like presigned upload URLs
+	 * Override the request URL for this call. Receives the URL built from
+	 * base, pathname and query, and returns the final URL, used as given.
+	 * Suits one-off targets such as presigned upload URLs
 	 */
 	url?: ((url: URL) => URL | string | Promise<URL | string>) | undefined;
 	headers?: Record<string, string> | undefined;

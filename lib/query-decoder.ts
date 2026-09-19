@@ -14,9 +14,7 @@ const queryMaxDepth = 8;
 const queryBracketsPattern = /^(?:\[[^[\]]*\])+$/;
 
 // a segment named `__proto__` stays an ordinary member on a bare node
-function queryNode(): Record<string, unknown> {
-	return Object.create(null);
-}
+const queryNode: () => Record<string, unknown> = () => Object.create(null);
 
 function isQueryNode(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);

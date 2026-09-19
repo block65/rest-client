@@ -9,7 +9,8 @@ export const requestListener: RequestListener = (req, res) => {
 		const url = new URL(req.url, `http://${req.headers.host}`);
 		const key = url.searchParams.get("key") ?? "default";
 		const failures = Number(url.searchParams.get("failures") ?? "0");
-		const attempt = (flakyAttempts.get(key) ?? 0) + 1;
+		const previous = flakyAttempts.get(key);
+		const attempt = previous === undefined ? 1 : previous + 1;
 		flakyAttempts.set(key, attempt);
 
 		res.writeHead(attempt <= failures ? 503 : 200, {

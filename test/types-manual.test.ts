@@ -6,8 +6,6 @@ import { stripUndefined } from "../src/main.ts";
 
 const fakeApiUrl = new URL("https://192.0.2.1");
 
-// const expectedApiReturnValue = undefined;
-
 type RandomBody = { data: 888 };
 type RandomParams = { something: "heehee" };
 type RandomInput = RandomParams & RandomBody;
@@ -27,7 +25,6 @@ const client = new RandomClient(fakeApiUrl, {
 				"x-is-fake": "yep",
 			}),
 		}),
-		// json: expectedApiReturnValue
 	}),
 });
 
@@ -50,11 +47,7 @@ test("manual command", async () => {
 	expectTypeOf(result).toMatchTypeOf<RandomOutput>();
 });
 
-// Generated clients take an UndefinedOnPartialDeep input and hand the
-// destructured members straight to super(), so a deepObject parameter arrives
-// with `| undefined` on its nested members while the query type spells them
-// exact-optional. stripUndefined only clears the top level, so Command has to
-// accept the deep-widened shape or this stops compiling
+// the deep-widened shape stripUndefined leaves behind, as Command sees it
 type DeepObjectQuery = {
 	effective_at?: { gt?: `${number}`; lte?: `${number}` };
 	project_ids?: readonly string[];
@@ -79,6 +72,11 @@ class DeepObjectQueryCommand extends Command<
 }
 
 test("command with a nested query object", () => {
+	// A generated client destructures an UndefinedOnPartialDeep input into
+	// super(), so nested members arrive widened with `| undefined` while the
+	// query type spells them exact-optional. stripUndefined clears the top
+	// level alone, leaving Command to accept the widened shape
+
 	const command = new DeepObjectQueryCommand({
 		effective_at: { gt: "1", lte: undefined },
 		limit: undefined,

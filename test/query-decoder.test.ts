@@ -6,14 +6,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
 
-function spec(overrides: Partial<QueryParamSpec> = {}): QueryParamSpec {
+function spec(overrides: Partial<QueryParamSpec> = {}) {
 	return {
 		name: "a",
 		type: "object",
 		style: "form",
 		explode: true,
 		...overrides,
-	};
+	} satisfies QueryParamSpec;
 }
 
 describe("parseQuery", () => {

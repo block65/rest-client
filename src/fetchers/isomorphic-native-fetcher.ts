@@ -7,14 +7,11 @@ import type {
 	FetcherResponse,
 } from "../../lib/types.ts";
 
-// `RequestInit.headers` accepts a Headers, an array of pairs or a plain
-// object, and only the last of those survives an object spread. Normalising
-// through Headers keeps all three, and `set` overrides a default whatever case
-// either side spells the name in
+// an object spread keeps only the plain-object form of RequestInit.headers
 function mergedHeaders(
 	defaults: RequestInit["headers"],
 	overrides: Record<string, string> | undefined,
-): Headers {
+) {
 	const merged = new Headers(defaults);
 
 	for (const [name, value] of Object.entries(overrides ?? {})) {
@@ -24,7 +21,7 @@ function mergedHeaders(
 	return merged;
 }
 
-function multiSignal(...signals: (AbortSignal | undefined)[]): AbortSignal {
+function multiSignal(...signals: (AbortSignal | undefined)[]) {
 	const controller = new AbortController();
 
 	for (const signal of signals) {
@@ -47,16 +44,10 @@ type IsomorphicFetcherResponse =
 	| FetcherResponse<Jsonifiable>
 	| FetcherResponse<ReadableStream<Uint8Array> | null>;
 
-// transient statuses worth another attempt; everything else — ok or not —
-// returns to the caller so error semantics never depend on retry config
+// transient statuses worth another attempt, below the 5xx range
 const retryableStatuses = new Set([408, 425, 429]);
 
-function isRetryableStatus(status: number): boolean {
-	return status >= 500 || retryableStatuses.has(status);
-}
-
-// carries the parsed response through p-retry so exhausted retries can still
-// resolve with the final response instead of a context-free error
+// holds the parsed response, so exhausted retries resolve with it
 class RetryableStatusError extends Error {
 	public readonly res: IsomorphicFetcherResponse;
 
@@ -66,16 +57,14 @@ class RetryableStatusError extends Error {
 	}
 }
 
-async function intoFetcherResponse(
-	res: Response,
-	url: URL,
-): Promise<IsomorphicFetcherResponse> {
+async function intoFetcherResponse(res: Response, url: URL) {
 	const contentType = res.headers.get("content-type");
-
-	// const contentLength = res.headers.get('content-length');
 
 	// auto parse JSON
 	if (contentType?.includes("/json")) {
+		// TYPESAFETY: res.json() resolves to any, and a JSON response body is
+		// Jsonifiable by construction
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 		const responseJson = (await res.json()) as Jsonifiable;
 		return {
 			body: responseJson,
@@ -132,7 +121,10 @@ export function createIsomorphicNativeFetcher(
 				const res2 = await intoFetcherResponse(res, url);
 
 				// transient failures throw a plain error so p-retry re-attempts them
-				if (!res.ok && isRetryableStatus(res.status)) {
+				if (
+					!res.ok &&
+					(res.status >= 500 || retryableStatuses.has(res.status))
+				) {
 					throw new RetryableStatusError(res2);
 				}
 

@@ -20,9 +20,8 @@ export class ServiceError extends CustomError {
 
 	/**
 	 * Reconstructs a ServiceError from a raw response body and the originating
-	 * Response. Structured error bodies ({code?, message, details?}) are
-	 * unpacked into the error's message, code, and details; otherwise falls
-	 * back to `res.statusText` with an `http-<status>` detail
+	 * Response. A structured body supplies message, code and details. Any
+	 * other body falls back to `res.statusText` with an `http-<status>` detail
 	 */
 	public static fromResponse(res: Response, body: unknown) {
 		if (isPlainObject(body) && "message" in body) {
@@ -51,8 +50,8 @@ export class ServiceError extends CustomError {
 }
 
 /**
- * Wraps a response-validation failure with the command/URL context — the bare
- * ValiError on its own doesn't tell you which request produced the bad body
+ * Wraps a response-validation failure with the command and URL context. A bare
+ * ValiError names the schema that failed but not the request behind it
  */
 export class ResponseValidationError extends CustomError {
 	override code = CustomError.INVALID_ARGUMENT;
