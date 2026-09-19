@@ -28,4 +28,10 @@ jobs:
           node-version: ${{ matrix.version }}
           cache: "pnpm"
 
-      - run: make test typecheck lint pretty.check
+      - run: pnpm install
+
+      # Spelled out rather than `just`, which runners do not ship.
+      - run: pnpm exec tsc
+      - run: pnpm exec vitest run
+      - run: pnpm exec oxlint --format=github
+      - run: pnpm exec oxfmt --check
