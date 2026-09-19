@@ -53,7 +53,6 @@ export abstract class Command<
 	}
 
 	// public API; standard Object.prototype.toString override
-	// fallow-ignore-next-line unused-class-member
 	public toString() {
 		return this.serialize();
 	}

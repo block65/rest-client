@@ -1,5 +1,8 @@
 {
-	"$schema": "./node_modules/fallow/schema/fallowrc.json",
+	"extends": ["npm:@block65/shared-config/lib/fallow/fallow.jsonc"],
+
+	"entry": ["src/main.ts", "oxfmt.config.ts", "oxlint.config.ts"],
+
 	// Public API of @block65/rest-client. These classes are exported and consumed
 	// by downstream packages, so their public members appear unused locally.
 	"usedClassMembers": [

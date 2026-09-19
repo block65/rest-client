@@ -1,4 +1,4 @@
-check: typecheck lint fmt-check test
+check: typecheck lint fmt-check test dead-code
 
 typecheck:
 	pnpm exec oxlint --type-aware --type-check
@@ -14,6 +14,9 @@ fmt-check:
 
 test:
 	pnpm exec vitest run
+
+dead-code:
+	pnpm exec fallow
 
 clean:
 	rm -rf node_modules
