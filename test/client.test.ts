@@ -4,10 +4,12 @@ import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
 import { afterAll, assert, beforeAll, describe, expect, test } from "vitest";
 import {
 	Command,
+	type QueryParamSpec,
 	type QueryStyles,
 	RestServiceClient,
 	ServiceError,
 	createIsomorphicNativeFetcher,
+	parseQuery,
 } from "../src/main.ts";
 import { requestListener } from "./server.ts";
 
@@ -97,6 +99,19 @@ class FakeOverrideCommand extends Command<never, FakeMyHeadersOutput> {
 
 function expected(entries: [string, string][]): string {
 	return new URLSearchParams(entries).toString();
+}
+
+// one entry per name, a list where the name repeats, which is all a server
+// knows without the document
+function flatten(url: URL): Record<string, string | string[]> {
+	return Object.fromEntries(
+		[...new Set(url.searchParams.keys())].map((name) => {
+			// getAll answers at least one value for a name the keys listed
+			const [first = "", ...rest] = url.searchParams.getAll(name);
+
+			return [name, rest.length > 0 ? [first, ...rest] : first];
+		}),
+	);
 }
 
 describe("Client", () => {
@@ -610,6 +625,147 @@ describe("Client", () => {
 
 			expect(url.search).toBe("?id=42&flag=true&name=alice&tags=cat&tags=dog");
 			expect(url.search).not.toContain("%5B");
+		});
+
+		// parseQuery is the other end of appendSearchParams, so encoding a value
+		// and decoding it has to give the value back. A receiver sees strings, so
+		// the expectation is the input with every scalar stringified
+		describe("round trip through parseQuery", () => {
+			async function roundTrip(query: Query, specs: readonly QueryParamSpec[]) {
+				const styles = Object.fromEntries(
+					specs.map(({ name, style, explode }) => [name, { style, explode }]),
+				);
+				const url = await captureUrl(query, styles);
+
+				return parseQuery(flatten(url), specs);
+			}
+
+			test("an array survives the default style", async () => {
+				const result = await roundTrip({ tags: ["cat", "dog"] }, [
+					{ name: "tags", type: "array", style: "form", explode: true },
+				]);
+
+				expect(result).toEqual({ tags: ["cat", "dog"] });
+			});
+
+			test("a one-item array survives, where the wire loses the array", async () => {
+				const result = await roundTrip({ tags: ["cat"] }, [
+					{ name: "tags", type: "array", style: "form", explode: true },
+				]);
+
+				expect(result).toEqual({ tags: ["cat"] });
+			});
+
+			test("an object survives the default style, by its declared members", async () => {
+				const result = await roundTrip({ effective_at: { gt: 1, lte: 2 } }, [
+					{
+						name: "effective_at",
+						type: "object",
+						style: "form",
+						explode: true,
+						members: ["gt", "lte"],
+					},
+				]);
+
+				expect(result).toEqual({ effective_at: { gt: "1", lte: "2" } });
+			});
+
+			test("an array survives explode: false", async () => {
+				const result = await roundTrip({ tags: ["cat", "dog"] }, [
+					{ name: "tags", type: "array", style: "form", explode: false },
+				]);
+
+				expect(result).toEqual({ tags: ["cat", "dog"] });
+			});
+
+			test("an object survives explode: false", async () => {
+				const result = await roundTrip({ a: { colour: "red", size: "xl" } }, [
+					{ name: "a", type: "object", style: "form", explode: false },
+				]);
+
+				expect(result).toEqual({ a: { colour: "red", size: "xl" } });
+			});
+
+			test("pipeDelimited survives explode: false", async () => {
+				const result = await roundTrip({ tags: ["cat", "dog"] }, [
+					{
+						name: "tags",
+						type: "array",
+						style: "pipeDelimited",
+						explode: false,
+					},
+				]);
+
+				expect(result).toEqual({ tags: ["cat", "dog"] });
+			});
+
+			test("spaceDelimited survives explode: false", async () => {
+				const result = await roundTrip({ tags: ["cat", "dog"] }, [
+					{
+						name: "tags",
+						type: "array",
+						style: "spaceDelimited",
+						explode: false,
+					},
+				]);
+
+				expect(result).toEqual({ tags: ["cat", "dog"] });
+			});
+
+			test("deepObject survives, parent name included", async () => {
+				const result = await roundTrip({ a: { gt: 1, lte: 2 } }, [
+					{ name: "a", type: "object", style: "deepObject", explode: true },
+				]);
+
+				expect(result).toEqual({ a: { gt: "1", lte: "2" } });
+			});
+
+			test("a nested object survives deepObject", async () => {
+				const result = await roundTrip({ a: { b: { c: 1 } } }, [
+					{ name: "a", type: "object", style: "deepObject", explode: true },
+				]);
+
+				expect(result).toEqual({ a: { b: { c: "1" } } });
+			});
+
+			test("objects inside an array survive deepObject indexing", async () => {
+				const result = await roundTrip({ a: [{ b: 1 }, { b: 2 }] }, [
+					{ name: "a", type: "object", style: "deepObject", explode: true },
+				]);
+
+				expect(result).toEqual({ a: [{ b: "1" }, { b: "2" }] });
+			});
+
+			test("nested arrays survive deepObject indexing", async () => {
+				const result = await roundTrip({ a: [[1, 2], [3]] }, [
+					{ name: "a", type: "object", style: "deepObject", explode: true },
+				]);
+
+				expect(result).toEqual({ a: [["1", "2"], ["3"]] });
+			});
+
+			// two object parameters under the default style send the same key, so it
+			// arrives as one list and the first spec claims all of it
+			test("the collision the encoder warns about is visible here too", async () => {
+				const result = await roundTrip({ a: { id: 1 }, b: { id: 2 } }, [
+					{
+						name: "a",
+						type: "object",
+						style: "form",
+						explode: true,
+						members: ["id"],
+					},
+					{
+						name: "b",
+						type: "object",
+						style: "form",
+						explode: true,
+						members: ["id"],
+					},
+				]);
+
+				expect(result).toEqual({ a: { id: ["1", "2"] } });
+			});
 		});
 	});
 
