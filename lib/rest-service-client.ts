@@ -358,7 +358,6 @@ export class RestServiceClient<
 	}
 
 	// public API for streaming responses
-	// fallow-ignore-next-line unused-class-member
 	public async stream<
 		InputType extends ClientInput,
 		OutputType extends ClientOutput,
