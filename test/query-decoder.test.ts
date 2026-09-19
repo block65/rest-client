@@ -241,6 +241,42 @@ describe("parseQuery", () => {
 		});
 	});
 
+	describe("a query string in place of a parsed map", () => {
+		test("a repeated key arrives as the array the map form would hold", () => {
+			expect(
+				parseQuery("?tags=cat&tags=dog", [
+					spec({ name: "tags", type: "array" }),
+				]),
+			).toEqual({ tags: ["cat", "dog"] });
+		});
+
+		test("a single occurrence still becomes an array under form explode", () => {
+			expect(
+				parseQuery("tags=cat", [spec({ name: "tags", type: "array" })]),
+			).toEqual({ tags: ["cat"] });
+		});
+
+		test("percent-encoded delimiters survive to the split", () => {
+			expect(
+				parseQuery("a=cat%2Cdog", [
+					spec({ name: "a", type: "array", explode: false }),
+				]),
+			).toEqual({ a: ["cat", "dog"] });
+		});
+
+		test("bracket keys reach the deepObject decoder", () => {
+			expect(
+				parseQuery("at%5Bgt%5D=1&at%5Blte%5D=2", [
+					spec({ name: "at", style: "deepObject" }),
+				]),
+			).toEqual({ at: { gt: "1", lte: "2" } });
+		});
+
+		test("a leading ? is accepted", () => {
+			expect(parseQuery("?limit=20", [])).toEqual({ limit: "20" });
+		});
+	});
+
 	test("the input is not modified", () => {
 		const query = { gt: "1", "a[b]": "2", tags: "cat" };
 

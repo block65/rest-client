@@ -1,3 +1,4 @@
+import queryString from "query-string";
 import type { QueryParamSpec } from "./types.ts";
 
 // deepObject uses bracket keys, so §4.12.6 gives it no delimiter
@@ -127,35 +128,28 @@ function hoistObject(
 	name: string,
 	members: readonly string[],
 ) {
-	const present = members.filter((member) => member in result);
+	const present = new Set(members.filter((member) => member in result));
 
-	if (present.length === 0) {
+	if (present.size === 0) {
 		// an absent parameter stays absent, short of becoming an empty object
 		return result;
 	}
 
-	const node = Object.fromEntries(
-		present.map((member) => [member, result[member]] as const),
-	);
+	const entries = Object.entries(result);
 
 	return Object.fromEntries([
-		...Object.entries(result).filter(([key]) => !present.includes(key)),
-		[name, node] as const,
+		...entries.filter(([key]) => !present.has(key)),
+		[name, Object.fromEntries(entries.filter(([key]) => present.has(key)))],
 	]);
 }
 
 // alternating member name and member value, so an odd trailing name is dropped
 function pairsToObject(parts: readonly string[]) {
-	const pairs: [string, string][] = [];
+	const pairs = parts.flatMap((value, index) => {
+		const member = index % 2 === 1 ? parts.at(index - 1) : undefined;
 
-	for (let index = 0; index + 1 < parts.length; index += 2) {
-		const member = parts[index];
-		const value = parts[index + 1];
-
-		if (member !== undefined && value !== undefined) {
-			pairs.push([member, value]);
-		}
-	}
+		return member === undefined ? [] : [[member, value] as const];
+	});
 
 	return Object.fromEntries(pairs);
 }
@@ -204,16 +198,18 @@ function applySpec(result: Record<string, unknown>, spec: QueryParamSpec) {
 }
 
 /**
- * Reads back what appendSearchParams wrote. A server gets a flat map of literal
- * query keys, and Hono hands a validator that map. A schema built from the same
- * document expects the declared object or array. `style` and `explode` connect
- * the two, so a command's specs are enough to rebuild the shape.
+ * Reads back what appendSearchParams wrote. Takes the query string itself, or
+ * the flat map of literal query keys that a framework such as Hono hands its
+ * validator. A schema built from the same document expects the declared
+ * object or array, and `style` with `explode` connects the two.
  *
  * Only object and array parameters take a spec
  */
 export function parseQuery(
-	query: Record<string, string | string[]>,
+	query: string | Record<string, string | string[]>,
 	specs: readonly QueryParamSpec[],
 ): Record<string, unknown> {
-	return specs.reduce<Record<string, unknown>>(applySpec, { ...query });
+	const flat = typeof query === "string" ? queryString.parse(query) : query;
+
+	return specs.reduce<Record<string, unknown>>(applySpec, { ...flat });
 }
