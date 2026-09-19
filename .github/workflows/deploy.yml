@@ -23,7 +23,10 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: "pnpm"
 
-      - run: make
+      - run: pnpm install
+
+      # Spelled out rather than `just`, which runners do not ship.
+      - run: pnpm exec tsc
 
       # the trusted publisher grants "npm stage publish", so this uploads for
       # review rather than going live. approve it with pnpm stage approve.
