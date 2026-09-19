@@ -48,6 +48,22 @@ export type QueryParameterEncoding = {
 
 export type QueryStyles = Readonly<Record<string, QueryParameterEncoding>>;
 
+/**
+ * What a receiver needs to read a query parameter back, which is the encoding
+ * plus the two things only the document knows. `type` decides whether one
+ * joined value is an array's items or an object's members, and `members` is the
+ * only way back from `form` with `explode`, which drops the parent name from
+ * the wire entirely.
+ *
+ * A scalar parameter has no spec. It arrives as the string it was sent as under
+ * every style
+ */
+export type QueryParamSpec = QueryParameterEncoding & {
+	readonly name: string;
+	readonly type: "object" | "array";
+	readonly members?: readonly string[];
+};
+
 export type RequestMethod<T = any> = (
 	params: RequestParameters,
 	options?: RuntimeOptions,
