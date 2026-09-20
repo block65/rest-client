@@ -468,12 +468,7 @@ describe("Client", () => {
 			test("deepObject brackets each member under the parent name", async () => {
 				const url = await captureUrl(at, deepObjectSerializer);
 
-				expect(url.search).toBe(
-					`?${expected([
-						["at[gt]", "1"],
-						["at[lte]", "2"],
-					])}`,
-				);
+				expect(url.search).toBe("?at[gt]=1&at[lte]=2");
 			});
 
 			// two object parameters sharing a member name collide under form
@@ -483,12 +478,7 @@ describe("Client", () => {
 					deepObjectSerializer,
 				);
 
-				expect(url.search).toBe(
-					`?${expected([
-						["a[gt]", "1"],
-						["effective_at[gt]", "2"],
-					])}`,
-				);
+				expect(url.search).toBe("?a[gt]=1&effective_at[gt]=2");
 			});
 
 			// §4.12.3 leaves anything but an object undefined for deepObject
