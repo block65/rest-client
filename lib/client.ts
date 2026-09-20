@@ -14,6 +14,11 @@ import type {
 } from "./types.ts";
 import { isPlainObject, toJsonValue } from "./utils.ts";
 
+// spreading an iterable Headers into an object drops every header
+function headerRecord(headers: Record<string, string> | Headers | undefined) {
+	return headers instanceof Headers ? Object.fromEntries(headers) : headers;
+}
+
 function isStandardSchema<TInput, TOutput>(
 	schema: unknown,
 ): schema is s.StandardSchemaV1<TInput, TOutput> {
@@ -298,7 +303,7 @@ export class RestServiceClient<
 		return {
 			...clientHeaders,
 			...command.headers,
-			...runtimeOptions?.headers,
+			...headerRecord(runtimeOptions?.headers),
 		};
 	}
 
@@ -313,7 +318,7 @@ export class RestServiceClient<
 			...runtimeOptions,
 			headers: {
 				accept: "application/json",
-				...runtimeOptions?.headers,
+				...headerRecord(runtimeOptions?.headers),
 				"content-type": "application/json;charset=utf-8",
 			},
 		});
