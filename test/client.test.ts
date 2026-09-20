@@ -164,7 +164,7 @@ describe("Client", () => {
 	test("JSON error attaches response to thrown ServiceError", async () => {
 		const err = await client
 			.json(new FakeJsonErrorCommand())
-			.catch((e: unknown) => e);
+			.catch((error: unknown) => error);
 
 		assert(err instanceof ServiceError);
 		expect(err.response).toBeInstanceOf(Response);
@@ -270,9 +270,7 @@ describe("Client", () => {
 			return received;
 		};
 
-		// TYPESAFETY: the serializer tests below drive values `Query` excludes by
-		// design, and appendSearchParams takes unknown values. One cast here
-		// serves all of them
+		// TYPESAFETY: the tests below drive values Query excludes by design
 		const captureAnyUrl = (query: Record<string, unknown>) =>
 			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- these cases drive values Query excludes
 			captureUrl(query as Query);
@@ -333,7 +331,7 @@ describe("Client", () => {
 			// and an unhoisted object would go out as "[object Object]"
 			test("object members are hoisted and the parent name is dropped", async () => {
 				const url = await captureUrl({
-					effective_at: { gt: 1700000000, lte: 1700000100 },
+					effective_at: { gt: 1_700_000_000, lte: 1_700_000_100 },
 					limit: 20,
 					project_ids: ["proj_a", "proj_b"],
 				});
@@ -404,8 +402,9 @@ describe("Client", () => {
 					{ changes: ["ENV A=1", "ENV B=2"] },
 					joined,
 				);
-				// stated literally, because expected() builds with URLSearchParams,
-				// which writes a space as + where the client writes %20
+
+				// expected() builds with URLSearchParams, which writes a space as
+				// + where the client writes %20
 				expect(url.search).toBe("?changes=ENV%20A%3D1%2CENV%20B%3D2");
 			});
 
@@ -431,6 +430,7 @@ describe("Client", () => {
 						a: { style: "spaceDelimited", explode: false },
 					},
 				);
+
 				// the OAS example for spaceDelimited is percent encoded, id=3%204%205
 				expect(spaced.search).toBe("?a=1%202");
 
@@ -452,7 +452,7 @@ describe("Client", () => {
 
 			test("object members are bracketed under the parent name", async () => {
 				const url = await captureUrl(
-					{ effective_at: { gt: 1700000000, lte: 1700000100 } },
+					{ effective_at: { gt: 1_700_000_000, lte: 1_700_000_100 } },
 					deep,
 				);
 				expect(url.search).toBe(

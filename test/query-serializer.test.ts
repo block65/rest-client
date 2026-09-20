@@ -49,8 +49,7 @@ describe.each(serializers)("%s", (_name, serialize) => {
 	});
 });
 
-// the bytes the client puts on the wire by default, stated once so a change
-// to the encoding shows up here
+// the default's bytes, stated once so a change to the encoding shows here
 describe("the default serializer's output", () => {
 	test.each([
 		["a plain string", { a: "one" }],

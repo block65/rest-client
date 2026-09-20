@@ -6,14 +6,16 @@ import { isPlainObject, toJsonValue } from "./utils.ts";
 function resolve(value: unknown) {
 	const resolved = toJsonValue(value);
 
-	return Array.isArray(resolved) ? resolved.map(toJsonValue) : resolved;
+	return Array.isArray(resolved)
+		? resolved.map((item) => toJsonValue(item))
+		: resolved;
 }
 
 // MDN's recipe, plus toWellFormed so a lone surrogate writes U+FFFD
 function encodeRFC3986URIComponent(str: string) {
 	return encodeURIComponent(str.toWellFormed()).replaceAll(
 		/[!'()*]/g,
-		(char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+		(char) => `%${char.codePointAt(0)?.toString(16).toUpperCase()}`,
 	);
 }
 
@@ -134,10 +136,9 @@ function writeSearchParams(
 }
 
 /**
- * Writes a query the way the OpenAPI document states, taking each parameter's
- * style and explode from the command's `queryStyles`. An unlisted parameter
- * takes the OAS default of `form` with `explode`. Both names and values go
- * through the RFC 3986 encoding, so url.search returns what was written
+ * Writes each parameter with the style and explode its `queryStyles` entry
+ * states, or the OAS default of `form` with `explode`. Names and values take
+ * the RFC 3986 encoding, so url.search returns what was written
  */
 export function createStyledSerializer(
 	styles: QueryStyles | undefined,
@@ -173,7 +174,7 @@ function wellFormed(value: unknown): unknown {
 		return value.toWellFormed();
 	}
 
-	return Array.isArray(value) ? value.map(wellFormed) : value;
+	return Array.isArray(value) ? value.map((item) => wellFormed(item)) : value;
 }
 
 /**

@@ -130,7 +130,7 @@ describe("Fetcher", () => {
 		const err = await fetcher({
 			method: "get",
 			url: new URL("/unresponsive", base),
-		}).catch((e) => e);
+		}).catch((error) => error);
 
 		expect(err).toBeInstanceOf(DOMException);
 		expect(err.code).toBe(DOMException.TIMEOUT_ERR);
@@ -209,7 +209,7 @@ describe("Fetcher", () => {
 			method: "get",
 			url: new URL("/unresponsive", base),
 			signal: controller.signal,
-		}).catch((e) => e);
+		}).catch((error) => error);
 
 		expect(err).toBeInstanceOf(DOMException);
 		expect(err.code).toBe(DOMException.ABORT_ERR);

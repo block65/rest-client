@@ -32,9 +32,7 @@ export type OptionalToUndefined<T extends object> = {
 };
 
 export function stripUndefined<T extends object>(obj: OptionalToUndefined<T>) {
-	// TYPESAFETY: the filter drops exactly the undefined-valued keys that
-	// WithoutUndefinedProperties removes from T. Object.fromEntries types its
-	// result as a string index signature and cannot express the mapped type
+	// TYPESAFETY: fromEntries types its result as an index signature
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- fromEntries returns an index signature, never the mapped type
 	return Object.fromEntries(
 		Object.entries(obj).filter(([, v]) => v !== undefined),

@@ -1,10 +1,10 @@
-import type { RequestListener } from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { type SerializedError, type StatusCode } from "@block65/custom-error";
 
 // per-key attempt counters for the /flaky endpoint
 const flakyAttempts = new Map<string, number>();
 
-export const requestListener: RequestListener = (req, res) => {
+export function requestListener(req: IncomingMessage, res: ServerResponse) {
 	if (req.url?.startsWith("/flaky")) {
 		const url = new URL(req.url, `http://${req.headers.host}`);
 		const key = url.searchParams.get("key") ?? "default";
@@ -89,4 +89,4 @@ export const requestListener: RequestListener = (req, res) => {
 			res.end("<h1>Not Found</h1>");
 			break;
 	}
-};
+}

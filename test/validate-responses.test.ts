@@ -104,7 +104,7 @@ describe("response validation (schema presence drives it)", () => {
 		});
 
 		const command = new GetAccountCommand();
-		const err = await client.json(command).catch((e: unknown) => e);
+		const err = await client.json(command).catch((error: unknown) => error);
 
 		assert(err instanceof ResponseValidationError);
 		expect(err.command).toBe(command);
