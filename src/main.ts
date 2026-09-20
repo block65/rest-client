@@ -45,4 +45,4 @@ export function stripUndefined<T extends object>(obj: OptionalToUndefined<T>) {
 export {
 	RestServiceClient,
 	type RestServiceClientConfig,
-} from "../lib/rest-service-client.ts";
+} from "../lib/client.ts";
