@@ -452,6 +452,18 @@ describe("Client", () => {
 				expect(url.searchParams.get("tags")).toBe("cat|dog");
 			});
 
+			test("spaceDelimited alternates an object's names and values", async () => {
+				const url = await captureUrl(at, spaceDelimitedSerializer);
+
+				expect(url.searchParams.get("at")).toBe("gt 1 lte 2");
+			});
+
+			test("pipeDelimited alternates an object's names and values", async () => {
+				const url = await captureUrl(at, pipeDelimitedSerializer);
+
+				expect(url.searchParams.get("at")).toBe("gt|1|lte|2");
+			});
+
 			test("deepObject brackets each member under the parent name", async () => {
 				const url = await captureUrl(at, deepObjectSerializer);
 
