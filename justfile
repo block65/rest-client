@@ -6,6 +6,10 @@ typecheck:
 lint:
 	pnpm exec oxlint
 
+# CI reads the annotations, which only this format writes
+lint-ci:
+	pnpm exec oxlint --format=github
+
 fmt:
 	pnpm exec oxfmt
 
