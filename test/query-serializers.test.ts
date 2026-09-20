@@ -1,5 +1,7 @@
 import {
+	createQueryStringSerializer,
 	deepObjectSerializer,
+	defaultQuerySerializer,
 	formCommaSerializer,
 	formSerializer,
 	pipeDelimitedSerializer,
@@ -135,5 +137,42 @@ describe("url.search round trip", () => {
 
 			expect(url.search).toBe(`?${search}`);
 		}
+	});
+});
+
+// the client's default, writing the bytes 14.0.1 put on the wire
+describe("defaultQuerySerializer", () => {
+	test("a space is +, where the percent-encoded styles write %20", () => {
+		expect(defaultQuerySerializer({ a: "x y" })).toBe("a=x+y");
+		expect(searchParamsSerializer({ a: "x y" })).toBe("a=x%20y");
+	});
+
+	test("an array repeats its key and null and undefined drop out", () => {
+		expect(defaultQuerySerializer({ id: [3, null, 4, undefined] })).toBe(
+			"id=3&id=4",
+		);
+	});
+
+	test("an object writes as JSON rather than [object Object]", () => {
+		expect(defaultQuerySerializer({ a: { b: 1 } })).toBe("a=%7B%22b%22%3A1%7D");
+	});
+});
+
+// query-string reaches the shapes a repeated key cannot
+describe("createQueryStringSerializer", () => {
+	test("arrayFormat comma joins an array under one key", () => {
+		expect(
+			createQueryStringSerializer({ arrayFormat: "comma" })({ id: [3, 4, 5] }),
+		).toBe("id=3,4,5");
+	});
+
+	test("arrayFormat bracket repeats the key with brackets", () => {
+		expect(
+			createQueryStringSerializer({ arrayFormat: "bracket" })({ id: [3, 4] }),
+		).toBe("id[]=3&id[]=4");
+	});
+
+	test("without options it repeats the key", () => {
+		expect(createQueryStringSerializer()({ id: [3, 4] })).toBe("id=3&id=4");
 	});
 });

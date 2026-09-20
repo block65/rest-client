@@ -17,7 +17,11 @@ export { createIsomorphicNativeFetcher } from "./fetchers/isomorphic-native-fetc
 
 export { jsonStringify } from "../lib/utils.ts";
 
-export { searchParamsSerializer } from "../lib/query-serializers.ts";
+export {
+	createQueryStringSerializer,
+	defaultQuerySerializer,
+	searchParamsSerializer,
+} from "../lib/query-serializers.ts";
 
 // decodes the query styles a generated command declares
 export { parseQuery } from "../lib/query-decoder.ts";

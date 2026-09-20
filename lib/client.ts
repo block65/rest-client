@@ -6,7 +6,7 @@ import {
 	ResponseValidationError,
 	ServiceError,
 } from "./errors.ts";
-import { searchParamsSerializer } from "./query-serializers.ts";
+import { defaultQuerySerializer } from "./query-serializers.ts";
 import { appendSearchParams } from "./query-styles.ts";
 import type {
 	FetcherMethod,
@@ -169,8 +169,8 @@ export class RestServiceClient<
 				// one serializer over the whole query cannot vary by parameter
 				appendSearchParams(url.searchParams, query, queryStyles);
 			} else {
-				// searchParamsSerializer repeats a key per array item
-				url.search = (querySerializer ?? searchParamsSerializer)(query);
+				// defaultQuerySerializer repeats a key per array item
+				url.search = (querySerializer ?? defaultQuerySerializer)(query);
 			}
 		}
 

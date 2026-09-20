@@ -1,4 +1,5 @@
 import queryString, { type StringifyOptions } from "query-string";
+import type { QuerySerializer } from "./types.ts";
 import { isPlainObject, jsonStringify, toJsonValue } from "./utils.ts";
 
 function queryValue(value: unknown) {
@@ -41,7 +42,10 @@ function alternating(value: unknown) {
 }
 
 // query-string alphabetises every query unless sort is off
-const options = { skipNull: true, sort: false } satisfies StringifyOptions;
+const stringifyOptions = {
+	skipNull: true,
+	sort: false,
+} satisfies StringifyOptions;
 
 // what query-string's own encoder writes, for the parts it is handed raw
 function encodeRFC3986URIComponent(str: string) {
@@ -99,10 +103,42 @@ function merged(pairs: readonly (readonly [string, string[]])[]) {
  */
 export function searchParamsSerializer(query: Record<string, unknown>) {
 	return queryString.stringify(query, {
-		...options,
+		...stringifyOptions,
 		arrayFormat: "none",
 		replacer: (_key, value) => queryParts(value),
 	});
+}
+
+/**
+ * Repeats a key per array item and drops null and undefined. The client writes
+ * a query this way unless the command names another serializer. URLSearchParams
+ * assembles it, so a space is `+`, as 14.0.1 wrote it
+ */
+export const defaultQuerySerializer: QuerySerializer = (query) => {
+	const params = new URLSearchParams();
+
+	for (const [name, value] of Object.entries(query)) {
+		for (const part of queryParts(value)) {
+			params.append(name, part);
+		}
+	}
+
+	return params.toString();
+};
+
+/**
+ * Serializes with query-string. Its `arrayFormat` covers the shapes a repeated
+ * key cannot, among them `comma`, `bracket` and `separator`
+ */
+export function createQueryStringSerializer(
+	options?: StringifyOptions,
+): QuerySerializer {
+	return (query) =>
+		queryString.stringify(query, {
+			...stringifyOptions,
+			replacer: (_key, value) => queryParts(value),
+			...options,
+		});
 }
 
 /**
@@ -115,7 +151,7 @@ export function searchParamsSerializer(query: Record<string, unknown>) {
 export function formSerializer(query: Record<string, unknown>) {
 	return queryString.stringify(
 		merged(explode(query, (_name, member) => member)),
-		{ ...options, arrayFormat: "none" },
+		{ ...stringifyOptions, arrayFormat: "none" },
 	);
 }
 
@@ -173,7 +209,7 @@ export function deepObjectSerializer(query: Record<string, unknown>) {
 	);
 
 	return queryString.stringify(merged(bracketed), {
-		...options,
+		...stringifyOptions,
 		arrayFormat: "none",
 		encode: false,
 	});
