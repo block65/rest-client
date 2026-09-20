@@ -1,7 +1,4 @@
 import { createServer } from "node:http";
-import getPort from "get-port";
-import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
-import { afterAll, assert, beforeAll, describe, expect, test } from "vitest";
 import {
 	Command,
 	type QuerySerializer,
@@ -12,8 +9,12 @@ import {
 	formCommaSerializer,
 	formSerializer,
 	pipeDelimitedSerializer,
+	searchParamsSerializer,
 	spaceDelimitedSerializer,
-} from "../src/main.ts";
+} from "@block65/rest-client";
+import getPort from "get-port";
+import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
+import { afterAll, assert, beforeAll, describe, expect, test } from "vitest";
 import { requestListener } from "./server.ts";
 
 const port = await getPort();
@@ -498,6 +499,38 @@ describe("Client", () => {
 				);
 
 				expect(url.searchParams.get("limit")).toBe("20");
+			});
+
+			// the client assigns a serializer's output to url.search, so
+			// url.search must give back the same bytes
+			test("url.search returns every style's output unchanged", () => {
+				const serializers = [
+					searchParamsSerializer,
+					formSerializer,
+					formCommaSerializer,
+					spaceDelimitedSerializer,
+					pipeDelimitedSerializer,
+					deepObjectSerializer,
+				];
+
+				const queries: Record<string, unknown>[] = [
+					tags,
+					at,
+					{ q: "a b&c=d#e", limit: 20 },
+					{ pct: "100%", already: "%20" },
+					{ plus: "a+b", quote: "it's", brackets: "a[b]" },
+					{ ...tags, ...at, empty: "" },
+				];
+
+				for (const serializer of serializers) {
+					for (const query of queries) {
+						const search = serializer(query);
+						const url = new URL("https://192.0.2.1/p");
+						url.search = search;
+
+						expect(url.search).toBe(`?${search}`);
+					}
+				}
 			});
 
 			test("every style omits null and undefined", async () => {

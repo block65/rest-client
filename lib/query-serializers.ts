@@ -12,7 +12,6 @@ function toJson(value: unknown) {
 	return typeof toJSON === "function" ? toJSON.call(value) : value;
 }
 
-// a plain object goes out as JSON, any other non-scalar as its toString
 function queryValue(value: unknown) {
 	const resolved = toJson(value);
 
@@ -23,7 +22,6 @@ function queryValue(value: unknown) {
 	return isPlainObject(resolved) ? jsonStringify(resolved) : String(resolved);
 }
 
-// an array contributes one value per item, null and undefined none
 function queryParts(value: unknown) {
 	const resolved = toJson(value);
 
@@ -36,7 +34,7 @@ function queryParts(value: unknown) {
 const options = { skipNull: true, sort: false } satisfies StringifyOptions;
 
 // without explode, an object is one value of alternating names and values
-function alternating(_key: string, value: unknown) {
+function alternating(value: unknown) {
 	return isPlainObject(value)
 		? Object.entries(value).flatMap(([member, memberValue]) => {
 				const part = queryValue(memberValue);
@@ -92,41 +90,45 @@ export function formSerializer(query: Record<string, unknown>) {
 	);
 }
 
-/**
- * `form` without `explode`. One value per parameter. An array joins on a
- * comma, and an object alternates its member names and values
- */
-export function formCommaSerializer(query: Record<string, unknown>) {
-	return queryString.stringify(query, {
-		...options,
-		arrayFormat: "comma",
-		replacer: alternating,
-	});
+// query-string's own encoder, so every style encodes a value the same way
+function encodePart(part: string) {
+	return encodeURIComponent(part).replaceAll(
+		/[!'()*]/g,
+		(char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+	);
+}
+
+// query-string joins on one character, and spaceDelimited needs %20
+function delimitedSerializer(delimiter: string) {
+	return (query: Record<string, unknown>) =>
+		Object.entries(query)
+			.flatMap(([name, value]) => {
+				const parts = alternating(value);
+
+				return parts.length === 0
+					? []
+					: `${encodePart(name)}=${parts.map(encodePart).join(delimiter)}`;
+			})
+			.join("&");
 }
 
 /**
- * `spaceDelimited`, stated without `explode`
+ * `form` without `explode`. An array joins on a comma, and an object
+ * alternates its member names and values
  */
-export function spaceDelimitedSerializer(query: Record<string, unknown>) {
-	return queryString.stringify(query, {
-		...options,
-		arrayFormat: "separator",
-		arrayFormatSeparator: " ",
-		replacer: alternating,
-	});
-}
+export const formCommaSerializer = delimitedSerializer(",");
 
 /**
- * `pipeDelimited`, stated without `explode`
+ * `spaceDelimited`, stated without `explode`. The OAS example is percent
+ * encoded, `id=3%204%205`
  */
-export function pipeDelimitedSerializer(query: Record<string, unknown>) {
-	return queryString.stringify(query, {
-		...options,
-		arrayFormat: "separator",
-		arrayFormatSeparator: "|",
-		replacer: alternating,
-	});
-}
+export const spaceDelimitedSerializer = delimitedSerializer("%20");
+
+/**
+ * `pipeDelimited`, stated without `explode`. The OAS example leaves the pipe
+ * as it is, `id=3|4|5`, and a query may hold one
+ */
+export const pipeDelimitedSerializer = delimitedSerializer("|");
 
 /**
  * `deepObject`, which brackets each member under the parent name as `at[gt]=1`.
