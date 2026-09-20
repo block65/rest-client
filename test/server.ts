@@ -40,6 +40,9 @@ export const requestListener: RequestListener = (req, res) => {
 				JSON.stringify({
 					...req.headers,
 					host: "redacted", // redacted as it changes every test run
+					// node 24's fetch sends it and node 26's does not, and what
+					// the client sets is the subject here
+					"sec-fetch-mode": undefined,
 				}),
 			);
 			break;
