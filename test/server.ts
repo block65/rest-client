@@ -36,15 +36,20 @@ export const requestListener: RequestListener = (req, res) => {
 
 		case "/my-headers":
 			res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
-			res.end(
-				JSON.stringify({
-					...req.headers,
-					host: "redacted", // redacted as it changes every test run
-					// node 24's fetch sends it and node 26's does not, and what
-					// the client sets is the subject here
-					"sec-fetch-mode": undefined,
-				}),
-			);
+
+			// which sec-fetch headers undici sends moves with the node version,
+			// so the snapshots leave this one out
+			{
+				const { ["sec-fetch-mode"]: fetchMode, ...headers } = req.headers;
+				void fetchMode;
+
+				res.end(
+					JSON.stringify({
+						...headers,
+						host: "redacted", // redacted as it changes every test run
+					}),
+				);
+			}
 			break;
 		case "/index.html":
 			res.writeHead(200, { "content-type": "text/html" });

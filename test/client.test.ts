@@ -404,9 +404,9 @@ describe("Client", () => {
 					{ changes: ["ENV A=1", "ENV B=2"] },
 					joined,
 				);
-				expect(url.search).toBe(
-					`?${expected([["changes", "ENV A=1,ENV B=2"]])}`,
-				);
+				// stated literally, because expected() builds with URLSearchParams,
+				// which writes a space as + where the client writes %20
+				expect(url.search).toBe("?changes=ENV%20A%3D1%2CENV%20B%3D2");
 			});
 
 			test("an object joins as alternating member name and value", async () => {
@@ -431,7 +431,8 @@ describe("Client", () => {
 						a: { style: "spaceDelimited", explode: false },
 					},
 				);
-				expect(spaced.search).toBe(`?${expected([["a", "1 2"]])}`);
+				// the OAS example for spaceDelimited is percent encoded, id=3%204%205
+				expect(spaced.search).toBe("?a=1%202");
 
 				const piped = await captureUrl(
 					{ a: [1, 2] },
@@ -593,12 +594,7 @@ describe("Client", () => {
 				a: { gt: 1, toJSON: "not a hook" },
 			});
 
-			expect(url.search).toBe(
-				`?${expected([
-					["gt", "1"],
-					["toJSON", "not a hook"],
-				])}`,
-			);
+			expect(url.search).toBe("?gt=1&toJSON=not%20a%20hook");
 		});
 
 		test("non-plain objects with no toJSON are left to their own toString", async () => {

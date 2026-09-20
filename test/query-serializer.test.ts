@@ -48,3 +48,36 @@ describe.each(serializers)("%s", (_name, serialize) => {
 		expect(roundTrip(serialize({ a: "\uD800" })).read).toBe("�");
 	});
 });
+
+// the bytes the client puts on the wire by default, stated once so a change
+// to the encoding shows up here
+describe("the default serializer's output", () => {
+	test.each([
+		["a plain string", { a: "one" }],
+		["an array", { a: ["one", "two"] }],
+		["a nested object, hoisted", { effective_at: { gt: 1, lte: 2 } }],
+		// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop is the subject
+		["a Date, through toJSON", { at: new Date(0) }],
+		["null", { a: null, b: "keep" }],
+		["undefined", { a: undefined, b: "keep" }],
+		["a space", { a: "one two" }],
+		["reserved characters", { a: "a&b=c#d?e/f" }],
+		["unicode", { a: "café 🎉" }],
+		["a lone surrogate", { a: "\uD800" }],
+	])("%s", (_case, query) => {
+		expect(defaultQuerySerializer(query)).toMatchSnapshot();
+	});
+
+	test.each([
+		["a space", "one two"],
+		["reserved characters", "a&b=c#d?e/f"],
+		["unicode", "café 🎉"],
+		["a plus", "a+b"],
+	])("%s survives url.search and searchParams.get", (_case, value) => {
+		const url = new URL("https://192.0.2.1/");
+		url.search = defaultQuerySerializer({ a: value });
+
+		expect(url.searchParams.get("a")).toBe(value);
+		expect(url.search.slice(1)).toBe(defaultQuerySerializer({ a: value }));
+	});
+});
