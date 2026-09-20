@@ -62,8 +62,7 @@ async function intoFetcherResponse(res: Response, url: URL) {
 
 	// auto parse JSON
 	if (contentType?.includes("/json")) {
-		// TYPESAFETY: res.json() resolves to unknown, and a JSON response body
-		// is Jsonifiable by construction
+		// TYPESAFETY: res.json() resolves to unknown, a JSON body is Jsonifiable
 		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a parsed JSON body is Jsonifiable
 		const responseJson = (await res.json()) as Jsonifiable;
 		return {
@@ -80,6 +79,14 @@ async function intoFetcherResponse(res: Response, url: URL) {
 	} satisfies FetcherResponse<ReadableStream<Uint8Array> | null>;
 }
 
+function timeoutSignal(timeout: number | undefined) {
+	if (timeout === undefined) {
+		return;
+	}
+
+	return AbortSignal.timeout(timeout);
+}
+
 export function createIsomorphicNativeFetcher(
 	options: Omit<RequestInit, "method" | "body" | "signal"> & {
 		fetch?: typeof globalThis.fetch;
@@ -88,21 +95,21 @@ export function createIsomorphicNativeFetcher(
 	} = {},
 ): FetcherMethod {
 	return async (params: FetcherParams) => {
-		const { url, method, body = null, headers, credentials, signal } = params;
+		const { url, method, body, headers, credentials, signal } = params;
 		const { fetch = globalThis.fetch, ...rest } = options;
 
 		const combinedSignal = multiSignal(
 			signal,
 			rest.retry?.signal,
-			rest.timeout !== undefined
-				? AbortSignal.timeout(rest.timeout)
-				: undefined,
+			timeoutSignal(rest.timeout),
 		);
 
 		return pRetry(
 			async (_attempt: number) => {
+				// fetch reads a copy, so a later write to the caller's Uint8Array
+				// leaves the request as it was
 				const finalBody =
-					body instanceof Uint8Array ? body.slice().buffer : body;
+					body instanceof Uint8Array ? new Uint8Array(body).buffer : body;
 
 				const res = await fetch(url, {
 					// overridable
@@ -115,7 +122,9 @@ export function createIsomorphicNativeFetcher(
 
 					// not overridable
 					method,
-					body: finalBody,
+
+					// exactOptionalPropertyTypes rejects an explicit undefined
+					...(finalBody === undefined ? {} : { body: finalBody }),
 				});
 
 				const res2 = await intoFetcherResponse(res, url);
@@ -144,13 +153,13 @@ export function createIsomorphicNativeFetcher(
 						retries: 0,
 						signal: combinedSignal,
 					},
-		).catch((err: unknown) => {
+		).catch((error: unknown) => {
 			// retries exhausted — resolve with the final response so non-ok
 			// handling stays the caller's job, with or without retry config
-			if (err instanceof RetryableStatusError) {
-				return err.res;
+			if (error instanceof RetryableStatusError) {
+				return error.res;
 			}
-			throw err;
+			throw error;
 		});
 	};
 }

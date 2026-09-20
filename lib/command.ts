@@ -42,7 +42,7 @@ export abstract class Command<
 
 	constructor(
 		pathname: string,
-		body: Body | null = null,
+		body?: Body | null,
 		query?: UndefinedOnPartialDeep<CommandQuery>,
 		headers?: CommandHeaders,
 	) {
