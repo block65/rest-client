@@ -274,7 +274,7 @@ describe("Client", () => {
 		// design, and appendSearchParams takes unknown values. One cast here
 		// serves all of them
 		const captureAnyUrl = (query: Record<string, unknown>) =>
-			// oxlint-disable-next-line typescript/no-unsafe-type-assertion
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- these cases drive values Query excludes
 			captureUrl(query as Query);
 
 		// TYPESAFETY: the same, for the serializer harness
@@ -282,7 +282,7 @@ describe("Client", () => {
 			query: Record<string, unknown>,
 			serializer: QuerySerializer,
 		) =>
-			// oxlint-disable-next-line typescript/no-unsafe-type-assertion
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- these cases drive values Query excludes
 			captureSerialized(query as Query, serializer);
 
 		test("array values become repeated keys (OpenAPI form/explode default)", async () => {
