@@ -14,7 +14,7 @@ jobs:
   check:
     strategy:
       matrix:
-        version: [26]
+        version: [24, 26]
         os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
