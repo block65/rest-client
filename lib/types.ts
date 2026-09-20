@@ -45,7 +45,7 @@ export type RequestParameters = {
 	method: HttpMethod;
 	query?: Record<string, string | number | (string | number)[]> | undefined;
 	body?: unknown;
-	headers?: Record<string, string> | undefined;
+	headers?: Record<string, string> | Headers | undefined;
 };
 
 export type RuntimeOptions = {
@@ -55,7 +55,7 @@ export type RuntimeOptions = {
 	 * Suits one-off targets such as presigned upload URLs
 	 */
 	url?: ((url: URL) => URL | string | Promise<URL | string>) | undefined;
-	headers?: Record<string, string> | undefined;
+	headers?: Record<string, string> | undefined | Headers;
 	signal?: AbortSignal;
 	/** @deprecated  */
 	json?: boolean;
