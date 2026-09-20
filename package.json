@@ -2,7 +2,7 @@
 	"name": "@block65/rest-client",
 	"version": "14.1.0",
 	"private": false,
-	"description": "Block65 REST client",
+	"description": "Opinionated REST client for Block65 projects",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
