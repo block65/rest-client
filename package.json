@@ -26,7 +26,7 @@
 		"query-string": "^9.5.1"
 	},
 	"devDependencies": {
-		"@block65/shared-config": "^0.3.0",
+		"@block65/shared-config": "^0.3.2",
 		"@block65/tsconfig": "^0.3.1",
 		"@types/node": "^26.6.1",
 		"fallow": "^3.27.0",

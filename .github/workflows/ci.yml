@@ -28,11 +28,13 @@ jobs:
           node-version: ${{ matrix.version }}
           cache: "pnpm"
 
+      # The package scripts call just, so it is needed before install
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+
       - run: pnpm install
 
-      # Spelled out rather than `just`, which runners do not ship.
-      - run: pnpm exec oxlint --type-aware --type-check
-      - run: pnpm exec oxlint --format=github
-      - run: pnpm exec oxfmt --check
-      - run: pnpm exec vitest run
-      - run: pnpm exec fallow
+      - run: just typecheck
+      - run: just lint
+      - run: just fmt-check
+      - run: just test
+      - run: just dead-code

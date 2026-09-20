@@ -23,10 +23,12 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: "pnpm"
 
+      # The package scripts call just, so it is needed before install
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+
       - run: pnpm install
 
-      # Spelled out rather than `just`, which runners do not ship.
-      - run: pnpm exec oxlint --type-aware --type-check
+      - run: just typecheck
 
       # the trusted publisher grants "npm stage publish", so this uploads for
       # review rather than going live. approve it with pnpm stage approve.
