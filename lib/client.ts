@@ -125,18 +125,9 @@ export class RestServiceClient<
 		InputType extends ClientInput,
 		OutputType extends ClientOutput,
 	>(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
-		const { method, pathname, query, querySerializer } = command;
+		const { method } = command;
 
-		let url = new URL(`.${pathname}`, this.#base);
-
-		if (query) {
-			// searchParamsSerializer repeats a key per array item
-			url.search = (querySerializer ?? searchParamsSerializer)(query);
-		}
-
-		if (runtimeOptions?.url) {
-			url = new URL(await runtimeOptions.url(url));
-		}
+		const url = await this.#buildUrl(command, runtimeOptions);
 
 		this.#log("req: %s %s", method.toUpperCase(), url, runtimeOptions);
 
@@ -164,6 +155,20 @@ export class RestServiceClient<
 		);
 
 		return { ...result, url };
+	}
+
+	// the runtime hook rewrites the serialized URL, so it runs last
+	async #buildUrl(command: Command, runtimeOptions?: RuntimeOptions) {
+		const { pathname, query, querySerializer } = command;
+
+		const url = new URL(`.${pathname}`, this.#base);
+
+		if (query) {
+			// searchParamsSerializer repeats a key per array item
+			url.search = (querySerializer ?? searchParamsSerializer)(query);
+		}
+
+		return runtimeOptions?.url ? new URL(await runtimeOptions.url(url)) : url;
 	}
 
 	async #resolveHeaders(command: Command, runtimeOptions?: RuntimeOptions) {
