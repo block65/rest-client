@@ -7,6 +7,7 @@ import {
 	ServiceError,
 } from "./errors.ts";
 import { searchParamsSerializer } from "./query-serializers.ts";
+import { appendSearchParams } from "./query-styles.ts";
 import type {
 	FetcherMethod,
 	ResolvableHeaders,
@@ -159,13 +160,18 @@ export class RestServiceClient<
 
 	// the runtime hook rewrites the serialized URL, so it runs last
 	async #buildUrl(command: Command, runtimeOptions?: RuntimeOptions) {
-		const { pathname, query, querySerializer } = command;
+		const { pathname, query, querySerializer, queryStyles } = command;
 
 		const url = new URL(`.${pathname}`, this.#base);
 
 		if (query) {
-			// searchParamsSerializer repeats a key per array item
-			url.search = (querySerializer ?? searchParamsSerializer)(query);
+			if (queryStyles) {
+				// one serializer over the whole query cannot vary by parameter
+				appendSearchParams(url.searchParams, query, queryStyles);
+			} else {
+				// searchParamsSerializer repeats a key per array item
+				url.search = (querySerializer ?? searchParamsSerializer)(query);
+			}
 		}
 
 		return runtimeOptions?.url ? new URL(await runtimeOptions.url(url)) : url;

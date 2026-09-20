@@ -1,33 +1,26 @@
 import queryString, { type StringifyOptions } from "query-string";
-import { isPlainObject, jsonStringify } from "./utils.ts";
-
-// applied once per position, so a toJSON returning `this` terminates
-function toJson(value: unknown) {
-	if (value === null || typeof value !== "object" || !("toJSON" in value)) {
-		return value;
-	}
-
-	const { toJSON } = value;
-
-	return typeof toJSON === "function" ? toJSON.call(value) : value;
-}
+import { isPlainObject, jsonStringify, toJsonValue } from "./utils.ts";
 
 function queryValue(value: unknown) {
-	const resolved = toJson(value);
+	const resolved = toJsonValue(value);
 
 	if (resolved === null || resolved === undefined) {
 		return;
 	}
 
+	if (isPlainObject(resolved)) {
+		return jsonStringify(resolved);
+	}
+
 	// a lone surrogate writes U+FFFD instead of throwing URIError out of
-	// whichever encoder sees it
-	return isPlainObject(resolved)
-		? jsonStringify(resolved)
-		: String(resolved).toWellFormed();
+	// whichever encoder sees it. A Blob or a toJSON-less class instance
+	// supplies toString
+	// oxlint-disable-next-line typescript/no-base-to-string
+	return String(resolved).toWellFormed();
 }
 
 function queryParts(value: unknown) {
-	const resolved = toJson(value);
+	const resolved = toJsonValue(value);
 
 	return (Array.isArray(resolved) ? resolved : [resolved])
 		.map(queryValue)
