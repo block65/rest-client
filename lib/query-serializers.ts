@@ -12,10 +12,7 @@ function toJson(value: unknown) {
 	return typeof toJSON === "function" ? toJSON.call(value) : value;
 }
 
-/**
- * One query value as it goes on the wire, or undefined where it is omitted.
- * A plain object writes as JSON. Any other non-scalar writes as its toString
- */
+// a plain object goes out as JSON, any other non-scalar as its toString
 function queryValue(value: unknown) {
 	const resolved = toJson(value);
 
@@ -26,10 +23,7 @@ function queryValue(value: unknown) {
 	return isPlainObject(resolved) ? jsonStringify(resolved) : String(resolved);
 }
 
-/**
- * Every wire value one key holds. An array contributes one per item, and
- * null and undefined contribute none
- */
+// an array contributes one value per item, null and undefined none
 function queryParts(value: unknown) {
 	const resolved = toJson(value);
 
