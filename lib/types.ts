@@ -50,7 +50,7 @@ export type QueryStyles = Readonly<Record<string, QueryParameterEncoding>>;
 
 /**
  * Turns a command's query object into the search string that follows the `?`,
- * in place of the styles the client would otherwise apply
+ * in place of queryStyles
  */
 export type QuerySerializer = (query: Record<string, unknown>) => string;
 
