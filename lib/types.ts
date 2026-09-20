@@ -31,9 +31,40 @@ export type HttpMethod = "get" | "post" | "put" | "patch" | "delete" | "head";
 
 /**
  * Turns a command's query object into the search string that follows the `?`.
- * Reading one back is the receiving framework's job, not this package's
+ * `parseQuery` reads one back
  */
 export type QuerySerializer = (query: Record<string, unknown>) => string;
+
+/**
+ * A generated client lists the style and explode of a query parameter here
+ * when its document departs from the OAS default of `form` with
+ * `explode: true`. An unlisted parameter uses that default
+ */
+export type QueryParameterStyle =
+	| "form"
+	| "spaceDelimited"
+	| "pipeDelimited"
+	| "deepObject";
+
+export type QueryParameterEncoding = {
+	style: QueryParameterStyle;
+	explode: boolean;
+};
+
+export type QueryStyles = Readonly<Record<string, QueryParameterEncoding>>;
+
+/**
+ * What a receiver needs to read a query parameter back. `type` selects
+ * between an array's items and an object's members when one joined value
+ * holds both. `members` names the parts to collect for `form` with
+ * `explode`, which omits the parent name from the wire. Object and array
+ * parameters take a spec
+ */
+export type QueryParamSpec = QueryParameterEncoding & {
+	readonly name: string;
+	readonly type: "object" | "array";
+	readonly members?: readonly string[];
+};
 
 export type RequestMethod<T = any> = (
 	params: RequestParameters,

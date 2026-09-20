@@ -19,6 +19,9 @@ export { jsonStringify } from "../lib/utils.ts";
 
 export { searchParamsSerializer } from "../lib/query-serializers.ts";
 
+// decodes the query styles a generated command declares
+export { parseQuery } from "../lib/query-decoder.ts";
+
 // one per query parameter style of
 // https://spec.openapis.org/oas/v3.2.0.html#style-examples
 export {

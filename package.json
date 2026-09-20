@@ -22,7 +22,8 @@
 	"dependencies": {
 		"@block65/custom-error": "^14.1.0",
 		"@standard-schema/spec": "^1.1.0",
-		"p-retry": "^8.0.1"
+		"p-retry": "^8.0.1",
+		"query-string": "^9.5.1"
 	},
 	"devDependencies": {
 		"@block65/shared-config": "^0.3.2",
