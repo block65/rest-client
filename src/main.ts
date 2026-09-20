@@ -17,11 +17,17 @@ export { createIsomorphicNativeFetcher } from "./fetchers/isomorphic-native-fetc
 
 export { jsonStringify } from "../lib/utils.ts";
 
-// the query serializers a command can pick from
+export { searchParamsSerializer } from "../lib/query-serializers.ts";
+
+// one per query parameter style of
+// https://spec.openapis.org/oas/v3.2.0.html#style-examples
 export {
-	createQueryStringSerializer,
-	defaultQuerySerializer,
-} from "../lib/query-serializer.ts";
+	deepObjectSerializer,
+	formCommaSerializer,
+	formSerializer,
+	pipeDelimitedSerializer,
+	spaceDelimitedSerializer,
+} from "../lib/query-serializers.ts";
 
 export type WithoutUndefinedProperties<T extends object> = Simplify<{
 	[P in keyof T]: Exclude<T[P], undefined>;

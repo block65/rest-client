@@ -6,7 +6,7 @@ import {
 	ResponseValidationError,
 	ServiceError,
 } from "./errors.ts";
-import { defaultQuerySerializer } from "./query-serializer.ts";
+import { searchParamsSerializer } from "./query-serializers.ts";
 import type {
 	FetcherMethod,
 	ResolvableHeaders,
@@ -125,22 +125,18 @@ export class RestServiceClient<
 		InputType extends ClientInput,
 		OutputType extends ClientOutput,
 	>(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
-		const {
-			method,
-			pathname,
-			query,
-			querySerializer = defaultQuerySerializer,
-		} = command;
+		const { method, pathname, query, querySerializer } = command;
 
-		const defaultUrl = new URL(`.${pathname}`, this.#base);
+		let url = new URL(`.${pathname}`, this.#base);
 
 		if (query) {
-			defaultUrl.search = querySerializer(query);
+			// searchParamsSerializer repeats a key per array item
+			url.search = (querySerializer ?? searchParamsSerializer)(query);
 		}
 
-		const url = runtimeOptions?.url
-			? new URL(await runtimeOptions.url(defaultUrl))
-			: defaultUrl;
+		if (runtimeOptions?.url) {
+			url = new URL(await runtimeOptions.url(url));
+		}
 
 		this.#log("req: %s %s", method.toUpperCase(), url, runtimeOptions);
 

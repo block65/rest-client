@@ -1,4 +1,4 @@
-import type { Jsonifiable } from "type-fest";
+import type { Jsonifiable, JsonPrimitive } from "type-fest";
 
 export type JsonifiableObject =
 	| { [Key in string]?: Jsonifiable }
@@ -43,7 +43,7 @@ export type RequestMethod<T = any> = (
 export type RequestParameters = {
 	pathname: string;
 	method: HttpMethod;
-	query?: Record<string, string | number | (string | number)[]> | undefined;
+	query?: Record<string, JsonPrimitive[]> | URLSearchParams | undefined;
 	body?: unknown;
 	headers?: Record<string, string> | Headers | undefined;
 };
@@ -51,14 +51,13 @@ export type RequestParameters = {
 export type RuntimeOptions = {
 	/**
 	 * Override the request URL for this call. Receives the URL built from
-	 * base, pathname and query, and returns the final URL, used as given.
-	 * Suits one-off targets such as presigned upload URLs
+	 * base, pathname and query, and returns the final URL, used as given
 	 */
 	url?: ((url: URL) => URL | string | Promise<URL | string>) | undefined;
+
 	headers?: Record<string, string> | undefined | Headers;
+
 	signal?: AbortSignal;
-	/** @deprecated  */
-	json?: boolean;
 };
 
 export type RequestMethodCaller<T = unknown> = (

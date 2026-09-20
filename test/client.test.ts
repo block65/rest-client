@@ -8,7 +8,11 @@ import {
 	RestServiceClient,
 	ServiceError,
 	createIsomorphicNativeFetcher,
-	createQueryStringSerializer,
+	deepObjectSerializer,
+	formCommaSerializer,
+	formSerializer,
+	pipeDelimitedSerializer,
+	spaceDelimitedSerializer,
 } from "../src/main.ts";
 import { requestListener } from "./server.ts";
 
@@ -388,44 +392,118 @@ describe("Client", () => {
 
 				expect(url.search).toBe("?fixed=1");
 			});
+		});
 
-			test("query-string writes the arrayFormat a repeated key cannot", async () => {
-				const url = await captureUrl(
-					{ tags: ["cat", "dog"] },
-					createQueryStringSerializer({ arrayFormat: "comma" }),
+		// the style table of OAS 3.2 §4.12.6, one serializer per row
+		describe("the OpenAPI styles", () => {
+			const tags = { tags: ["cat", "dog"] };
+			const at = { at: { gt: 1, lte: 2 } };
+
+			test("form with explode repeats an array's key", async () => {
+				const url = await captureUrl(tags, formSerializer);
+
+				expect(url.searchParams.getAll("tags")).toStrictEqual(["cat", "dog"]);
+			});
+
+			// an unhoisted object would go out as "[object Object]"
+			test("form with explode hoists an object's members", async () => {
+				const url = await captureUrl(at, formSerializer);
+
+				expect(url.search).toBe(
+					`?${expected([
+						["gt", "1"],
+						["lte", "2"],
+					])}`,
 				);
+			});
+
+			test("form without explode joins on a comma", async () => {
+				const url = await captureUrl(tags, formCommaSerializer);
 
 				expect(url.searchParams.get("tags")).toBe("cat,dog");
 			});
 
-			// query-string sorts its keys unless told not to, which would reorder
-			// every query the client already sends
-			test("query-string keeps insertion order", async () => {
-				const url = await captureUrl(
-					{ z: 1, a: 2 },
-					createQueryStringSerializer(),
-				);
+			// an object writes its member names and values alternating
+			test("form without explode alternates an object's names and values", async () => {
+				const url = await captureUrl(at, formCommaSerializer);
 
-				expect(url.search).toBe("?z=1&a=2");
+				expect(url.searchParams.get("at")).toBe("gt,1,lte,2");
 			});
 
-			test("query-string drops null and undefined as the default does", async () => {
-				const url = await captureUrl(
-					{ a: null, b: undefined, c: "keep" },
-					createQueryStringSerializer(),
-				);
-
-				expect(url.search).toBe("?c=keep");
-			});
-
-			test("query-string applies toJSON before encoding", async () => {
+			// leaving the name behind would shift every pair after it
+			test("form without explode drops an omitted member's name too", async () => {
 				const url = await captureAnyUrl(
-					// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop is the subject
-					{ when: new Date(0) },
-					createQueryStringSerializer(),
+					{ at: { a: null, gt: 1, bad: undefined, lte: 2 } },
+					formCommaSerializer,
 				);
 
-				expect(url.searchParams.get("when")).toBe("1970-01-01T00:00:00.000Z");
+				expect(url.searchParams.get("at")).toBe("gt,1,lte,2");
+			});
+
+			test("spaceDelimited joins on a space", async () => {
+				const url = await captureUrl(tags, spaceDelimitedSerializer);
+
+				expect(url.searchParams.get("tags")).toBe("cat dog");
+			});
+
+			test("pipeDelimited joins on a pipe", async () => {
+				const url = await captureUrl(tags, pipeDelimitedSerializer);
+
+				expect(url.searchParams.get("tags")).toBe("cat|dog");
+			});
+
+			test("deepObject brackets each member under the parent name", async () => {
+				const url = await captureUrl(at, deepObjectSerializer);
+
+				expect(url.search).toBe(
+					`?${expected([
+						["at[gt]", "1"],
+						["at[lte]", "2"],
+					])}`,
+				);
+			});
+
+			// two object parameters sharing a member name collide under form
+			test("deepObject keeps two objects' shared member names apart", async () => {
+				const url = await captureUrl(
+					{ a: { gt: 1 }, effective_at: { gt: 2 } },
+					deepObjectSerializer,
+				);
+
+				expect(url.search).toBe(
+					`?${expected([
+						["a[gt]", "1"],
+						["effective_at[gt]", "2"],
+					])}`,
+				);
+			});
+
+			// §4.12.3 leaves anything but an object undefined for deepObject
+			test("deepObject writes a scalar parameter as form does", async () => {
+				const url = await captureUrl(
+					{ limit: 20, ...at },
+					deepObjectSerializer,
+				);
+
+				expect(url.searchParams.get("limit")).toBe("20");
+			});
+
+			test("every style omits null and undefined", async () => {
+				const urls = await Promise.all(
+					[
+						formSerializer,
+						formCommaSerializer,
+						spaceDelimitedSerializer,
+						pipeDelimitedSerializer,
+						deepObjectSerializer,
+					].map((serializer) =>
+						captureUrl({ a: null, b: undefined, c: "keep" }, serializer),
+					),
+				);
+
+				for (const url of urls) {
+					expect(url.search).toBe(`?${expected([["c", "keep"]])}`);
+				}
 			});
 		});
 	});
