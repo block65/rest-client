@@ -1,3 +1,4 @@
+import queryString, { type StringifyOptions } from "query-string";
 import { isPlainObject, jsonStringify } from "./utils.ts";
 
 // applied once per position, so a toJSON returning `this` terminates
@@ -18,7 +19,11 @@ function queryValue(value: unknown) {
 		return;
 	}
 
-	return isPlainObject(resolved) ? jsonStringify(resolved) : String(resolved);
+	// a lone surrogate writes U+FFFD instead of throwing URIError out of
+	// whichever encoder sees it
+	return isPlainObject(resolved)
+		? jsonStringify(resolved)
+		: String(resolved).toWellFormed();
 }
 
 function queryParts(value: unknown) {
@@ -42,6 +47,10 @@ function alternating(value: unknown) {
 		: queryParts(value);
 }
 
+// query-string alphabetises every query unless sort is off
+const options = { skipNull: true, sort: false } satisfies StringifyOptions;
+
+// what query-string's own encoder writes, for the parts it is handed raw
 function encodeRFC3986URIComponent(str: string) {
 	return encodeURIComponent(str.toWellFormed()).replaceAll(
 		/[!'()*]/g,
@@ -57,31 +66,37 @@ function encodeDelimiter(delimiter: string) {
 	return url.search.slice(1);
 }
 
-// with explode, each object member becomes a parameter, named by encodedName
+// with explode, each object member becomes a parameter, named by memberName
 function explode(
 	query: Record<string, unknown>,
-	encodedName: (name: string, member: string) => string,
+	memberName: (name: string, member: string) => string,
+	// deepObject assembles unencoded, so a scalar name is encoded here
+	paramName: (name: string) => string = (name) => name.toWellFormed(),
 ) {
 	return Object.entries(query).flatMap(([name, value]) =>
 		isPlainObject(value)
 			? Object.entries(value).map(
 					([member, memberValue]) =>
-						[encodedName(name, member), queryParts(memberValue)] as const,
+						[
+							memberName(name, member.toWellFormed()),
+							queryParts(memberValue),
+						] as const,
 				)
-			: [[encodeRFC3986URIComponent(name), queryParts(value)] as const],
+			: [[paramName(name), queryParts(value)] as const],
 	);
 }
 
-// a repeated name is legal, so two objects sharing a member keep both values
-function explodedSerializer(
-	encodedName: (name: string, member: string) => string,
-) {
-	return (query: Record<string, unknown>) =>
-		explode(query, encodedName)
-			.flatMap(([name, parts]) =>
-				parts.map((part) => `${name}=${encodeRFC3986URIComponent(part)}`),
-			)
-			.join("&");
+// pairs, not an object, so two objects sharing a member keep both values
+function merged(pairs: readonly (readonly [string, string[]])[]) {
+	const query = new Map<string, string[]>();
+
+	for (const [name, parts] of pairs) {
+		query.set(name, [...(query.get(name) ?? []), ...parts]);
+	}
+
+	// fromEntries defines __proto__ as an own property, where assignment would
+	// not
+	return Object.fromEntries(query);
 }
 
 /**
@@ -90,14 +105,11 @@ function explodedSerializer(
  * serializer
  */
 export function searchParamsSerializer(query: Record<string, unknown>) {
-	return Object.entries(query)
-		.flatMap(([name, value]) =>
-			queryParts(value).map(
-				(part) =>
-					`${encodeRFC3986URIComponent(name)}=${encodeRFC3986URIComponent(part)}`,
-			),
-		)
-		.join("&");
+	return queryString.stringify(query, {
+		...options,
+		arrayFormat: "none",
+		replacer: (_key, value) => queryParts(value),
+	});
 }
 
 /**
@@ -107,9 +119,12 @@ export function searchParamsSerializer(query: Record<string, unknown>) {
  * `form` with `explode`, the OAS default. An array repeats its name, and an
  * object hoists its members to parameters of their own, losing the parent name
  */
-export const formSerializer = explodedSerializer((_name, member) =>
-	encodeRFC3986URIComponent(member),
-);
+export function formSerializer(query: Record<string, unknown>) {
+	return queryString.stringify(
+		merged(explode(query, (_name, member) => member)),
+		{ ...options, arrayFormat: "none" },
+	);
+}
 
 // a delimiter the OAS writes raw stays raw, for a server that splits first
 function delimitedSerializer(delimiter: string) {
@@ -151,7 +166,22 @@ export const pipeDelimitedSerializer = delimitedSerializer("|");
  * object with scalar properties and leaves anything else undefined, so a
  * non-object parameter writes as it would under `form`
  */
-export const deepObjectSerializer = explodedSerializer(
-	(name, member) =>
-		`${encodeRFC3986URIComponent(name)}[${encodeRFC3986URIComponent(member)}]`,
-);
+export function deepObjectSerializer(query: Record<string, unknown>) {
+	// the brackets stay raw, matching the OAS example, so the name and member
+	// are encoded either side of them and query-string assembles what it is
+	// given
+	const bracketed = explode(
+		query,
+		(name, member) =>
+			`${encodeRFC3986URIComponent(name)}[${encodeRFC3986URIComponent(member)}]`,
+		encodeRFC3986URIComponent,
+	).map(
+		([name, parts]) => [name, parts.map(encodeRFC3986URIComponent)] as const,
+	);
+
+	return queryString.stringify(merged(bracketed), {
+		...options,
+		arrayFormat: "none",
+		encode: false,
+	});
+}
