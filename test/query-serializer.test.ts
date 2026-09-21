@@ -55,7 +55,7 @@ describe("the default serializer's output", () => {
 		["a plain string", { a: "one" }],
 		["an array", { a: ["one", "two"] }],
 		["a nested object, hoisted", { effective_at: { gt: 1, lte: 2 } }],
-		// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop is the subject
+		// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop
 		["a Date, through toJSON", { at: new Date(0) }],
 		["null", { a: null, b: "keep" }],
 		["undefined", { a: undefined, b: "keep" }],

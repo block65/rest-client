@@ -62,8 +62,8 @@ async function intoFetcherResponse(res: Response, url: URL) {
 
 	// auto parse JSON
 	if (contentType?.includes("/json")) {
-		// TYPESAFETY: res.json() resolves to unknown, a JSON body is Jsonifiable
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a parsed JSON body is Jsonifiable
+		// res.json() resolves to unknown, and a parsed JSON body is Jsonifiable
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- JSON body
 		const responseJson = (await res.json()) as Jsonifiable;
 		return {
 			body: responseJson,
