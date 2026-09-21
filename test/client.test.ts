@@ -270,15 +270,16 @@ describe("Client", () => {
 			return received;
 		};
 
+		// the cases below drive values Query excludes by design
 		const captureAnyUrl = (query: Record<string, unknown>) =>
-			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- these cases drive values Query excludes
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test data
 			captureUrl(query as Query);
 
 		const captureAnySerialized = (
 			query: Record<string, unknown>,
 			serializer: QuerySerializer,
 		) =>
-			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- these cases drive values Query excludes
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test data
 			captureSerialized(query as Query, serializer);
 
 		test("array values become repeated keys (OpenAPI form/explode default)", async () => {
@@ -519,7 +520,7 @@ describe("Client", () => {
 		// enumerable members are empty and toString gives a timezone dependent
 		// locale string, leaving toJSON as the usable form
 		test("a Date serializes via toJSON as ISO, not a locale string", async () => {
-			// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop is the subject
+			// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop
 			const when = new Date(0);
 			const url = await captureAnyUrl({ when });
 
@@ -531,7 +532,9 @@ describe("Client", () => {
 		// stays throw-free. toJSON returns null, which the null rule omits
 		test("an invalid Date is omitted rather than throwing", async () => {
 			const url = await captureAnyUrl({
-				// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Temporal throws on construction, so it cannot express this
+				// only a Date holds an invalid instant, as Temporal throws on
+				// construction
+				// oxlint-disable-next-line unicorn-unported/prefer-temporal -- no Temporal
 				when: new Date(Number.NaN),
 				keep: "yes",
 			});
@@ -668,9 +671,10 @@ describe("Client", () => {
 			});
 
 			test("query-string applies toJSON before encoding", async () => {
+				// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop
+				const when = new Date(0);
 				const url = await captureAnySerialized(
-					// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop is the subject
-					{ when: new Date(0) },
+					{ when },
 					createQueryStringSerializer(),
 				);
 
