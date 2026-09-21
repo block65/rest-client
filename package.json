@@ -1,6 +1,6 @@
 {
 	"name": "@block65/rest-client",
-	"version": "14.1.0",
+	"version": "14.2.0",
 	"private": false,
 	"description": "Opinionated REST client for Block65 projects",
 	"license": "MIT",
