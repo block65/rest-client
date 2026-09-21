@@ -24,77 +24,73 @@ function resolveQueryValue(input: unknown) {
 	return isPlainObject(input) ? input : toJsonValue(input);
 }
 
+type Pair = readonly [name: string, value: string];
+
+// a Blob, a ReadableStream or a toJSON-less class instance supplies toString
+function scalar(name: string, value: unknown): Pair[] {
+	return [[name, String(value)]];
+}
+
 // each parameter takes the style and explode of OAS 3.2 §4.12.6
-function writeSearchParams(
-	write: (name: string, value: string) => void,
+function searchParamPairs(
 	query: Record<string, unknown>,
 	styles: QueryStyles | undefined,
-) {
-	// a Blob, a ReadableStream or a toJSON-less class instance supplies toString
-	const appendScalar = (name: string, value: unknown) => {
-		write(name, String(value));
-	};
-
+): Pair[] {
 	// one key per member or item, hoisting a nested object past what OAS covers
-	const appendExploded = (name: string, input: unknown) => {
+	const exploded = (name: string, input: unknown): Pair[] => {
 		const value = resolveQueryValue(input);
 
 		// an invalid Date reaches here, its toJSON having returned null
 		if (value === null || value === undefined) {
-			return;
+			return [];
 		}
 
 		if (Array.isArray(value)) {
-			for (const item of value) {
-				appendExploded(name, item);
-			}
-
-			return;
+			return value.flatMap((item) => exploded(name, item));
 		}
 
 		if (isPlainObject(value)) {
-			for (const [member, memberValue] of Object.entries(value)) {
-				appendExploded(member, memberValue);
-			}
-
-			return;
+			return Object.entries(value).flatMap(([member, memberValue]) =>
+				exploded(member, memberValue),
+			);
 		}
 
-		appendScalar(name, value);
+		return scalar(name, value);
 	};
 
 	// one value holds an array's items, or an object's alternating name and value
-	const appendJoined = (name: string, input: unknown, delimiter: string) => {
+	const joined = (name: string, input: unknown, delimiter: string): Pair[] => {
 		const value = resolveQueryValue(input);
 
 		if (value === null || value === undefined) {
-			return;
+			return [];
 		}
 
-		let parts: unknown[] = [value];
-
-		if (Array.isArray(value)) {
-			parts = value;
-		} else if (isPlainObject(value)) {
-			parts = Object.entries(value).flat();
-		}
+		// flat unwraps an array and leaves a scalar wrapped
+		const parts: unknown[] = isPlainObject(value)
+			? Object.entries(value).flat()
+			: [value].flat();
 
 		const usable = parts.filter((part) => part !== null && part !== undefined);
 
-		if (usable.length > 0) {
-			appendScalar(
-				name,
-				usable.map((part) => String(resolveQueryValue(part))).join(delimiter),
-			);
-		}
+		return usable.length > 0
+			? scalar(
+					name,
+					usable.map((part) => String(resolveQueryValue(part))).join(delimiter),
+				)
+			: [];
 	};
 
 	// deepObject brackets each member under the parent name, as ?at[gt]=1
-	const appendDeep = (name: string, input: unknown, nestedInArray: boolean) => {
+	const deep = (
+		name: string,
+		input: unknown,
+		nestedInArray: boolean,
+	): Pair[] => {
 		const value = resolveQueryValue(input);
 
 		if (value === null || value === undefined) {
-			return;
+			return [];
 		}
 
 		if (Array.isArray(value)) {
@@ -102,37 +98,33 @@ function writeSearchParams(
 				nestedInArray ||
 				value.some((item) => isPlainObject(item) || Array.isArray(item));
 
-			value.forEach((item, index) => {
-				appendDeep(indexed ? `${name}[${index}]` : name, item, true);
-			});
-
-			return;
+			return value.flatMap((item, index) =>
+				deep(indexed ? `${name}[${index}]` : name, item, true),
+			);
 		}
 
 		if (isPlainObject(value)) {
-			for (const [member, memberValue] of Object.entries(value)) {
-				appendDeep(`${name}[${member}]`, memberValue, false);
-			}
-
-			return;
+			return Object.entries(value).flatMap(([member, memberValue]) =>
+				deep(`${name}[${member}]`, memberValue, false),
+			);
 		}
 
-		appendScalar(name, value);
+		return scalar(name, value);
 	};
 
 	const delimiters = { spaceDelimited: " ", pipeDelimited: "|" } as const;
 
-	for (const [name, value] of Object.entries(query)) {
+	return Object.entries(query).flatMap(([name, value]) => {
 		const { style = "form", explode = true } = styles?.[name] ?? {};
 
 		if (style === "deepObject") {
-			appendDeep(name, value, false);
-		} else if (explode) {
-			appendExploded(name, value);
-		} else {
-			appendJoined(name, value, style === "form" ? "," : delimiters[style]);
+			return deep(name, value, false);
 		}
-	}
+
+		return explode
+			? exploded(name, value)
+			: joined(name, value, style === "form" ? "," : delimiters[style]);
+	});
 }
 
 /**
@@ -143,21 +135,13 @@ function writeSearchParams(
 export function serializerForStyles(
 	styles: QueryStyles | undefined,
 ): QuerySerializer {
-	return (query) => {
-		const pairs: string[] = [];
-
-		writeSearchParams(
-			(name, value) => {
-				pairs.push(
+	return (query) =>
+		searchParamPairs(query, styles)
+			.map(
+				([name, value]) =>
 					`${encodeRFC3986URIComponent(name)}=${encodeRFC3986URIComponent(value)}`,
-				);
-			},
-			query,
-			styles,
-		);
-
-		return pairs.join("&");
-	};
+			)
+			.join("&");
 }
 
 /**
