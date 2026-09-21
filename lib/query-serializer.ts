@@ -140,7 +140,7 @@ function writeSearchParams(
  * states, or the OAS default of `form` with `explode`. Names and values take
  * the RFC 3986 encoding, so url.search returns what was written
  */
-export function createStyledSerializer(
+export function serializerForStyles(
 	styles: QueryStyles | undefined,
 ): QuerySerializer {
 	return (query) => {
@@ -166,7 +166,7 @@ export function createStyledSerializer(
  * names another serializer
  */
 export const defaultQuerySerializer: QuerySerializer =
-	createStyledSerializer(undefined);
+	serializerForStyles(undefined);
 
 // encodeURIComponent, query-string's encoder, throws on a lone surrogate
 function wellFormed(value: unknown): unknown {

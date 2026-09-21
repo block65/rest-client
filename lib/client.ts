@@ -6,7 +6,7 @@ import {
 	ResponseValidationError,
 	ServiceError,
 } from "./errors.ts";
-import { createStyledSerializer } from "./query-serializer.ts";
+import { serializerForStyles } from "./query-serializer.ts";
 import type {
 	FetcherMethod,
 	ResolvableHeaders,
@@ -162,9 +162,7 @@ export class RestServiceClient<
 		const url = new URL(`.${pathname}`, this.#base);
 
 		if (query) {
-			url.search = (querySerializer ?? createStyledSerializer(queryStyles))(
-				query,
-			);
+			url.search = (querySerializer ?? serializerForStyles(queryStyles))(query);
 		}
 
 		return runtimeOptions?.url ? new URL(await runtimeOptions.url(url)) : url;

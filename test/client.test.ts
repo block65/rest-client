@@ -322,8 +322,8 @@ describe("Client", () => {
 			);
 		});
 
-		// almost every generated command lands on this default, and the styled
-		// cases below run from a command's own `queryStyles`
+		// almost every generated command lands on this default, and the cases
+		// below each take their style from a command's own `queryStyles`
 		describe("form, explode: true (the OAS default)", () => {
 			// OpenAI's ListAuditLogs effective_at states this style by omission,
 			// and an unhoisted object would go out as "[object Object]"
