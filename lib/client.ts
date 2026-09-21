@@ -91,7 +91,6 @@ export class RestServiceClient<
 		const schema = getCommandResponseSchema<TInput, TOutput>(command);
 
 		if (!schema) {
-			// TYPESAFETY: with no schema, the declared TOutput stands
 			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- without a schema nothing narrows TOutput
 			return body as TOutput;
 		}
@@ -245,14 +244,12 @@ export class RestServiceClient<
 		const { body } = await this.response(command, runtimeOptions);
 
 		if (body instanceof ReadableStream) {
-			// TYPESAFETY: the fetcher yields the body stream untyped
 			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the fetcher types the stream's chunks as Uint8Array
 			return body as ReadableStream<OutputType>;
 		}
 
 		return new ReadableStream<OutputType>({
 			start(controller) {
-				// TYPESAFETY: a non-stream body is the parsed response
 				// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a non-stream body is the parsed response
 				controller.enqueue(body as OutputType);
 				controller.close();

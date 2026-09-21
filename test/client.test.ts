@@ -270,12 +270,10 @@ describe("Client", () => {
 			return received;
 		};
 
-		// TYPESAFETY: the tests below drive values Query excludes by design
 		const captureAnyUrl = (query: Record<string, unknown>) =>
 			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- these cases drive values Query excludes
 			captureUrl(query as Query);
 
-		// TYPESAFETY: the same, for the serializer harness
 		const captureAnySerialized = (
 			query: Record<string, unknown>,
 			serializer: QuerySerializer,
