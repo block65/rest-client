@@ -10,7 +10,7 @@ import {
 
 const fakeUrl = new URL("https://192.0.2.1");
 
-const billingAccountSchema = v.object({
+const billingAccountSchema = v.strictObject({
 	id: v.pipe(
 		v.string(),
 		v.transform((s) => BigInt(s)),
@@ -104,7 +104,7 @@ describe("response validation (schema presence drives it)", () => {
 		});
 
 		const command = new GetAccountCommand();
-		const err = await client.json(command).catch((e: unknown) => e);
+		const err = await client.json(command).catch((error: unknown) => error);
 
 		assert(err instanceof ResponseValidationError);
 		expect(err.command).toBe(command);

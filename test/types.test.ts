@@ -9,8 +9,6 @@ import { BillingCountry, type BillingAccount } from "./fixtures/test1/types.ts";
 
 const fakeApiUrl = new URL("https://192.0.2.1");
 
-// const expectedApiReturnValue: Record<string, unknown> = {};
-
 const client = new BillingServiceRestApiRestClient(fakeApiUrl, {
 	fetcher: async () => ({
 		url: fakeApiUrl,
@@ -23,7 +21,6 @@ const client = new BillingServiceRestApiRestClient(fakeApiUrl, {
 				"x-is-fake": "yep",
 			}),
 		}),
-		// json: expectedApiReturnValue
 	}),
 });
 

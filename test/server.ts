@@ -1,15 +1,16 @@
-import type { RequestListener } from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { type SerializedError, type StatusCode } from "@block65/custom-error";
 
 // per-key attempt counters for the /flaky endpoint
 const flakyAttempts = new Map<string, number>();
 
-export const requestListener: RequestListener = (req, res) => {
+export function requestListener(req: IncomingMessage, res: ServerResponse) {
 	if (req.url?.startsWith("/flaky")) {
 		const url = new URL(req.url, `http://${req.headers.host}`);
 		const key = url.searchParams.get("key") ?? "default";
 		const failures = Number(url.searchParams.get("failures") ?? "0");
-		const attempt = (flakyAttempts.get(key) ?? 0) + 1;
+		const previous = flakyAttempts.get(key);
+		const attempt = previous === undefined ? 1 : previous + 1;
 		flakyAttempts.set(key, attempt);
 
 		res.writeHead(attempt <= failures ? 503 : 200, {
@@ -35,12 +36,20 @@ export const requestListener: RequestListener = (req, res) => {
 
 		case "/my-headers":
 			res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
-			res.end(
-				JSON.stringify({
-					...req.headers,
-					host: "redacted", // redacted as it changes every test run
-				}),
-			);
+
+			// which sec-fetch headers undici sends moves with the node version,
+			// so the snapshots leave this one out
+			{
+				const { ["sec-fetch-mode"]: fetchMode, ...headers } = req.headers;
+				void fetchMode;
+
+				res.end(
+					JSON.stringify({
+						...headers,
+						host: "redacted", // redacted as it changes every test run
+					}),
+				);
+			}
 			break;
 		case "/index.html":
 			res.writeHead(200, { "content-type": "text/html" });
@@ -80,4 +89,4 @@ export const requestListener: RequestListener = (req, res) => {
 			res.end("<h1>Not Found</h1>");
 			break;
 	}
-};
+}

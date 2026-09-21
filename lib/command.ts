@@ -1,12 +1,12 @@
 import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
-import type { HttpMethod, QueryStyles } from "./types.ts";
+import type { HttpMethod, QuerySerializer, QueryStyles } from "./types.ts";
 
 type JsonObject = { [Key in string]?: JsonValue };
 
 type Body = RequestInit["body"] | null | Uint8Array;
 
 export abstract class Command<
-	// WARN: this must be kept compatible with the Client Input and Output types
+	// must stay compatible with the Client Input and Output types
 	CommandInput = unknown,
 	CommandOutput = unknown,
 	CommandQuery extends UndefinedOnPartialDeep<JsonObject> =
@@ -29,6 +29,10 @@ export abstract class Command<
 	// OAS default. An unlisted parameter uses that default
 	public readonly queryStyles: QueryStyles | undefined;
 
+	// Replaces the styles above for the whole query, for a server the OAS
+	// styles cannot describe
+	public readonly querySerializer: QuerySerializer | undefined;
+
 	// Without these, unused generics make Command<A, X> ≡ Command<B, X>
 	// and the cross-client guard silently disappears
 	declare readonly "~input"?: CommandInput;
@@ -38,7 +42,7 @@ export abstract class Command<
 
 	constructor(
 		pathname: string,
-		body: Body | null = null,
+		body?: Body | null,
 		query?: UndefinedOnPartialDeep<CommandQuery>,
 		headers?: CommandHeaders,
 	) {
@@ -52,8 +56,7 @@ export abstract class Command<
 		return JSON.stringify(this.toJSON());
 	}
 
-	// public API; standard Object.prototype.toString override
-	// fallow-ignore-next-line unused-class-member
+	// public API, overriding Object.prototype.toString
 	public toString() {
 		return this.serialize();
 	}

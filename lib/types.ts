@@ -48,6 +48,12 @@ export type QueryParameterEncoding = {
 
 export type QueryStyles = Readonly<Record<string, QueryParameterEncoding>>;
 
+/**
+ * Turns a command's query object into the search string that follows the `?`,
+ * in place of queryStyles
+ */
+export type QuerySerializer = (query: Record<string, unknown>) => string;
+
 export type RequestMethod<T = any> = (
 	params: RequestParameters,
 	options?: RuntimeOptions,
@@ -58,19 +64,17 @@ export type RequestParameters = {
 	method: HttpMethod;
 	query?: Record<string, string | number | (string | number)[]> | undefined;
 	body?: unknown;
-	headers?: Record<string, string> | undefined;
+	headers?: Record<string, string> | Headers | undefined;
 };
 
 export type RuntimeOptions = {
 	/**
-	 * Override the request URL for this call. Receives the URL the client would
-	 * otherwise have used (base + pathname + query) and must return the final
-	 * URL. The return value is used as-is — no further pathname or query
-	 * processing is applied — which makes this suitable for one-off targets
-	 * like presigned upload URLs
+	 * Override the request URL for this call. Receives the URL built from
+	 * base, pathname and query, and returns the final URL, used as given.
+	 * Suits one-off targets such as presigned upload URLs
 	 */
 	url?: ((url: URL) => URL | string | Promise<URL | string>) | undefined;
-	headers?: Record<string, string> | undefined;
+	headers?: Record<string, string> | undefined | Headers;
 	signal?: AbortSignal;
 	/** @deprecated  */
 	json?: boolean;

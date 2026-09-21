@@ -57,8 +57,8 @@ describe("Fetcher", () => {
 
 		expect(res.res.status).toBe(404);
 
-		// body is an unread stream here; snapshotting it captures Node's stream
-		// internals, which differ between Node versions
+		// body is an unread stream, so a snapshot of it captures Node stream
+		// internals that differ between Node versions
 		expect(res).toMatchSnapshot({
 			url: expect.any(URL),
 			body: expect.any(ReadableStream),
@@ -130,7 +130,7 @@ describe("Fetcher", () => {
 		const err = await fetcher({
 			method: "get",
 			url: new URL("/unresponsive", base),
-		}).catch((e) => e);
+		}).catch((error) => error);
 
 		expect(err).toBeInstanceOf(DOMException);
 		expect(err.code).toBe(DOMException.TIMEOUT_ERR);
@@ -209,7 +209,7 @@ describe("Fetcher", () => {
 			method: "get",
 			url: new URL("/unresponsive", base),
 			signal: controller.signal,
-		}).catch((e) => e);
+		}).catch((error) => error);
 
 		expect(err).toBeInstanceOf(DOMException);
 		expect(err.code).toBe(DOMException.ABORT_ERR);

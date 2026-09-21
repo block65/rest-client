@@ -2,7 +2,7 @@
 	"name": "@block65/rest-client",
 	"version": "14.1.0",
 	"private": false,
-	"description": "Block65 REST client",
+	"description": "Opinionated REST client for Block65 projects",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
@@ -17,33 +17,36 @@
 		".": "./src/main.ts"
 	},
 	"scripts": {
-		"preversion": "make test"
+		"preversion": "just check"
 	},
 	"dependencies": {
 		"@block65/custom-error": "^14.1.0",
 		"@standard-schema/spec": "^1.1.0",
-		"p-retry": "^8.0.0"
+		"p-retry": "^8.0.1",
+		"query-string": "^9.5.1"
 	},
 	"devDependencies": {
-		"@block65/shared-config": "^0.3.0",
-		"@tsconfig/strictest": "^2.0.8",
-		"@types/node": "^26.4.0",
+		"@block65/shared-config": "^0.3.2",
+		"@block65/tsconfig": "^0.3.1",
+		"@types/node": "^26.6.2",
+		"fallow": "^3.27.0",
 		"get-port": "^7.2.0",
-		"oxfmt": "^0.65.0",
-		"oxlint": "^1.82.0",
-		"oxlint-tsgolint": "^7.0.2001",
-		"type-fest": "^5.9.0",
+		"oxfmt": "^0.68.0",
+		"oxlint": "^1.83.0",
+		"oxlint-tsgolint": "^7.0.2002",
+		"type-fest": "^5.10.0",
 		"typescript": "^7.0.2",
-		"valibot": "^1.4.2",
-		"vite": "^8.2.2",
-		"vitest": "^4.1.11"
+		"valibot": "^1.5.0",
+		"vite": "^8.3.0",
+		"vitest": "^5.0.1"
 	},
 	"peerDependencies": {
-		"valibot": "^1.4.1"
+		"valibot": "^1.5.0"
 	},
 	"peerDependenciesMeta": {
 		"valibot": {
 			"optional": true
 		}
-	}
+	},
+	"packageManager": "pnpm@12.4.0"
 }

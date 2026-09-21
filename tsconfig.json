@@ -1,17 +1,12 @@
 {
-	"extends": "@tsconfig/strictest",
+	"extends": ["@block65/tsconfig/vanilla", "@block65/tsconfig/noprojref"],
+
 	"compilerOptions": {
-		"target": "es2024",
-		"module": "nodenext",
-		"moduleResolution": "nodenext",
-		"lib": ["es2024"],
-		"esModuleInterop": true,
-		"skipLibCheck": true,
-		"erasableSyntaxOnly": false,
-		"allowImportingTsExtensions": true,
-		"noEmit": true,
-		"noPropertyAccessFromIndexSignature": false
+		"types": ["node"],
+
+		// test/fixtures holds @block65/openapi-codegen output, which emits enums
+		"erasableSyntaxOnly": false
 	},
-	"include": ["./src", "test", "./lib", "./oxlint.config.ts"],
-	"exclude": ["node_modules"]
+
+	"include": ["src", "lib", "test", "oxlint.config.ts", "oxfmt.config.ts"]
 }
