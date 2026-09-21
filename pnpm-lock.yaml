@@ -163,8 +163,8 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  oxlint: npm:@block65/oxlint@>=1.82.0
-  oxlint-tsgolint: npm:@block65/oxlint-tsgolint@>=7.0.2001
+  oxlint: npm:@block65/oxlint@>=1.83.0
+  oxlint-tsgolint: npm:@block65/oxlint-tsgolint@>=7.0.200200
 
 importers:
 
@@ -185,7 +185,7 @@ importers:
     devDependencies:
       '@block65/shared-config':
         specifier: ^0.3.2
-        version: 0.3.2(@block65/oxlint-tsgolint@7.0.2001)(@block65/oxlint@1.82.0(@block65/oxlint-tsgolint@7.0.2001))(eslint@10.10.0)(fallow@3.27.0)(oxfmt@0.68.0)
+        version: 0.3.2(@block65/oxlint-tsgolint@7.0.200200)(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)(fallow@3.27.0)(oxfmt@0.68.0)
       '@block65/tsconfig':
         specifier: ^0.3.1
         version: 0.3.1
@@ -202,11 +202,11 @@ importers:
         specifier: ^0.68.0
         version: 0.68.0
       oxlint:
-        specifier: npm:@block65/oxlint@>=1.82.0
-        version: '@block65/oxlint@1.82.0(@block65/oxlint-tsgolint@7.0.2001)'
+        specifier: npm:@block65/oxlint@>=1.83.0
+        version: '@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200)'
       oxlint-tsgolint:
-        specifier: npm:@block65/oxlint-tsgolint@>=7.0.2001
-        version: '@block65/oxlint-tsgolint@7.0.2001'
+        specifier: npm:@block65/oxlint-tsgolint@>=7.0.200200
+        version: '@block65/oxlint-tsgolint@7.0.200200'
       type-fest:
         specifier: ^5.10.0
         version: 5.10.0
@@ -228,15 +228,15 @@ packages:
   '@block65/custom-error@14.1.0':
     resolution: {integrity: sha512-smbcm4A4TwTwKDxJz639scvwCSVtU8qmk/Em2n9P5NT2JLGeK/beRI8acUS/yuAK04LYQrjfDqUFSva4472OcQ==}
 
-  '@block65/oxlint-binding-linux-arm64-gnu@1.82.0':
-    resolution: {integrity: sha512-QX+Tuj6VfaPErOExy5bEAyWT3I9WsAFutJBi59Nxy0RKOsobOGwA2IurAzAM+uJYeaGPp53/SsSiS1aScLeP4w==}
+  '@block65/oxlint-binding-linux-arm64-gnu@1.83.0':
+    resolution: {integrity: sha512-iH3ufhqCxiemK1JIQj8Er/Z//L4fNawO9Mb8CzCou6p84l+HWAWkHVV2vWd+Wk8zaMm2m5vs2ONy0CBzrus3Qw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@block65/oxlint-binding-linux-x64-gnu@1.82.0':
-    resolution: {integrity: sha512-KEA+bN3ASWHBwoaZ/VsnVIpxmThXeeP5XSMrL21wCPlmWd9GWeTQ//JRSG9jK1b2App5Zj0B3Bcp7hjmE3GDWg==}
+  '@block65/oxlint-binding-linux-x64-gnu@1.83.0':
+    resolution: {integrity: sha512-zQ+L+Jpv2m/1DDqZr56WMirvz483ULuGROq1+ka4iqfG2vJh14KNxgWUXaahmnXGSvBnQCH1y0Q0kfMvtqqc8w==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
@@ -248,22 +248,22 @@ packages:
     peerDependencies:
       oxlint: '>=1.82.0'
 
-  '@block65/oxlint-tsgolint-linux-arm64@7.0.2001':
-    resolution: {integrity: sha512-jbhrX6SAVquzyfePqG4c2nKkfeMTo+gjm9FfIc08Cb7SlvqZn8+WJ/DVUHD3BffKWbMN6SrYJWlEm9vXYh1a9Q==}
+  '@block65/oxlint-tsgolint-linux-arm64@7.0.200200':
+    resolution: {integrity: sha512-BRTbnw/wRUQePD6sKup3cyPoN5jc7GnAOyyJ6TE5lXp5B8cr1zbt3OVjoksoYnceqZpeO5g36PecgauSMNO+Pg==}
     cpu: [arm64]
     os: [linux]
 
-  '@block65/oxlint-tsgolint-linux-x64@7.0.2001':
-    resolution: {integrity: sha512-L3shVGCKRlf+BaY6vBkH4kJzYapil5Cs+13HK7wgJ4kkKZATPnWypZBk+WbDGgcp8yQxr9oI1LaEi5F4liriIQ==}
+  '@block65/oxlint-tsgolint-linux-x64@7.0.200200':
+    resolution: {integrity: sha512-Jj6CpfCqkioWv1kOtDBOFF1BS2OJ9KLWoowfOwPB635VnR1mLsi+utWh/6C0rkxxM6luunX5cB15g1rQ+OaGOA==}
     cpu: [x64]
     os: [linux]
 
-  '@block65/oxlint-tsgolint@7.0.2001':
-    resolution: {integrity: sha512-GDMjs7EXe/lJoVZ3NioG1qkyuCrhYtBltjabGNCE+jdOvoqW6UCmUGkcPc9r/R87B2a9u00ZdqeQ5YTyL7mPIw==}
+  '@block65/oxlint-tsgolint@7.0.200200':
+    resolution: {integrity: sha512-UZ/b6cEl7ahIygTXKaQKcsb7Abt2a8GW1BvZb4JVNJjwEcDXp/k1iL1u/yeUedLzKRQQvqmLHOzXPd6cl82WyQ==}
     hasBin: true
 
-  '@block65/oxlint@1.82.0':
-    resolution: {integrity: sha512-M4Vzp+3y12LwZFONRrPD0Btexx4c7hGFmjRqyvrWD/NKa5ow5yueR5B2vhqseTG9X3VYpfrjEA9HqOzQgy1bcw==}
+  '@block65/oxlint@1.83.0':
+    resolution: {integrity: sha512-5TR+kgM82dZXxA9WXa+sF1S4bUy5JZzCxeU83ItD/EifhTO1EHiEZ9Pnhf9YD7fjukDb7z7nji5D3CN9i8utvw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -1491,45 +1491,45 @@ snapshots:
     dependencies:
       serialize-error: 13.0.1
 
-  '@block65/oxlint-binding-linux-arm64-gnu@1.82.0':
+  '@block65/oxlint-binding-linux-arm64-gnu@1.83.0':
     optional: true
 
-  '@block65/oxlint-binding-linux-x64-gnu@1.82.0':
+  '@block65/oxlint-binding-linux-x64-gnu@1.83.0':
     optional: true
 
-  '@block65/oxlint-plugin@0.8.0(@block65/oxlint@1.82.0(@block65/oxlint-tsgolint@7.0.2001))(eslint@10.10.0)':
+  '@block65/oxlint-plugin@0.8.0(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)':
     dependencies:
       css-tree: 3.2.1
       eslint-plugin-unicorn: 75.0.0(eslint@10.10.0)
-      oxlint: '@block65/oxlint@1.82.0(@block65/oxlint-tsgolint@7.0.2001)'
+      oxlint: '@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200)'
     transitivePeerDependencies:
       - eslint
 
-  '@block65/oxlint-tsgolint-linux-arm64@7.0.2001':
+  '@block65/oxlint-tsgolint-linux-arm64@7.0.200200':
     optional: true
 
-  '@block65/oxlint-tsgolint-linux-x64@7.0.2001':
+  '@block65/oxlint-tsgolint-linux-x64@7.0.200200':
     optional: true
 
-  '@block65/oxlint-tsgolint@7.0.2001':
+  '@block65/oxlint-tsgolint@7.0.200200':
     optionalDependencies:
-      '@block65/oxlint-tsgolint-linux-arm64': 7.0.2001
-      '@block65/oxlint-tsgolint-linux-x64': 7.0.2001
+      '@block65/oxlint-tsgolint-linux-arm64': 7.0.200200
+      '@block65/oxlint-tsgolint-linux-x64': 7.0.200200
 
-  '@block65/oxlint@1.82.0(@block65/oxlint-tsgolint@7.0.2001)':
+  '@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200)':
     optionalDependencies:
-      '@block65/oxlint-binding-linux-arm64-gnu': 1.82.0
-      '@block65/oxlint-binding-linux-x64-gnu': 1.82.0
-      oxlint-tsgolint: '@block65/oxlint-tsgolint@7.0.2001'
+      '@block65/oxlint-binding-linux-arm64-gnu': 1.83.0
+      '@block65/oxlint-binding-linux-x64-gnu': 1.83.0
+      oxlint-tsgolint: '@block65/oxlint-tsgolint@7.0.200200'
 
-  '@block65/shared-config@0.3.2(@block65/oxlint-tsgolint@7.0.2001)(@block65/oxlint@1.82.0(@block65/oxlint-tsgolint@7.0.2001))(eslint@10.10.0)(fallow@3.27.0)(oxfmt@0.68.0)':
+  '@block65/shared-config@0.3.2(@block65/oxlint-tsgolint@7.0.200200)(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)(fallow@3.27.0)(oxfmt@0.68.0)':
     dependencies:
-      '@block65/oxlint-plugin': 0.8.0(@block65/oxlint@1.82.0(@block65/oxlint-tsgolint@7.0.2001))(eslint@10.10.0)
+      '@block65/oxlint-plugin': 0.8.0(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)
     optionalDependencies:
       fallow: 3.27.0
       oxfmt: 0.68.0
-      oxlint: '@block65/oxlint@1.82.0(@block65/oxlint-tsgolint@7.0.2001)'
-      oxlint-tsgolint: '@block65/oxlint-tsgolint@7.0.2001'
+      oxlint: '@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200)'
+      oxlint-tsgolint: '@block65/oxlint-tsgolint@7.0.200200'
     transitivePeerDependencies:
       - eslint
 

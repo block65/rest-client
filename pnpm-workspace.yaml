@@ -2,9 +2,13 @@ allowBuilds:
   esbuild: false
 
 minimumReleaseAgeExclude:
-  - "@block65/oxlint-plugin@0.6.0"
-  - "@block65/shared-config@0.3.0"
+  - '@block65/oxlint-binding-linux-arm64-gnu@1.83.0'
+  - '@block65/oxlint-binding-linux-x64-gnu@1.83.0'
+  - '@block65/oxlint-tsgolint-linux-arm64@7.0.200200'
+  - '@block65/oxlint-tsgolint-linux-x64@7.0.200200'
+  - '@block65/oxlint-tsgolint@7.0.200200'
+  - '@block65/oxlint@1.83.0'
 
 overrides:
-  oxlint: npm:@block65/oxlint@>=1.82.0
-  oxlint-tsgolint: npm:@block65/oxlint-tsgolint@>=7.0.2001
+  oxlint: npm:@block65/oxlint@>=1.83.0
+  oxlint-tsgolint: npm:@block65/oxlint-tsgolint@>=7.0.200200
