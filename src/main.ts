@@ -32,10 +32,11 @@ export type OptionalToUndefined<T extends object> = {
 };
 
 export function stripUndefined<T extends object>(obj: OptionalToUndefined<T>) {
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- fromEntries returns an index signature, never the mapped type
-	return Object.fromEntries(
-		Object.entries(obj).filter(([, v]) => v !== undefined),
-	) as WithoutUndefinedProperties<T>;
+	const kept = Object.entries(obj).filter(([, v]) => v !== undefined);
+
+	// fromEntries returns an index signature, never the mapped type
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- by design
+	return Object.fromEntries(kept) as WithoutUndefinedProperties<T>;
 }
 
 // the client

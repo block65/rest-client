@@ -27,93 +27,91 @@ function resolveQueryValue(input: unknown) {
 type Pair = readonly [name: string, value: string];
 
 // a Blob, a ReadableStream or a toJSON-less class instance supplies toString
-function scalar(name: string, value: unknown): Pair[] {
-	return [[name, String(value)]];
+function scalar(name: string, value: unknown) {
+	return [name, String(value)] as const;
 }
+
+// one key per member or item, hoisting a nested object past what OAS covers
+function exploded(name: string, input: unknown): Pair[] {
+	const value = resolveQueryValue(input);
+
+	// an invalid Date reaches here, its toJSON having returned null
+	if (value === null || value === undefined) {
+		return [];
+	}
+
+	if (Array.isArray(value)) {
+		return value.flatMap((item) => exploded(name, item));
+	}
+
+	if (isPlainObject(value)) {
+		return Object.entries(value).flatMap(([member, memberValue]) =>
+			exploded(member, memberValue),
+		);
+	}
+
+	return [scalar(name, value)];
+}
+
+// one value holds an array's items, or an object's alternating name and value
+function joined(name: string, input: unknown, delimiter: string) {
+	const value = resolveQueryValue(input);
+
+	if (value === null || value === undefined) {
+		return [];
+	}
+
+	// flat unwraps an array and leaves a scalar wrapped
+	const parts: unknown[] = isPlainObject(value)
+		? Object.entries(value).flat()
+		: [value].flat();
+
+	const usable = parts.filter((part) => part !== null && part !== undefined);
+
+	return usable.length > 0
+		? [
+				scalar(
+					name,
+					usable.map((part) => String(resolveQueryValue(part))).join(delimiter),
+				),
+			]
+		: [];
+}
+
+// deepObject brackets each member under the parent name, as ?at[gt]=1
+function deep(name: string, input: unknown, nestedInArray: boolean): Pair[] {
+	const value = resolveQueryValue(input);
+
+	if (value === null || value === undefined) {
+		return [];
+	}
+
+	if (Array.isArray(value)) {
+		const indexed =
+			nestedInArray ||
+			value.some((item) => isPlainObject(item) || Array.isArray(item));
+
+		return value.flatMap((item, index) =>
+			deep(indexed ? `${name}[${index}]` : name, item, true),
+		);
+	}
+
+	if (isPlainObject(value)) {
+		return Object.entries(value).flatMap(([member, memberValue]) =>
+			deep(`${name}[${member}]`, memberValue, false),
+		);
+	}
+
+	return [scalar(name, value)];
+}
+
+const delimiters = { spaceDelimited: " ", pipeDelimited: "|" } as const;
 
 // each parameter takes the style and explode of OAS 3.2 §4.12.6
 function searchParamPairs(
 	query: Record<string, unknown>,
 	styles: QueryStyles | undefined,
-): Pair[] {
-	// one key per member or item, hoisting a nested object past what OAS covers
-	const exploded = (name: string, input: unknown): Pair[] => {
-		const value = resolveQueryValue(input);
-
-		// an invalid Date reaches here, its toJSON having returned null
-		if (value === null || value === undefined) {
-			return [];
-		}
-
-		if (Array.isArray(value)) {
-			return value.flatMap((item) => exploded(name, item));
-		}
-
-		if (isPlainObject(value)) {
-			return Object.entries(value).flatMap(([member, memberValue]) =>
-				exploded(member, memberValue),
-			);
-		}
-
-		return scalar(name, value);
-	};
-
-	// one value holds an array's items, or an object's alternating name and value
-	const joined = (name: string, input: unknown, delimiter: string): Pair[] => {
-		const value = resolveQueryValue(input);
-
-		if (value === null || value === undefined) {
-			return [];
-		}
-
-		// flat unwraps an array and leaves a scalar wrapped
-		const parts: unknown[] = isPlainObject(value)
-			? Object.entries(value).flat()
-			: [value].flat();
-
-		const usable = parts.filter((part) => part !== null && part !== undefined);
-
-		return usable.length > 0
-			? scalar(
-					name,
-					usable.map((part) => String(resolveQueryValue(part))).join(delimiter),
-				)
-			: [];
-	};
-
-	// deepObject brackets each member under the parent name, as ?at[gt]=1
-	const deep = (
-		name: string,
-		input: unknown,
-		nestedInArray: boolean,
-	): Pair[] => {
-		const value = resolveQueryValue(input);
-
-		if (value === null || value === undefined) {
-			return [];
-		}
-
-		if (Array.isArray(value)) {
-			const indexed =
-				nestedInArray ||
-				value.some((item) => isPlainObject(item) || Array.isArray(item));
-
-			return value.flatMap((item, index) =>
-				deep(indexed ? `${name}[${index}]` : name, item, true),
-			);
-		}
-
-		if (isPlainObject(value)) {
-			return Object.entries(value).flatMap(([member, memberValue]) =>
-				deep(`${name}[${member}]`, memberValue, false),
-			);
-		}
-
-		return scalar(name, value);
-	};
-
-	const delimiters = { spaceDelimited: " ", pipeDelimited: "|" } as const;
-
+) {
 	return Object.entries(query).flatMap(([name, value]) => {
 		const { style = "form", explode = true } = styles?.[name] ?? {};
 
