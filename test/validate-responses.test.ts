@@ -11,10 +11,7 @@ import {
 const fakeUrl = new URL("https://192.0.2.1");
 
 const billingAccountSchema = v.strictObject({
-	id: v.pipe(
-		v.string(),
-		v.transform((s) => BigInt(s)),
-	),
+	id: v.pipe(v.string(), v.transform<string, bigint>(BigInt)),
 	name: v.string(),
 });
 
