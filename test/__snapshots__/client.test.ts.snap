@@ -29,3 +29,23 @@ exports[`Client > Headers 1`] = `
 `;
 
 exports[`Client > JSON Error > "Data should be array" 1`] = `[Error: Data should be array]`;
+
+exports[`Client > a command naming deepObjectSerializer > writes the URL 1`] = `"https://192.0.2.1/query?limit=10&tags=cat&tags=dog&filter%5Bsince%5D=2020&filter%5Buntil%5D=2021"`;
+
+exports[`Client > a command naming deepObjectSerializer > writes the URL with sortQuery 1`] = `"https://192.0.2.1/query?filter%5Bsince%5D=2020&filter%5Buntil%5D=2021&limit=10&tags=cat&tags=dog"`;
+
+exports[`Client > a command naming formExplodeSerializer > writes the URL 1`] = `"https://192.0.2.1/query?limit=10&tags=cat&tags=dog&since=2020&until=2021"`;
+
+exports[`Client > a command naming formExplodeSerializer > writes the URL with sortQuery 1`] = `"https://192.0.2.1/query?since=2020&until=2021&limit=10&tags=cat&tags=dog"`;
+
+exports[`Client > a command naming formSerializer > writes the URL 1`] = `"https://192.0.2.1/query?limit=10&tags=cat,dog&filter=since,2020,until,2021"`;
+
+exports[`Client > a command naming formSerializer > writes the URL with sortQuery 1`] = `"https://192.0.2.1/query?filter=since,2020,until,2021&limit=10&tags=cat,dog"`;
+
+exports[`Client > a command naming pipeDelimitedSerializer > writes the URL 1`] = `"https://192.0.2.1/query?limit=10&tags=cat%7Cdog&filter=since%7C2020%7Cuntil%7C2021"`;
+
+exports[`Client > a command naming pipeDelimitedSerializer > writes the URL with sortQuery 1`] = `"https://192.0.2.1/query?filter=since%7C2020%7Cuntil%7C2021&limit=10&tags=cat%7Cdog"`;
+
+exports[`Client > a command naming spaceDelimitedSerializer > writes the URL 1`] = `"https://192.0.2.1/query?limit=10&tags=cat%20dog&filter=since%202020%20until%202021"`;
+
+exports[`Client > a command naming spaceDelimitedSerializer > writes the URL with sortQuery 1`] = `"https://192.0.2.1/query?filter=since%202020%20until%202021&limit=10&tags=cat%20dog"`;

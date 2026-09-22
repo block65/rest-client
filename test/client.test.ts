@@ -6,8 +6,11 @@ import {
 	type RestServiceClientConfig,
 	ServiceError,
 	createIsomorphicNativeFetcher,
+	deepObjectSerializer,
 	formExplodeSerializer,
 	formSerializer,
+	pipeDelimitedSerializer,
+	spaceDelimitedSerializer,
 } from "@block65/rest-client";
 import getPort from "get-port";
 import type { JsonObject, UnknownRecord } from "type-fest";
@@ -265,6 +268,34 @@ describe("Client", () => {
 		);
 
 		expect(url.search).toBe("?fixed=1");
+	});
+
+	// each serializer a command can name, reaching the URL through the client
+	describe.each([
+		["formExplodeSerializer", formExplodeSerializer],
+		["formSerializer", formSerializer],
+		["spaceDelimitedSerializer", spaceDelimitedSerializer],
+		["pipeDelimitedSerializer", pipeDelimitedSerializer],
+		["deepObjectSerializer", deepObjectSerializer],
+	])("a command naming %s", (_name, serializer) => {
+		const query = {
+			limit: 10,
+			tags: ["cat", "dog"],
+			filter: { since: "2020", until: "2021" },
+		};
+
+		test("writes the URL", async () => {
+			const url = await serializeViaClient(query, { serializer });
+			expect(url.href).toMatchSnapshot();
+		});
+
+		test("writes the URL with sortQuery", async () => {
+			const url = await serializeViaClient(query, {
+				serializer,
+				sortQuery: true,
+			});
+			expect(url.href).toMatchSnapshot();
+		});
 	});
 
 	test("a command without a query sends no search", async () => {
