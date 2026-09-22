@@ -14,8 +14,43 @@ import type {
 } from "./types.ts";
 import { isPlainObject } from "./utils.ts";
 
+const utf8 = new TextEncoder();
+
+// `<` on strings misorders astral characters, and a signing scheme uses bytes
+function compareUtf8Bytes(a: string, b: string) {
+	const bytesA = utf8.encode(a);
+	const bytesB = utf8.encode(b);
+
+	for (const [i, byteA] of bytesA.entries()) {
+		const byteB = bytesB[i];
+
+		// b ran out first, so it is a prefix of a
+		if (byteB === undefined) {
+			return 1;
+		}
+
+		if (byteA !== byteB) {
+			return byteA - byteB;
+		}
+	}
+
+	return bytesA.length - bytesB.length;
+}
+
+// both serializers keep insertion order, so sorting here sorts the URL
+function sortQueryKeys(
+	query: Record<string, unknown>,
+	sort: true | ((a: string, b: string) => number),
+) {
+	const order = sort === true ? compareUtf8Bytes : sort;
+
+	return Object.fromEntries(
+		Object.entries(query).toSorted(([a], [b]) => order(a, b)),
+	);
+}
+
 // spreading an iterable Headers into an object drops every header
-function headerRecord(headers: Record<string, string> | Headers | undefined) {
+function headersFrom(headers: Record<string, string> | Headers | undefined) {
 	return headers instanceof Headers ? Object.fromEntries(headers) : headers;
 }
 
@@ -43,6 +78,12 @@ export type RestServiceClientConfig = {
 	headers?: ResolvableHeaders | undefined;
 	credentials?: "include" | "omit" | "same-origin" | undefined;
 	responseValidator?: ((response: unknown) => boolean) | undefined;
+	/**
+	 * Orders every query's keys before serialization, so a cache or a
+	 * signature keyed on the URL sees the same URL however the caller built
+	 * the query. `true` sorts by UTF-8 byte order, a comparator by its result
+	 */
+	sortQuery?: boolean | ((a: string, b: string) => number) | undefined;
 } & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
 
 export class RestServiceClient<
@@ -60,12 +101,15 @@ export class RestServiceClient<
 
 	readonly #logger: RestServiceClientConfig["logger"];
 
+	readonly #sortQuery: RestServiceClientConfig["sortQuery"];
+
 	constructor(base: URL | string, config: RestServiceClientConfig = {}) {
 		this.#base = new URL(base);
 		this.#headers = Object.freeze(config.headers);
 
 		this.#logger = config.logger;
 		this.#responseValidator = config.responseValidator;
+		this.#sortQuery = config.sortQuery;
 
 		this.#fetcher =
 			"fetcher" in config
@@ -163,7 +207,11 @@ export class RestServiceClient<
 		const url = new URL(`.${pathname}`, this.#base);
 
 		if (query) {
-			url.search = (querySerializer ?? serializerForStyles(queryStyles))(query);
+			const serialize = querySerializer ?? serializerForStyles(queryStyles);
+
+			url.search = serialize(
+				this.#sortQuery ? sortQueryKeys(query, this.#sortQuery) : query,
+			);
 		}
 
 		return runtimeOptions?.url ? new URL(await runtimeOptions.url(url)) : url;
@@ -174,6 +222,7 @@ export class RestServiceClient<
 			Object.entries(this.#headers ?? {}).map(
 				async ([key, valueOrResolver]) => {
 					if (typeof valueOrResolver === "function") {
+						// binding allows the resolver to access its client via `this`
 						const resolver = valueOrResolver.bind(this);
 						return [key, await resolver()] as const;
 					}
@@ -189,7 +238,7 @@ export class RestServiceClient<
 		return {
 			...clientHeaders,
 			...command.headers,
-			...headerRecord(runtimeOptions?.headers),
+			...headersFrom(runtimeOptions?.headers),
 		};
 	}
 
@@ -204,7 +253,7 @@ export class RestServiceClient<
 			...runtimeOptions,
 			headers: {
 				accept: "application/json",
-				...headerRecord(runtimeOptions?.headers),
+				...headersFrom(runtimeOptions?.headers),
 				"content-type": "application/json;charset=utf-8",
 			},
 		});

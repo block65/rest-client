@@ -1,8 +1,8 @@
 /// <reference types="node" />
 import { createServer } from "node:http";
+import { createIsomorphicNativeFetcher } from "@block65/rest-client";
 import getPort from "get-port";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { createIsomorphicNativeFetcher } from "../src/main.ts";
 import { requestListener } from "./server.ts";
 
 const server = createServer(requestListener);

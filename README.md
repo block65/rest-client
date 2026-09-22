@@ -65,6 +65,15 @@ new RestServiceClient(url, {
 
 The default fetcher retries idempotent (`GET`) requests and supports timeouts and merged abort signals.
 
+### Sorted query keys
+
+Both serializers write keys in the order the query object was built. `sortQuery` orders them first, by UTF-8 byte order or by a comparator, so a cache or a signature keyed on the URL sees one URL per query:
+
+```ts
+new RestServiceClient(url, { sortQuery: true });
+new RestServiceClient(url, { sortQuery: (a, b) => a.localeCompare(b) });
+```
+
 ### Response validation via `responseSchema`
 
 When a generated command class exposes a static `responseSchema` (any [Standard Schema](https://standardschema.dev) validator, such as [valibot](https://valibot.dev)), the client automatically runs the schema against successful responses — useful for coercing JSON-unsafe types like `int64` strings into `BigInt`.

@@ -1,12 +1,12 @@
-import type { Jsonifiable } from "type-fest";
-import * as v from "valibot";
-import { assert, describe, expect, test } from "vitest";
 import {
 	Command,
 	ResponseValidationError,
 	RestServiceClient,
 	jsonStringify,
-} from "../src/main.ts";
+} from "@block65/rest-client";
+import type { Jsonifiable } from "type-fest";
+import * as v from "valibot";
+import { assert, describe, expect, test } from "vitest";
 
 const fakeUrl = new URL("https://192.0.2.1");
 

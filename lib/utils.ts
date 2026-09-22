@@ -29,3 +29,10 @@ export function jsonStringify(value: unknown): string {
 		typeof val === "bigint" ? val.toString() : val,
 	);
 }
+
+export function typedObjectEntries<T extends Record<string, unknown>>(
+	obj: T,
+): [keyof T, T[keyof T]][] {
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- its the entire point on this fn
+	return Object.entries(obj) as [keyof T, T[keyof T]][];
+}

@@ -166,16 +166,17 @@ function wellFormed(value: unknown): unknown {
 export function createQueryStringSerializer(
 	options?: queryString.StringifyOptions,
 ): QuerySerializer {
-	return (query) =>
-		queryString.stringify(
+	return function queryStringSerializer(query) {
+		return queryString.stringify(
 			Object.fromEntries(
 				Object.entries(query).map(([name, value]) => [
 					name.toWellFormed(),
 					wellFormed(resolve(value)),
 				]),
 			),
-			// query-string sorts its keys by default, and that reorders every
-			// query the client already sends
+			// keys keep their written order, as the default serializer's do, so
+			// the same query serializes to the same URL under either serializer
 			{ skipNull: true, sort: false, ...options },
 		);
+	};
 }
