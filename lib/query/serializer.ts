@@ -128,8 +128,12 @@ function prepare(query: UnknownRecord, style: Prepare) {
 
 // query-string writes the separator raw, and the spec shows it encoded
 function encodeSeparator(serialized: string, separator: string) {
-	// a byte is two hex digits, where toString(16) would drop a leading zero
-	const encoded = `%${utf8.encode(separator).toHex().toUpperCase()}`;
+	// a byte is two hex digits, where toString(16) alone would drop a leading
+	// zero. toHex would do this, but Node 24 does not have it
+	const encoded = Array.from(
+		utf8.encode(separator),
+		(byte) => `%${byte.toString(16).padStart(2, "0").toUpperCase()}`,
+	).join("");
 
 	// strict encoding has already encoded every space and pipe in a name or
 	// value, so each one still raw is a separator
