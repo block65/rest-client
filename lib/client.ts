@@ -50,7 +50,7 @@ function sortQueryKeys(
 }
 
 // spreading an iterable Headers into an object drops every header
-function headerRecord(headers: Record<string, string> | Headers | undefined) {
+function headersFrom(headers: Record<string, string> | Headers | undefined) {
 	return headers instanceof Headers ? Object.fromEntries(headers) : headers;
 }
 
@@ -207,7 +207,9 @@ export class RestServiceClient<
 		const url = new URL(`.${pathname}`, this.#base);
 
 		if (query) {
-			url.search = (querySerializer ?? serializerForStyles(queryStyles))(
+			const serialize = querySerializer ?? serializerForStyles(queryStyles);
+
+			url.search = serialize(
 				this.#sortQuery ? sortQueryKeys(query, this.#sortQuery) : query,
 			);
 		}
@@ -220,6 +222,7 @@ export class RestServiceClient<
 			Object.entries(this.#headers ?? {}).map(
 				async ([key, valueOrResolver]) => {
 					if (typeof valueOrResolver === "function") {
+						// binding allows the resolver to access its client via `this`
 						const resolver = valueOrResolver.bind(this);
 						return [key, await resolver()] as const;
 					}
@@ -235,7 +238,7 @@ export class RestServiceClient<
 		return {
 			...clientHeaders,
 			...command.headers,
-			...headerRecord(runtimeOptions?.headers),
+			...headersFrom(runtimeOptions?.headers),
 		};
 	}
 
@@ -250,7 +253,7 @@ export class RestServiceClient<
 			...runtimeOptions,
 			headers: {
 				accept: "application/json",
-				...headerRecord(runtimeOptions?.headers),
+				...headersFrom(runtimeOptions?.headers),
 				"content-type": "application/json;charset=utf-8",
 			},
 		});

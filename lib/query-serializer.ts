@@ -166,8 +166,8 @@ function wellFormed(value: unknown): unknown {
 export function createQueryStringSerializer(
 	options?: queryString.StringifyOptions,
 ): QuerySerializer {
-	return (query) =>
-		queryString.stringify(
+	return function queryStringSerializer(query) {
+		return queryString.stringify(
 			Object.fromEntries(
 				Object.entries(query).map(([name, value]) => [
 					name.toWellFormed(),
@@ -178,4 +178,5 @@ export function createQueryStringSerializer(
 			// the same query serializes to the same URL under either serializer
 			{ skipNull: true, sort: false, ...options },
 		);
+	};
 }
