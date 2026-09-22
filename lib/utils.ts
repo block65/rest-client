@@ -11,7 +11,6 @@ export function isPlainObject(value: unknown): value is UnknownRecord {
 
 type Jsonifiable<T extends JsonPrimitive = JsonPrimitive> = { toJSON(): T };
 
-// a Date, a URL or a caller's own class defines toJSON, and JSON.stringify calls it
 function isJsonifiable(value: unknown): value is Jsonifiable {
 	return (
 		typeof value === "object" &&
@@ -21,11 +20,6 @@ function isJsonifiable(value: unknown): value is Jsonifiable {
 	);
 }
 
-/**
- * Calls `toJSON` the way `JSON.stringify` does. A value defining `toJSON`
- * supplies its wire form, and the caller encodes the result. Runs once per
- * position, so a `toJSON` returning `this` terminates
- */
 export function toJsonValue<T>(value: T) {
 	return isJsonifiable(value) ? value.toJSON() : value;
 }
@@ -33,8 +27,9 @@ export function toJsonValue<T>(value: T) {
 type Stringifiable = { toString(): string };
 
 /**
- * A URL, a Blob or a caller's own class states its string form this way.
- * Object's own toString does not count
+ * Object's own toString yields "[object Object]", which says nothing about
+ * the value and would reach the wire unnoticed. A class that overrides it
+ * chose that text as its form
  */
 export function isStringifiable(value: unknown): value is Stringifiable {
 	return (
