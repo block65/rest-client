@@ -2,7 +2,7 @@ import {
 	type QuerySerializer,
 	deepObjectSerializer,
 	formExplodeSerializer,
-	formSerializer,
+	formJoinSerializer,
 	pipeDelimitedSerializer,
 	spaceDelimitedSerializer,
 } from "@block65/rest-client";
@@ -30,7 +30,7 @@ const color = {
 const rows: Row[] = [
 	[
 		"form, explode false",
-		formSerializer,
+		formJoinSerializer,
 		{
 			undefined: "color=",
 			string: "color=blue",
@@ -158,7 +158,7 @@ describe("percent-encoding", () => {
 		],
 		[
 			"a comma in a value beside the comma between items",
-			formSerializer,
+			formJoinSerializer,
 			{ a: ["x,y", "z"] },
 		],
 		[
@@ -180,7 +180,7 @@ describe("percent-encoding", () => {
 // the spec leaves an array or object member undefined for every style
 describe("nesting", () => {
 	test.each([
-		["form", formSerializer],
+		["form", formJoinSerializer],
 		["form with explode", formExplodeSerializer],
 		["spaceDelimited", spaceDelimitedSerializer],
 		["pipeDelimited", pipeDelimitedSerializer],
@@ -226,12 +226,12 @@ describe("hostile input", () => {
 		],
 		[
 			"a toJSON returning an object",
-			formSerializer,
+			formJoinSerializer,
 			{ a: { toJSON: () => ({ x: 1 }) } },
 		],
 		[
 			"a toJSON returning undefined",
-			formSerializer,
+			formJoinSerializer,
 			// oxlint-disable-next-line unicorn/no-useless-undefined -- the return is the case
 			{ a: { toJSON: () => undefined }, b: 1 },
 		],
@@ -251,7 +251,7 @@ describe("hostile input", () => {
 		const query: unknown = JSON.parse('{"__proto__":{"polluted":"1"},"b":"1"}');
 
 		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- parsed test data
-		expect(formSerializer(query as UnknownRecord)).toBe("b=1");
+		expect(formJoinSerializer(query as UnknownRecord)).toBe("b=1");
 		expect("polluted" in {}).toBe(false);
 	});
 });

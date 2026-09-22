@@ -14,7 +14,7 @@ const utf8 = new TextEncoder();
 
 // a scalar as query-string will encode it
 function text(name: string, value: unknown) {
-	// the spec's undefined value, which form writes as name=
+	// the spec's undefined value, written as an empty value
 	if (value === null) {
 		return "";
 	}
@@ -147,12 +147,7 @@ export function formExplodeSerializer(query: UnknownRecord) {
 	});
 }
 
-/**
- * `form` without `explode`, so items and members are joined with a comma.
- * A command that names nothing writes `form` with `explode`, the OpenAPI
- * default for a query parameter
- */
-export function formSerializer(query: UnknownRecord) {
+export function formJoinSerializer(query: UnknownRecord) {
 	return queryString.stringify(prepare(query, join), {
 		...options,
 		arrayFormat: "comma",

@@ -80,7 +80,7 @@ class ListAuditLogsCommand extends Command<Input, Output, Query> {
 | Serializer                 | style            | explode | `["blue", "black"]`      | `{ R: 100, G: 200 }`                |
 | -------------------------- | ---------------- | ------- | ------------------------ | ----------------------------------- |
 | `formExplodeSerializer`    | `form`           | true    | `color=blue&color=black` | `R=100&G=200`                       |
-| `formSerializer`           | `form`           | false   | `color=blue,black`       | `color=R,100,G,200`                 |
+| `formJoinSerializer`       | `form`           | false   | `color=blue,black`       | `color=R,100,G,200`                 |
 | `spaceDelimitedSerializer` | `spaceDelimited` | false   | `color=blue%20black`     | `color=R%20100%20G%20200`           |
 | `pipeDelimitedSerializer`  | `pipeDelimited`  | false   | `color=blue%7Cblack`     | `color=R%7C100%7CG%7C200`           |
 | `deepObjectSerializer`     | `deepObject`     |         | `color=blue&color=black` | `color%5BR%5D=100&color%5BG%5D=200` |

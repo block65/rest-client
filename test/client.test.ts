@@ -8,7 +8,7 @@ import {
 	createIsomorphicNativeFetcher,
 	deepObjectSerializer,
 	formExplodeSerializer,
-	formSerializer,
+	formJoinSerializer,
 	pipeDelimitedSerializer,
 	spaceDelimitedSerializer,
 } from "@block65/rest-client";
@@ -273,7 +273,7 @@ describe("Client", () => {
 	// each serializer a command can name, reaching the URL through the client
 	describe.each([
 		["formExplodeSerializer", formExplodeSerializer],
-		["formSerializer", formSerializer],
+		["formJoinSerializer", formJoinSerializer],
 		["spaceDelimitedSerializer", spaceDelimitedSerializer],
 		["pipeDelimitedSerializer", pipeDelimitedSerializer],
 		["deepObjectSerializer", deepObjectSerializer],
@@ -395,7 +395,7 @@ describe("Client", () => {
 		test("true sorts the keys another style writes", async () => {
 			const url = await serializeViaClient(queryParams, {
 				sortQuery: true,
-				serializer: formSerializer,
+				serializer: formJoinSerializer,
 			});
 			expect(url.search).toBe("?a=4&m=2,3&z=1");
 		});

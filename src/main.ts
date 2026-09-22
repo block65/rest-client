@@ -21,7 +21,7 @@ export { jsonStringify } from "../lib/utils.ts";
 export {
 	deepObjectSerializer,
 	formExplodeSerializer,
-	formSerializer,
+	formJoinSerializer,
 	pipeDelimitedSerializer,
 	spaceDelimitedSerializer,
 } from "../lib/query/serializer.ts";

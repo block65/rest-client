@@ -38,9 +38,9 @@ exports[`Client > a command naming formExplodeSerializer > writes the URL 1`] = 
 
 exports[`Client > a command naming formExplodeSerializer > writes the URL with sortQuery 1`] = `"https://192.0.2.1/query?since=2020&until=2021&limit=10&tags=cat&tags=dog"`;
 
-exports[`Client > a command naming formSerializer > writes the URL 1`] = `"https://192.0.2.1/query?limit=10&tags=cat,dog&filter=since,2020,until,2021"`;
+exports[`Client > a command naming formJoinSerializer > writes the URL 1`] = `"https://192.0.2.1/query?limit=10&tags=cat,dog&filter=since,2020,until,2021"`;
 
-exports[`Client > a command naming formSerializer > writes the URL with sortQuery 1`] = `"https://192.0.2.1/query?filter=since,2020,until,2021&limit=10&tags=cat,dog"`;
+exports[`Client > a command naming formJoinSerializer > writes the URL with sortQuery 1`] = `"https://192.0.2.1/query?filter=since,2020,until,2021&limit=10&tags=cat,dog"`;
 
 exports[`Client > a command naming pipeDelimitedSerializer > writes the URL 1`] = `"https://192.0.2.1/query?limit=10&tags=cat%7Cdog&filter=since%7C2020%7Cuntil%7C2021"`;
 
