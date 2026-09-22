@@ -25,10 +25,20 @@ export abstract class Command<
 	// level, so the deep-widened type is what is actually held
 	public readonly query: UndefinedOnPartialDeep<CommandQuery> | undefined;
 
-	// A generated command overrides this with a getter that builds its
-	// serializer on first use and keeps it. Importing the module stays free
-	public get querySerializer(): QuerySerializer | undefined {
+	// A generated command overrides this to build its serializer. The getter
+	// calls it once and keeps the result, so importing the module stays free
+	// and a command serializing many queries builds only one serializer.
+	// The annotation types the override, not this body
+	// oxlint-disable-next-line typescript/no-widening-return-type
+	protected buildQuerySerializer(): QuerySerializer | undefined {
 		return undefined;
+	}
+
+	#querySerializer: QuerySerializer | undefined;
+
+	public get serializeQuery(): QuerySerializer | undefined {
+		this.#querySerializer ??= this.buildQuerySerializer();
+		return this.#querySerializer;
 	}
 
 	// Without these, unused generics make Command<A, X> ≡ Command<B, X>

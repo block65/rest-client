@@ -7,13 +7,16 @@ import {
 	ResponseValidationError,
 	ServiceError,
 } from "./errors.ts";
-import { defaultQuerySerializer } from "./query/serializer.ts";
+import { createQuerySerializer } from "./query/serializer.ts";
 import type {
 	FetcherMethod,
 	ResolvableHeaders,
 	RuntimeOptions,
 } from "./types.ts";
 import { isPlainObject } from "./utils.ts";
+
+// every command that brings no serializer shares this one
+const serializeQueryByDefault = createQuerySerializer();
 
 const utf8 = new TextEncoder();
 
@@ -203,12 +206,12 @@ export class RestServiceClient<
 
 	// the runtime hook rewrites the serialized URL, so it runs last
 	async #buildUrl(command: Command, runtimeOptions?: RuntimeOptions) {
-		const { pathname, query, querySerializer } = command;
+		const { pathname, query, serializeQuery } = command;
 
 		const url = new URL(`.${pathname}`, this.#base);
 
 		if (query) {
-			const serialize = querySerializer ?? defaultQuerySerializer;
+			const serialize = serializeQuery ?? serializeQueryByDefault;
 
 			url.search = serialize(
 				this.#sortQuery ? sortQueryKeys(query, this.#sortQuery) : query,

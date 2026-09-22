@@ -117,7 +117,7 @@ class QueryCommand extends Command<never, unknown, Query> {
 		this.#serializer = serializer;
 	}
 
-	public override get querySerializer() {
+	protected override buildQuerySerializer() {
 		return this.#serializer;
 	}
 }

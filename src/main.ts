@@ -17,7 +17,7 @@ export { createIsomorphicNativeFetcher } from "./fetchers/isomorphic-native-fetc
 
 export { jsonStringify } from "../lib/utils.ts";
 
-// the serializers a command's querySerializer getter can return
+// the serializers a command's buildQuerySerializer can return
 export { createQueryStringSerializer } from "../lib/query/query-string.ts";
 export {
 	createQuerySerializer,
