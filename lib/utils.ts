@@ -1,6 +1,6 @@
-export function isPlainObject(
-	value: unknown,
-): value is Record<string, unknown> {
+import type { UnknownRecord } from "type-fest";
+
+export function isPlainObject(value: unknown): value is UnknownRecord {
 	if (Object.prototype.toString.call(value) !== "[object Object]") {
 		return false;
 	}
@@ -34,10 +34,13 @@ export function toJsonValue<T>(value: T): JsonValueOf<T> {
 	return (hasToJson(value) ? value.toJSON() : value) as JsonValueOf<T>;
 }
 
-// a URL, a Blob or a caller's own class states its string form this way
-export function hasOwnToString(
-	value: unknown,
-): value is { toString(): string } {
+type Stringifiable = { toString(): string };
+
+/**
+ * A URL, a Blob or a caller's own class states its string form this way.
+ * Object's own toString does not count
+ */
+export function isStringifiable(value: unknown): value is Stringifiable {
 	return (
 		typeof value === "object" &&
 		value !== null &&

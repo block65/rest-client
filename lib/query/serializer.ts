@@ -1,5 +1,5 @@
 import type { QueryParameterStyle, QuerySerializer } from "../types.ts";
-import { hasOwnToString, isPlainObject, toJsonValue } from "../utils.ts";
+import { isPlainObject, isStringifiable, toJsonValue } from "../utils.ts";
 
 // unencoded, since the serializer applies RFC 3986 once to every pair alike
 type NameValuePair = readonly [name: string, value: string];
@@ -9,17 +9,6 @@ type SerializeParameter = (name: string, value: unknown) => NameValuePair[];
 // a plain object skips toJSON, a legal member name in a query object
 function resolveQueryValue(input: unknown) {
 	return isPlainObject(input) ? input : toJsonValue(input);
-}
-
-type Stringifiable = { toString(): string };
-
-// a URL, a Blob or a caller's own class states its query form this way
-function isStringifiable(value: unknown): value is Stringifiable {
-	return (
-		typeof value === "object" &&
-		value !== null &&
-		value.toString !== Object.prototype.toString
-	);
 }
 
 // a plain object never reaches here, each style walks it first
