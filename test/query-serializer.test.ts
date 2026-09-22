@@ -118,9 +118,7 @@ describe("createQuerySerializer", () => {
 
 	// String() would have sent [object Object] and nothing would have noticed
 	test("a value with no string form throws rather than serializing", () => {
-		class Opaque {}
-
-		expect(() => defaultQuerySerializer({ a: new Opaque() })).toThrow(
+		expect(() => defaultQuerySerializer({ a: new Map() })).toThrow(
 			"query parameter a holds a object with no string form",
 		);
 	});
