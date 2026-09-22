@@ -65,18 +65,22 @@ new RestServiceClient(url, {
 
 The default fetcher retries idempotent (`GET`) requests and supports timeouts and merged abort signals.
 
-### Query parameter writers
+### Query parameter styles
 
-A generated command names a writer for each parameter whose OpenAPI document departs from the default of `form` with `explode`. Every other parameter takes the fallback, `writeFormExploded` unless the second argument says otherwise:
+A generated command names the OpenAPI `style` and `explode` of each parameter that departs from `form` with `explode`, in a getter that builds the serializer on first use and keeps it, so importing a module of commands builds no serializers:
 
 ```ts
-public override querySerializer = createQuerySerializer({
-	changes: writeFormJoined,
-	filter: writeDeepObject,
-});
+static #querySerializer: QuerySerializer | undefined;
+
+public override get querySerializer() {
+	return (ImagesCreateCommand.#querySerializer ??= createQuerySerializer({
+		changes: { style: "form", explode: false },
+		filter: { style: "deepObject" },
+	}));
+}
 ```
 
-The writers are `writeFormExploded`, `writeFormJoined`, `writeSpaceDelimited`, `writePipeDelimited` and `writeDeepObject`, one module each, so a bundle carries only the ones a client's commands name. A writer returns a parameter's pairs unencoded, and the serializer percent-encodes every pair once. `createQueryStringSerializer` remains for a server the OpenAPI styles cannot describe.
+Every OpenAPI 3.2 query style is covered, and `explode` defaults as OpenAPI says: true for `form`, false for the others. The serializer percent-encodes every name and value once, so `url.search` returns exactly what it produced. `createQueryStringSerializer` remains for a server the OpenAPI styles cannot describe.
 
 ### Sorted query keys
 

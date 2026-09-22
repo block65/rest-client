@@ -17,18 +17,12 @@ export { createIsomorphicNativeFetcher } from "./fetchers/isomorphic-native-fetc
 
 export { jsonStringify } from "../lib/utils.ts";
 
-// the query serializers a command can pick from, and the parameter writers
-// a generated command names
+// the serializers a command's querySerializer getter can return
 export { createQueryStringSerializer } from "../lib/query/query-string.ts";
 export {
 	createQuerySerializer,
 	defaultQuerySerializer,
 } from "../lib/query/serializer.ts";
-export { writeDeepObject } from "../lib/query/deep-object.ts";
-export { writeFormExploded } from "../lib/query/form-exploded.ts";
-export { writeFormJoined } from "../lib/query/form-joined.ts";
-export { writePipeDelimited } from "../lib/query/pipe-delimited.ts";
-export { writeSpaceDelimited } from "../lib/query/space-delimited.ts";
 
 export type WithoutUndefinedProperties<T extends object> = Simplify<{
 	[P in keyof T]: Exclude<T[P], undefined>;

@@ -1,5 +1,171 @@
-import type { QueryParameterWriter, QuerySerializer } from "../types.ts";
-import { writeFormExploded } from "./form-exploded.ts";
+import type { QueryParameterStyle, QuerySerializer } from "../types.ts";
+import { isPlainObject, toJsonValue } from "../utils.ts";
+
+// unencoded, since the serializer applies RFC 3986 once to every pair alike
+type Pair = readonly [name: string, value: string];
+
+type SerializeParameter = (name: string, value: unknown) => Pair[];
+
+// a plain object skips toJSON, a legal member name in a query object
+function resolveQueryValue(input: unknown) {
+	return isPlainObject(input) ? input : toJsonValue(input);
+}
+
+type Stringable = { toString(): string };
+
+// a URL, a Blob or a caller's own class states its query form this way
+function hasOwnToString(value: unknown): value is Stringable {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		value.toString !== Object.prototype.toString
+	);
+}
+
+// a plain object never reaches here, each style walks it first
+function stringifyScalar(name: string, value: unknown) {
+	switch (true) {
+		case typeof value === "string":
+			return value;
+		case typeof value === "number":
+		case typeof value === "boolean":
+		case typeof value === "bigint":
+			return value.toString();
+		case hasOwnToString(value):
+			return value.toString();
+		default:
+			throw new TypeError(
+				`query parameter ${name} holds a ${typeof value} with no string form`,
+			);
+	}
+}
+
+// form with explode, the OAS default. A member hoists past its parent name
+function explode(name: string, input: unknown): Pair[] {
+	const value = resolveQueryValue(input);
+
+	// an invalid Date reaches here, its toJSON having returned null
+	if (value === null || value === undefined) {
+		return [];
+	}
+
+	const pairs: Pair[] = [];
+
+	if (Array.isArray(value)) {
+		for (const item of value) {
+			pairs.push(...explode(name, item));
+		}
+	} else if (isPlainObject(value)) {
+		for (const [member, memberValue] of Object.entries(value)) {
+			pairs.push(...explode(member, memberValue));
+		}
+	} else {
+		pairs.push([name, stringifyScalar(name, value)]);
+	}
+
+	return pairs;
+}
+
+// an object's members alternate name and value, as OAS shows for explode false
+function joinableParts(value: unknown) {
+	if (Array.isArray(value)) {
+		return value;
+	}
+
+	if (isPlainObject(value)) {
+		const parts: unknown[] = [];
+
+		for (const [member, memberValue] of Object.entries(value)) {
+			parts.push(member, memberValue);
+		}
+
+		return parts;
+	}
+
+	return [value];
+}
+
+// without explode, one value holds every item joined with the delimiter
+function join(name: string, input: unknown, delimiter: string) {
+	const value = resolveQueryValue(input);
+
+	if (value === null || value === undefined) {
+		return [];
+	}
+
+	const usable: string[] = [];
+
+	for (const part of joinableParts(value)) {
+		if (part !== null && part !== undefined) {
+			usable.push(stringifyScalar(name, resolveQueryValue(part)));
+		}
+	}
+
+	if (usable.length === 0) {
+		return [];
+	}
+
+	const pair: Pair = [name, usable.join(delimiter)];
+
+	return [pair];
+}
+
+// deepObject brackets each member under the parent name, as at[gt]=1
+function bracket(name: string, input: unknown, nestedInArray = false): Pair[] {
+	const value = resolveQueryValue(input);
+
+	if (value === null || value === undefined) {
+		return [];
+	}
+
+	const pairs: Pair[] = [];
+
+	if (Array.isArray(value)) {
+		const indexed =
+			nestedInArray ||
+			value.some((item) => isPlainObject(item) || Array.isArray(item));
+
+		for (const [index, item] of value.entries()) {
+			pairs.push(...bracket(indexed ? `${name}[${index}]` : name, item, true));
+		}
+	} else if (isPlainObject(value)) {
+		for (const [member, memberValue] of Object.entries(value)) {
+			pairs.push(...bracket(`${name}[${member}]`, memberValue, false));
+		}
+	} else {
+		pairs.push([name, stringifyScalar(name, value)]);
+	}
+
+	return pairs;
+}
+
+const delimiters = {
+	form: ",",
+	spaceDelimited: " ",
+	pipeDelimited: "|",
+} as const;
+
+// explode defaults to true for form and false otherwise, as OAS states
+function selectStyle({
+	style = "form",
+	explode: exploded = style === "form",
+}: QueryParameterStyle) {
+	if (style === "deepObject") {
+		return bracket;
+	}
+
+	// OAS 3.2 gives an exploded spaceDelimited or pipeDelimited array the
+	// same form as an exploded form array
+	if (exploded) {
+		return explode;
+	}
+
+	const delimiter = delimiters[style];
+
+	return function joinDelimited(name: string, value: unknown) {
+		return join(name, value, delimiter);
+	};
+}
 
 // MDN's recipe, plus toWellFormed so a lone surrogate writes U+FFFD
 function encodeRFC3986URIComponent(str: string) {
@@ -10,37 +176,40 @@ function encodeRFC3986URIComponent(str: string) {
 }
 
 /**
- * Writes each parameter with the writer named for it, or the fallback, then
- * RFC 3986 encodes every name and value once, so url.search returns what was
- * written
+ * Serializes each parameter in the style named for it, the rest as form with
+ * explode. Every name and value is RFC 3986 encoded once, so url.search
+ * returns the serialized string unchanged
  */
 export function createQuerySerializer(
-	writers: Readonly<Record<string, QueryParameterWriter>>,
-	fallback: QueryParameterWriter = writeFormExploded,
+	parameters: Readonly<Record<string, QueryParameterStyle>> = {},
 ): QuerySerializer {
-	return function serializeQuery(query) {
-		return Object.entries(query)
-			.flatMap(([name, value]) => {
-				// a parameter named constructor must not pick up Object.prototype's
-				const write = Object.hasOwn(writers, name)
-					? (writers[name] ?? fallback)
-					: fallback;
+	// each style resolves once, so a request does one lookup per parameter
+	const styles = new Map<string, SerializeParameter>();
 
-				return write(name, value);
-			})
-			.map(
-				([name, value]) =>
-					`${encodeRFC3986URIComponent(name)}=${encodeRFC3986URIComponent(value)}`,
-			)
-			.join("&");
+	for (const [name, parameter] of Object.entries(parameters)) {
+		styles.set(name, selectStyle(parameter));
+	}
+
+	return function serializeQuery(query) {
+		const encoded: string[] = [];
+
+		for (const [name, value] of Object.entries(query)) {
+			const serialize = styles.get(name) ?? explode;
+
+			for (const [pairName, pairValue] of serialize(name, value)) {
+				encoded.push(
+					`${encodeRFC3986URIComponent(pairName)}=${encodeRFC3986URIComponent(pairValue)}`,
+				);
+			}
+		}
+
+		return encoded.join("&");
 	};
 }
 
 /**
- * Repeats a key per array item, drops null and undefined, and hoists a nested
- * object's members. The client writes a query this way unless the command
- * names another serializer
+ * Every parameter as form with explode. A key repeats per array item, null
+ * and undefined are dropped, a nested object's members are hoisted. The
+ * client uses this unless the command supplies a serializer
  */
-export const defaultQuerySerializer: QuerySerializer = createQuerySerializer(
-	{},
-);
+export const defaultQuerySerializer = createQuerySerializer();

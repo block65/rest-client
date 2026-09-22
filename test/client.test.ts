@@ -8,10 +8,6 @@ import {
 	createIsomorphicNativeFetcher,
 	createQuerySerializer,
 	createQueryStringSerializer,
-	writeDeepObject,
-	writeFormJoined,
-	writePipeDelimited,
-	writeSpaceDelimited,
 } from "@block65/rest-client";
 import getPort from "get-port";
 import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
@@ -114,11 +110,15 @@ type Query = UndefinedOnPartialDeep<{ [k in string]?: JsonValue }>;
 
 class QueryCommand extends Command<never, unknown, Query> {
 	public override method = "get" as const;
-	public override readonly querySerializer: QuerySerializer | undefined;
+	readonly #serializer: QuerySerializer | undefined;
 
 	constructor(query: Query, serializer?: QuerySerializer) {
 		super("/200", null, query);
-		this.querySerializer = serializer;
+		this.#serializer = serializer;
+	}
+
+	public override get querySerializer() {
+		return this.#serializer;
 	}
 }
 
@@ -322,7 +322,7 @@ describe("Client", () => {
 		});
 
 		// almost every generated command lands on this default, and the cases
-		// below each name a writer through a command's own serializer
+		// below each name a style through a command's own serializer
 		describe("form, explode: true (the OAS default)", () => {
 			// OpenAI's ListAuditLogs effective_at states this style by omission,
 			// and an unhoisted object would go out as "[object Object]"
@@ -389,7 +389,9 @@ describe("Client", () => {
 		});
 
 		describe("form, explode: false", () => {
-			const joined = createQuerySerializer({ changes: writeFormJoined });
+			const joined = createQuerySerializer({
+				changes: { style: "form", explode: false },
+			});
 
 			// Docker's /images/create declares exactly this
 			test("an array joins its items with commas under one key", async () => {
@@ -431,7 +433,9 @@ describe("Client", () => {
 				const spaced = await serializeViaClient(
 					{ a: [1, 2] },
 					{
-						serializer: createQuerySerializer({ a: writeSpaceDelimited }),
+						serializer: createQuerySerializer({
+							a: { style: "spaceDelimited" },
+						}),
 					},
 				);
 
@@ -441,7 +445,9 @@ describe("Client", () => {
 				const piped = await serializeViaClient(
 					{ a: [1, 2] },
 					{
-						serializer: createQuerySerializer({ a: writePipeDelimited }),
+						serializer: createQuerySerializer({
+							a: { style: "pipeDelimited" },
+						}),
 					},
 				);
 				expect(piped.search).toBe(`?${expected([["a", "1|2"]])}`);
@@ -450,8 +456,8 @@ describe("Client", () => {
 
 		describe("deepObject", () => {
 			const deep = createQuerySerializer({
-				effective_at: writeDeepObject,
-				a: writeDeepObject,
+				effective_at: { style: "deepObject" },
+				a: { style: "deepObject" },
 			});
 
 			test("object members are bracketed under the parent name", async () => {

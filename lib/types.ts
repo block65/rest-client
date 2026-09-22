@@ -30,13 +30,13 @@ export type FetcherMethod = (
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete" | "head";
 
 /**
- * Writes one query parameter as name and value pairs, unencoded. Each OAS
- * 3.2 style and explode combination a document can state is one writer
+ * A query parameter's `style` and `explode`, in the OpenAPI words. Explode
+ * defaults to true for `form` and to false for the other styles
  */
-export type QueryParameterWriter = (
-	name: string,
-	value: unknown,
-) => (readonly [name: string, value: string])[];
+export type QueryParameterStyle = {
+	style?: "form" | "spaceDelimited" | "pipeDelimited" | "deepObject";
+	explode?: boolean;
+};
 
 /** Turns a command's query object into the search string after the `?` */
 export type QuerySerializer = (query: Record<string, unknown>) => string;

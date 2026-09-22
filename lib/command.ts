@@ -25,9 +25,11 @@ export abstract class Command<
 	// level, so the deep-widened type is what is actually held
 	public readonly query: UndefinedOnPartialDeep<CommandQuery> | undefined;
 
-	// Names a writer per parameter that departs from the OAS default, or
-	// replaces the whole query's serializer for a server OAS cannot describe
-	public readonly querySerializer: QuerySerializer | undefined;
+	// A generated command overrides this with a getter that builds its
+	// serializer on first use and keeps it. Importing the module stays free
+	public get querySerializer(): QuerySerializer | undefined {
+		return undefined;
+	}
 
 	// Without these, unused generics make Command<A, X> ≡ Command<B, X>
 	// and the cross-client guard silently disappears

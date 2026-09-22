@@ -2,7 +2,6 @@ import {
 	createQuerySerializer,
 	createQueryStringSerializer,
 	defaultQuerySerializer,
-	writeFormJoined,
 } from "@block65/rest-client";
 import { describe, expect, test } from "vitest";
 import { typedObjectEntries } from "../lib/utils.ts";
@@ -85,23 +84,52 @@ describe("the default serializer's output", () => {
 });
 
 describe("createQuerySerializer", () => {
-	test("a named parameter takes its writer, the rest the fallback", () => {
-		const serialize = createQuerySerializer({ tags: writeFormJoined });
+	test("a named parameter takes its style, the rest form with explode", () => {
+		const serialize = createQuerySerializer({
+			tags: { style: "form", explode: false },
+		});
 
 		expect(serialize({ tags: ["a", "b"], ids: [1, 2] })).toBe(
 			"tags=a%2Cb&ids=1&ids=2",
 		);
 	});
 
-	test("the fallback replaces form explode for unnamed parameters", () => {
-		const serialize = createQuerySerializer({}, writeFormJoined);
+	// OpenAPI defaults explode to true for form and to false for the others
+	test("explode defaults per style", () => {
+		const serialize = createQuerySerializer({
+			a: { style: "form" },
+			b: { style: "spaceDelimited" },
+			c: { style: "pipeDelimited" },
+			d: {},
+		});
 
-		expect(serialize({ ids: [1, 2] })).toBe("ids=1%2C2");
+		expect(serialize({ a: [1, 2], b: [1, 2], c: [1, 2], d: [1, 2] })).toBe(
+			"a=1&a=2&b=1%202&c=1%7C2&d=1&d=2",
+		);
 	});
 
-	// styles?.[name] read Object.prototype.constructor for this key
-	test("a parameter named constructor takes the fallback", () => {
-		const serialize = createQuerySerializer({ tags: writeFormJoined });
+	test("an exploded spaceDelimited array repeats its key as form does", () => {
+		const serialize = createQuerySerializer({
+			a: { style: "spaceDelimited", explode: true },
+		});
+
+		expect(serialize({ a: [1, 2] })).toBe("a=1&a=2");
+	});
+
+	// String() would have sent [object Object] and nothing would have noticed
+	test("a value with no string form throws rather than serializing", () => {
+		class Opaque {}
+
+		expect(() => defaultQuerySerializer({ a: new Opaque() })).toThrow(
+			"query parameter a holds a object with no string form",
+		);
+	});
+
+	// a plain-object lookup read Object.prototype.constructor for this key
+	test("a parameter named constructor takes form with explode", () => {
+		const serialize = createQuerySerializer({
+			tags: { style: "form", explode: false },
+		});
 
 		expect(serialize({ constructor: ["a", "b"] })).toBe(
 			"constructor=a&constructor=b",
