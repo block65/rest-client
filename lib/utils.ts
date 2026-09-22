@@ -1,4 +1,4 @@
-import type { Entries, UnknownRecord } from "type-fest";
+import type { Entries, JsonPrimitive, UnknownRecord } from "type-fest";
 
 export function isPlainObject(value: unknown): value is UnknownRecord {
 	if (Object.prototype.toString.call(value) !== "[object Object]") {
@@ -9,12 +9,10 @@ export function isPlainObject(value: unknown): value is UnknownRecord {
 	return prototype === null || prototype === Object.getPrototypeOf({});
 }
 
+type Jsonifiable<T extends JsonPrimitive = JsonPrimitive> = { toJSON(): T };
+
 // the hook JSON.stringify honours, on a Date, a URL or a caller's own class
-type JsonReady<T> = { toJSON(): T };
-
-type JsonValueOf<T> = T extends JsonReady<infer Json> ? Json : T;
-
-function hasToJson(value: unknown): value is JsonReady<unknown> {
+function isJsonifiable(value: unknown): value is Jsonifiable {
 	return (
 		typeof value === "object" &&
 		value !== null &&
@@ -28,10 +26,8 @@ function hasToJson(value: unknown): value is JsonReady<unknown> {
  * toJSON supplies its wire form, and the caller encodes the result. Runs
  * once per position, so a toJSON returning `this` terminates
  */
-export function toJsonValue<T>(value: T): JsonValueOf<T> {
-	// the guard proves the branch, the conditional type only restates it
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- by design
-	return (hasToJson(value) ? value.toJSON() : value) as JsonValueOf<T>;
+export function toJsonValue<T>(value: T) {
+	return isJsonifiable(value) ? value.toJSON() : value;
 }
 
 type Stringifiable = { toString(): string };
