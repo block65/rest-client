@@ -32,98 +32,88 @@ function explode(name: string, value: unknown): UnencodedPair[] {
 		return [];
 	}
 
-	const pairs: UnencodedPair[] = [];
-
 	if (Array.isArray(resolvedValue)) {
-		for (const item of resolvedValue) {
-			pairs.push(...explode(name, item));
-		}
-	} else if (isPlainObject(resolvedValue)) {
-		for (const [member, memberValue] of Object.entries(resolvedValue)) {
-			pairs.push(...explode(member, memberValue));
-		}
-	} else {
-		pairs.push([name, stringifyParameter(name, resolvedValue)]);
+		return resolvedValue.map((item) => explode(name, item)).flat();
 	}
 
-	return pairs;
+	if (isPlainObject(resolvedValue)) {
+		return Object.entries(resolvedValue)
+			.map(([member, memberValue]) => explode(member, memberValue))
+			.flat();
+	}
+
+	return [[name, stringifyParameter(name, resolvedValue)]];
 }
 
 // an object's members alternate name and value, as OAS shows for explode false
-function joinableParts(value: unknown) {
+function flattenForJoin(value: unknown): unknown[] {
 	if (Array.isArray(value)) {
 		return value;
 	}
 
 	if (isPlainObject(value)) {
-		const parts: unknown[] = [];
-
-		for (const [member, memberValue] of Object.entries(value)) {
-			parts.push(member, memberValue);
-		}
-
-		return parts;
+		return Object.entries(value).flat();
 	}
 
 	return [value];
 }
 
 // without explode, one value holds every item joined with the delimiter
-function join(name: string, input: unknown, delimiter: string) {
-	const value = resolveQueryValue(input);
+function join(
+	name: string,
+	value: unknown,
+	delimiter: string,
+): UnencodedPair[] {
+	const resolvedValue = resolveQueryValue(value);
 
-	if (value === null || value === undefined) {
+	if (resolvedValue === null || resolvedValue === undefined) {
 		return [];
 	}
 
-	const usable: string[] = [];
-
-	for (const part of joinableParts(value)) {
-		if (part !== null && part !== undefined) {
-			usable.push(stringifyParameter(name, resolveQueryValue(part)));
-		}
-	}
+	const usable = flattenForJoin(resolvedValue)
+		.filter((item) => item !== null && item !== undefined)
+		.map((item) => stringifyParameter(name, resolveQueryValue(item)));
 
 	if (usable.length === 0) {
 		return [];
 	}
 
-	const pair: UnencodedPair = [name, usable.join(delimiter)];
-
-	return [pair];
+	return [[name, usable.join(delimiter)]];
 }
 
 // deepObject brackets each member under the parent name, as at[gt]=1
 function bracket(
 	name: string,
-	input: unknown,
+	value: unknown,
 	nestedInArray = false,
 ): UnencodedPair[] {
-	const value = resolveQueryValue(input);
+	const resolvedValue = resolveQueryValue(value);
 
-	if (value === null || value === undefined) {
+	if (resolvedValue === null || resolvedValue === undefined) {
 		return [];
 	}
 
-	const pairs: UnencodedPair[] = [];
-
-	if (Array.isArray(value)) {
+	if (Array.isArray(resolvedValue)) {
 		const indexed =
 			nestedInArray ||
-			value.some((item) => isPlainObject(item) || Array.isArray(item));
+			resolvedValue.some((item) => isPlainObject(item) || Array.isArray(item));
 
-		for (const [index, item] of value.entries()) {
-			pairs.push(...bracket(indexed ? `${name}[${index}]` : name, item, true));
-		}
-	} else if (isPlainObject(value)) {
-		for (const [member, memberValue] of Object.entries(value)) {
-			pairs.push(...bracket(`${name}[${member}]`, memberValue, false));
-		}
-	} else {
-		pairs.push([name, stringifyParameter(name, value)]);
+		return resolvedValue
+			.map((item, index) =>
+				bracket(indexed ? `${name}[${index}]` : name, item, true),
+			)
+			.flat();
 	}
 
-	return pairs;
+	if (isPlainObject(resolvedValue)) {
+		return Object.entries(resolvedValue)
+			.map(([member, memberValue]) =>
+				bracket(`${name}[${member}]`, memberValue, false),
+			)
+			.flat();
+	}
+
+	return [[name, stringifyParameter(name, resolvedValue)]];
 }
 
 const delimiters = {
@@ -178,19 +168,14 @@ export function createQuerySerializer(
 	}
 
 	return function serializeQuery(query) {
-		const encoded: string[] = [];
-
-		for (const [name, value] of Object.entries(query)) {
-			const serialize = styles.get(name) ?? explode;
-
-			for (const [pairName, pairValue] of serialize(name, value)) {
-				encoded.push(
-					`${encodeRFC3986URIComponent(pairName)}=${encodeRFC3986URIComponent(pairValue)}`,
-				);
-			}
-		}
-
-		return encoded.join("&");
+		return Object.entries(query)
+			.map(([name, value]) => (styles.get(name) ?? explode)(name, value))
+			.flat()
+			.map(
+				([name, value]) =>
+					`${encodeRFC3986URIComponent(name)}=${encodeRFC3986URIComponent(value)}`,
+			)
+			.join("&");
 	};
 }
 
