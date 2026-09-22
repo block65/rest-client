@@ -43,7 +43,7 @@ function explode(name: string, value: unknown): NameValuePair[] {
 }
 
 // an object's members alternate name and value, as OAS shows for explode false
-function flattenForJoin(value: unknown) {
+function flattenValue(value: unknown) {
 	if (Array.isArray(value)) {
 		return value;
 	}
@@ -64,7 +64,7 @@ function join(name: string, value: unknown, delimiter: string) {
 		return [];
 	}
 
-	const usable = flattenForJoin(jsonValue)
+	const usable = flattenValue(jsonValue)
 		.filter((item) => item !== null && item !== undefined)
 		.map((item) => stringifyParameter(name, maybeToJson(item)));
 
