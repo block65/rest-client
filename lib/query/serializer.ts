@@ -31,7 +31,7 @@ function text(name: string, value: unknown) {
 
 	if (scalar === undefined) {
 		throw new TypeError(
-			`query parameter ${name} holds a ${typeof value} with no string form`,
+			`query parameter ${name} holds a value with no string form`,
 		);
 	}
 

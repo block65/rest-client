@@ -99,36 +99,23 @@ describe.each(rows)("%s", (_style, serialize, written) => {
 		}
 	});
 
-	// JSON.stringify leaves an undefined member out, and so does every style
-	test("an undefined parameter is absent", () => {
-		expect(serialize({ color: undefined, other: "kept" })).toBe("other=kept");
-	});
-
-	test("an empty array is absent", () => {
-		expect(serialize({ color: [], other: "kept" })).toBe("other=kept");
-	});
-
-	test("parameters keep the order they were written in", () => {
-		expect(serialize({ z: "1", a: "2" })).toBe("z=1&a=2");
-	});
-
-	test("a Date is written as its toJSON", () => {
+	// what the spec leaves to the implementation, recorded once and reviewed
+	test.each([
+		["an undefined parameter", { color: undefined, other: "kept" }],
+		["an empty array", { color: [], other: "kept" }],
+		// query-string sorts unless told not to, and the client owns the order
+		["parameters written out of order", { z: "1", a: "2" }],
 		// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop
-		expect(serialize({ at: new Date(0) })).toBe(
-			"at=1970-01-01T00%3A00%3A00.000Z",
-		);
+		["a Date, through toJSON", { at: new Date(0) }],
+		["a lone surrogate", { color: "\uD800" }],
+	])("%s", (_case, query) => {
+		expect(serialize(query)).toMatchSnapshot();
 	});
 
 	test("a value with no string form is refused by name", () => {
-		expect(() => serialize({ color: new Map() })).toThrow(
-			/query parameter color/,
-		);
-	});
-
-	test("a lone surrogate writes U+FFFD rather than throwing", () => {
-		const url = new URL("https://192.0.2.1/");
-		url.search = serialize({ color: "\uD800" });
-		expect(url.searchParams.get("color")).toBe("�");
+		expect(() =>
+			serialize({ color: new Map() }),
+		).toThrowErrorMatchingSnapshot();
 	});
 });
 
@@ -157,26 +144,35 @@ describe("the spec's parameter examples", () => {
 // §4.12.4 encodes everything outside RFC 3986's unreserved set, and a
 // delimiter used for its reserved purpose stays raw
 describe("percent-encoding", () => {
-	test("reserved characters in a value are encoded", () => {
-		expect(formExplodeSerializer({ a: "b&c=d?e#f/g+h" })).toBe(
-			"a=b%26c%3Dd%3Fe%23f%2Fg%2Bh",
-		);
-	});
-
-	test("the RFC 3986 sub-delimiters encodeURIComponent leaves are encoded", () => {
-		expect(formExplodeSerializer({ a: "!'()*" })).toBe("a=%21%27%28%29%2A");
-	});
-
-	test("a comma in a value is encoded, a comma between items is not", () => {
-		expect(formSerializer({ a: ["x,y", "z"] })).toBe("a=x%2Cy,z");
-	});
-
-	test("a pipe in a value is encoded like the separator", () => {
-		expect(pipeDelimitedSerializer({ a: ["x|y", "z"] })).toBe("a=x%7Cy%7Cz");
-	});
-
-	test("a name takes the same encoding as a value", () => {
-		expect(formExplodeSerializer({ "a b": "c" })).toBe("a%20b=c");
+	test.each([
+		[
+			"reserved characters in a value",
+			formExplodeSerializer,
+			{ a: "b&c=d?e#f/g+h" },
+		],
+		[
+			"the sub-delimiters encodeURIComponent leaves",
+			formExplodeSerializer,
+			{ a: "!'()*" },
+		],
+		[
+			"a comma in a value beside the comma between items",
+			formSerializer,
+			{ a: ["x,y", "z"] },
+		],
+		[
+			"a pipe in a value beside the pipe separator",
+			pipeDelimitedSerializer,
+			{ a: ["x|y", "z"] },
+		],
+		[
+			"a space in a value beside the space separator",
+			spaceDelimitedSerializer,
+			{ a: ["x y", "z"] },
+		],
+		["a name", formExplodeSerializer, { "a b": "c" }],
+	])("%s", (_case, serialize, query) => {
+		expect(serialize(query)).toMatchSnapshot();
 	});
 });
 
@@ -189,12 +185,14 @@ describe("nesting", () => {
 		["pipeDelimited", pipeDelimitedSerializer],
 		["deepObject", deepObjectSerializer],
 	])("%s refuses a nested object", (_style, serialize) => {
-		expect(() => serialize({ color: { R: { deep: 1 } } })).toThrow(TypeError);
+		expect(() =>
+			serialize({ color: { R: { deep: 1 } } }),
+		).toThrowErrorMatchingSnapshot();
 	});
 
 	test("deepObject refuses an array member", () => {
-		expect(() => deepObjectSerializer({ color: { R: [1, 2] } })).toThrow(
-			TypeError,
-		);
+		expect(() =>
+			deepObjectSerializer({ color: { R: [1, 2] } }),
+		).toThrowErrorMatchingSnapshot();
 	});
 });

@@ -1,0 +1,85 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`deepObject > a Date, through toJSON 1`] = `"at=1970-01-01T00%3A00%3A00.000Z"`;
+
+exports[`deepObject > a lone surrogate 1`] = `"color=%EF%BF%BD"`;
+
+exports[`deepObject > a value with no string form is refused by name 1`] = `[TypeError: query parameter color holds a value with no string form]`;
+
+exports[`deepObject > an empty array 1`] = `"other=kept"`;
+
+exports[`deepObject > an undefined parameter 1`] = `"other=kept"`;
+
+exports[`deepObject > parameters written out of order 1`] = `"z=1&a=2"`;
+
+exports[`form, explode false > a Date, through toJSON 1`] = `"at=1970-01-01T00%3A00%3A00.000Z"`;
+
+exports[`form, explode false > a lone surrogate 1`] = `"color=%EF%BF%BD"`;
+
+exports[`form, explode false > a value with no string form is refused by name 1`] = `[TypeError: query parameter color holds a value with no string form]`;
+
+exports[`form, explode false > an empty array 1`] = `"other=kept"`;
+
+exports[`form, explode false > an undefined parameter 1`] = `"other=kept"`;
+
+exports[`form, explode false > parameters written out of order 1`] = `"z=1&a=2"`;
+
+exports[`form, explode true > a Date, through toJSON 1`] = `"at=1970-01-01T00%3A00%3A00.000Z"`;
+
+exports[`form, explode true > a lone surrogate 1`] = `"color=%EF%BF%BD"`;
+
+exports[`form, explode true > a value with no string form is refused by name 1`] = `[TypeError: query parameter color holds a value with no string form]`;
+
+exports[`form, explode true > an empty array 1`] = `"other=kept"`;
+
+exports[`form, explode true > an undefined parameter 1`] = `"other=kept"`;
+
+exports[`form, explode true > parameters written out of order 1`] = `"z=1&a=2"`;
+
+exports[`nesting > deepObject refuses a nested object 1`] = `[TypeError: query parameter R nests an array or object where the OpenAPI style allows a scalar]`;
+
+exports[`nesting > deepObject refuses an array member 1`] = `[TypeError: query parameter R nests an array or object where the OpenAPI style allows a scalar]`;
+
+exports[`nesting > form refuses a nested object 1`] = `[TypeError: query parameter color nests an array or object where the OpenAPI style allows a scalar]`;
+
+exports[`nesting > form with explode refuses a nested object 1`] = `[TypeError: query parameter R nests an array or object where the OpenAPI style allows a scalar]`;
+
+exports[`nesting > pipeDelimited refuses a nested object 1`] = `[TypeError: query parameter color nests an array or object where the OpenAPI style allows a scalar]`;
+
+exports[`nesting > spaceDelimited refuses a nested object 1`] = `[TypeError: query parameter color nests an array or object where the OpenAPI style allows a scalar]`;
+
+exports[`percent-encoding > a comma in a value beside the comma between items 1`] = `"a=x%2Cy,z"`;
+
+exports[`percent-encoding > a name 1`] = `"a%20b=c"`;
+
+exports[`percent-encoding > a pipe in a value beside the pipe separator 1`] = `"a=x%7Cy%7Cz"`;
+
+exports[`percent-encoding > a space in a value beside the space separator 1`] = `"a=x%20y%20z"`;
+
+exports[`percent-encoding > reserved characters in a value 1`] = `"a=b%26c%3Dd%3Fe%23f%2Fg%2Bh"`;
+
+exports[`percent-encoding > the sub-delimiters encodeURIComponent leaves 1`] = `"a=%21%27%28%29%2A"`;
+
+exports[`pipeDelimited > a Date, through toJSON 1`] = `"at=1970-01-01T00%3A00%3A00.000Z"`;
+
+exports[`pipeDelimited > a lone surrogate 1`] = `"color=%EF%BF%BD"`;
+
+exports[`pipeDelimited > a value with no string form is refused by name 1`] = `[TypeError: query parameter color holds a value with no string form]`;
+
+exports[`pipeDelimited > an empty array 1`] = `"other=kept"`;
+
+exports[`pipeDelimited > an undefined parameter 1`] = `"other=kept"`;
+
+exports[`pipeDelimited > parameters written out of order 1`] = `"z=1&a=2"`;
+
+exports[`spaceDelimited > a Date, through toJSON 1`] = `"at=1970-01-01T00%3A00%3A00.000Z"`;
+
+exports[`spaceDelimited > a lone surrogate 1`] = `"color=%EF%BF%BD"`;
+
+exports[`spaceDelimited > a value with no string form is refused by name 1`] = `[TypeError: query parameter color holds a value with no string form]`;
+
+exports[`spaceDelimited > an empty array 1`] = `"other=kept"`;
+
+exports[`spaceDelimited > an undefined parameter 1`] = `"other=kept"`;
+
+exports[`spaceDelimited > parameters written out of order 1`] = `"z=1&a=2"`;
