@@ -9,19 +9,29 @@ export function isPlainObject(
 	return prototype === null || prototype === Object.getPrototypeOf({});
 }
 
+// the hook JSON.stringify honours, on a Date, a URL or a caller's own class
+type JsonReady<T> = { toJSON(): T };
+
+type JsonValueOf<T> = T extends JsonReady<infer Json> ? Json : T;
+
+function hasToJson(value: unknown): value is JsonReady<unknown> {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"toJSON" in value &&
+		typeof value.toJSON === "function"
+	);
+}
+
 /**
  * Applies the toJSON hook the way JSON.stringify does. A value defining
  * toJSON supplies its wire form, and the caller encodes the result. Runs
  * once per position, so a toJSON returning `this` terminates
  */
-export function toJsonValue(value: unknown): unknown {
-	if (value === null || typeof value !== "object" || !("toJSON" in value)) {
-		return value;
-	}
-
-	const { toJSON } = value;
-
-	return typeof toJSON === "function" ? toJSON.call(value) : value;
+export function toJsonValue<T>(value: T): JsonValueOf<T> {
+	// the guard proves the branch, the conditional type only restates it
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- by design
+	return (hasToJson(value) ? value.toJSON() : value) as JsonValueOf<T>;
 }
 
 export function jsonStringify(value: unknown): string {

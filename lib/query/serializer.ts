@@ -2,19 +2,19 @@ import type { QueryParameterStyle, QuerySerializer } from "../types.ts";
 import { isPlainObject, toJsonValue } from "../utils.ts";
 
 // unencoded, since the serializer applies RFC 3986 once to every pair alike
-type Pair = readonly [name: string, value: string];
+type NameValuePair = readonly [name: string, value: string];
 
-type SerializeParameter = (name: string, value: unknown) => Pair[];
+type SerializeParameter = (name: string, value: unknown) => NameValuePair[];
 
 // a plain object skips toJSON, a legal member name in a query object
 function resolveQueryValue(input: unknown) {
 	return isPlainObject(input) ? input : toJsonValue(input);
 }
 
-type Stringable = { toString(): string };
+type Stringifiable = { toString(): string };
 
 // a URL, a Blob or a caller's own class states its query form this way
-function hasOwnToString(value: unknown): value is Stringable {
+function isStringifiable(value: unknown): value is Stringifiable {
 	return (
 		typeof value === "object" &&
 		value !== null &&
@@ -31,7 +31,7 @@ function stringifyScalar(name: string, value: unknown) {
 		case typeof value === "boolean":
 		case typeof value === "bigint":
 			return value.toString();
-		case hasOwnToString(value):
+		case isStringifiable(value):
 			return value.toString();
 		default:
 			throw new TypeError(
@@ -41,26 +41,26 @@ function stringifyScalar(name: string, value: unknown) {
 }
 
 // form with explode, the OAS default. A member hoists past its parent name
-function explode(name: string, input: unknown): Pair[] {
-	const value = resolveQueryValue(input);
+function explode(name: string, value: unknown): NameValuePair[] {
+	const resolvedValue = resolveQueryValue(value);
 
 	// an invalid Date reaches here, its toJSON having returned null
-	if (value === null || value === undefined) {
+	if (resolvedValue === null || resolvedValue === undefined) {
 		return [];
 	}
 
-	const pairs: Pair[] = [];
+	const pairs: NameValuePair[] = [];
 
-	if (Array.isArray(value)) {
-		for (const item of value) {
+	if (Array.isArray(resolvedValue)) {
+		for (const item of resolvedValue) {
 			pairs.push(...explode(name, item));
 		}
-	} else if (isPlainObject(value)) {
-		for (const [member, memberValue] of Object.entries(value)) {
+	} else if (isPlainObject(resolvedValue)) {
+		for (const [member, memberValue] of Object.entries(resolvedValue)) {
 			pairs.push(...explode(member, memberValue));
 		}
 	} else {
-		pairs.push([name, stringifyScalar(name, value)]);
+		pairs.push([name, stringifyScalar(name, resolvedValue)]);
 	}
 
 	return pairs;
@@ -105,20 +105,24 @@ function join(name: string, input: unknown, delimiter: string) {
 		return [];
 	}
 
-	const pair: Pair = [name, usable.join(delimiter)];
+	const pair: NameValuePair = [name, usable.join(delimiter)];
 
 	return [pair];
 }
 
 // deepObject brackets each member under the parent name, as at[gt]=1
-function bracket(name: string, input: unknown, nestedInArray = false): Pair[] {
+function bracket(
+	name: string,
+	input: unknown,
+	nestedInArray = false,
+): NameValuePair[] {
 	const value = resolveQueryValue(input);
 
 	if (value === null || value === undefined) {
 		return [];
 	}
 
-	const pairs: Pair[] = [];
+	const pairs: NameValuePair[] = [];
 
 	if (Array.isArray(value)) {
 		const indexed =
