@@ -1,10 +1,9 @@
 import type { QueryParameterStyle, QuerySerializer } from "../types.ts";
 import { isPlainObject, isStringifiable, toJsonValue } from "../utils.ts";
 
-// unencoded, or the serializer's own pass would turn every % into %25
-type NameValuePair = readonly [name: string, value: string];
+type UnencodedPair = readonly [name: string, value: string];
 
-type SerializeParameter = (name: string, value: unknown) => NameValuePair[];
+type SerializeParameter = (name: string, value: unknown) => UnencodedPair[];
 
 // a plain object skips toJSON, a legal member name in a query object
 function resolveQueryValue(input: unknown) {
@@ -30,7 +29,7 @@ function stringifyScalar(name: string, value: unknown) {
 }
 
 // form with explode, the OAS default. A member hoists past its parent name
-function explode(name: string, value: unknown): NameValuePair[] {
+function explode(name: string, value: unknown): UnencodedPair[] {
 	const resolvedValue = resolveQueryValue(value);
 
 	// an invalid Date reaches here, its toJSON having returned null
@@ -38,7 +37,7 @@ function explode(name: string, value: unknown): NameValuePair[] {
 		return [];
 	}
 
-	const pairs: NameValuePair[] = [];
+	const pairs: UnencodedPair[] = [];
 
 	if (Array.isArray(resolvedValue)) {
 		for (const item of resolvedValue) {
@@ -94,7 +93,7 @@ function join(name: string, input: unknown, delimiter: string) {
 		return [];
 	}
 
-	const pair: NameValuePair = [name, usable.join(delimiter)];
+	const pair: UnencodedPair = [name, usable.join(delimiter)];
 
 	return [pair];
 }
@@ -104,14 +103,14 @@ function bracket(
 	name: string,
 	input: unknown,
 	nestedInArray = false,
-): NameValuePair[] {
+): UnencodedPair[] {
 	const value = resolveQueryValue(input);
 
 	if (value === null || value === undefined) {
 		return [];
 	}
 
-	const pairs: NameValuePair[] = [];
+	const pairs: UnencodedPair[] = [];
 
 	if (Array.isArray(value)) {
 		const indexed =
