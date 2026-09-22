@@ -7,6 +7,7 @@ import {
 	type QuerySerializer,
 	type QueryStyles,
 	RestServiceClient,
+	type RestServiceClientConfig,
 	ServiceError,
 	createIsomorphicNativeFetcher,
 	createQueryStringSerializer,
@@ -650,8 +651,7 @@ describe("Client", () => {
 				expect(url.searchParams.get("tags")).toBe("cat,dog");
 			});
 
-			// query-string sorts its keys unless told not to, which would reorder
-			// every query the client already sends
+			// the same query serializes to the same URL under either serializer
 			test("query-string keeps insertion order", async () => {
 				const url = await captureSerialized(
 					{ z: 1, a: 2 },
@@ -711,6 +711,59 @@ describe("Client", () => {
 				"x-from-command": "command",
 				"x-runtime": "runtime",
 			});
+		});
+	});
+
+	describe("sortQuery", () => {
+		type Query = UndefinedOnPartialDeep<{ [k in string]?: JsonValue }>;
+
+		async function captureSorted(
+			sortQuery: RestServiceClientConfig["sortQuery"],
+			serializer?: QuerySerializer,
+		) {
+			class SortedCommand extends Command<never, unknown, Query> {
+				public override method = "get" as const;
+				public override querySerializer = serializer;
+				constructor() {
+					super("/200", null, { z: 1, m: [2, 3], a: 4 });
+				}
+			}
+
+			const sortingClient = new RestServiceClient(
+				new URL(`http://0.0.0.0:${port}`),
+				{ fetcher, sortQuery },
+			);
+
+			let received: URL | undefined;
+			await sortingClient.json(new SortedCommand(), {
+				url: (u) => {
+					received = u;
+					return new URL(`http://0.0.0.0:${port}/200`);
+				},
+			});
+			assert(received);
+
+			return received.search;
+		}
+
+		test("unset keeps the written order", async () => {
+			const search = await captureSorted(undefined);
+			expect(search).toBe("?z=1&m=2&m=3&a=4");
+		});
+
+		test("true sorts the keys the styles serializer writes", async () => {
+			const search = await captureSorted(true);
+			expect(search).toBe("?a=4&m=2&m=3&z=1");
+		});
+
+		test("true sorts the keys a command's own serializer writes", async () => {
+			const search = await captureSorted(true, createQueryStringSerializer());
+			expect(search).toBe("?a=4&m=2&m=3&z=1");
+		});
+
+		test("a comparator decides the order", async () => {
+			const search = await captureSorted((a, b) => b.localeCompare(a));
+			expect(search).toBe("?z=1&m=2&m=3&a=4");
 		});
 	});
 

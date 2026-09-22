@@ -174,8 +174,8 @@ export function createQueryStringSerializer(
 					wellFormed(resolve(value)),
 				]),
 			),
-			// query-string sorts its keys by default, and that reorders every
-			// query the client already sends
+			// keys keep their written order, as the default serializer's do, so
+			// the same query serializes to the same URL under either serializer
 			{ skipNull: true, sort: false, ...options },
 		);
 }

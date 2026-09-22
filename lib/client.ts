@@ -14,6 +14,19 @@ import type {
 } from "./types.ts";
 import { isPlainObject } from "./utils.ts";
 
+// both serializers keep insertion order, so sorting here sorts the URL
+function sortKeys(
+	query: Record<string, unknown>,
+	sort: true | ((a: string, b: string) => number),
+) {
+	const compare =
+		sort === true ? (a: string, b: string) => (a < b ? -1 : 1) : sort;
+
+	return Object.fromEntries(
+		Object.entries(query).toSorted(([a], [b]) => compare(a, b)),
+	);
+}
+
 // spreading an iterable Headers into an object drops every header
 function headerRecord(headers: Record<string, string> | Headers | undefined) {
 	return headers instanceof Headers ? Object.fromEntries(headers) : headers;
@@ -43,6 +56,12 @@ export type RestServiceClientConfig = {
 	headers?: ResolvableHeaders | undefined;
 	credentials?: "include" | "omit" | "same-origin" | undefined;
 	responseValidator?: ((response: unknown) => boolean) | undefined;
+	/**
+	 * Orders every query's keys before serialization, so a cache or a
+	 * signature keyed on the URL sees the same URL however the caller built
+	 * the query. `true` sorts by code point, a comparator sorts by its result
+	 */
+	sortQuery?: boolean | ((a: string, b: string) => number) | undefined;
 } & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
 
 export class RestServiceClient<
@@ -60,12 +79,15 @@ export class RestServiceClient<
 
 	readonly #logger: RestServiceClientConfig["logger"];
 
+	readonly #sortQuery: RestServiceClientConfig["sortQuery"];
+
 	constructor(base: URL | string, config: RestServiceClientConfig = {}) {
 		this.#base = new URL(base);
 		this.#headers = Object.freeze(config.headers);
 
 		this.#logger = config.logger;
 		this.#responseValidator = config.responseValidator;
+		this.#sortQuery = config.sortQuery;
 
 		this.#fetcher =
 			"fetcher" in config
@@ -163,7 +185,9 @@ export class RestServiceClient<
 		const url = new URL(`.${pathname}`, this.#base);
 
 		if (query) {
-			url.search = (querySerializer ?? serializerForStyles(queryStyles))(query);
+			url.search = (querySerializer ?? serializerForStyles(queryStyles))(
+				this.#sortQuery ? sortKeys(query, this.#sortQuery) : query,
+			);
 		}
 
 		return runtimeOptions?.url ? new URL(await runtimeOptions.url(url)) : url;
