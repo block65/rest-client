@@ -1,5 +1,5 @@
 import type { QueryParameterStyle, QuerySerializer } from "../types.ts";
-import { isPlainObject, toJsonValue } from "../utils.ts";
+import { hasOwnToString, isPlainObject, toJsonValue } from "../utils.ts";
 
 // unencoded, since the serializer applies RFC 3986 once to every pair alike
 type NameValuePair = readonly [name: string, value: string];

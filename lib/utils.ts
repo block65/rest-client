@@ -34,6 +34,17 @@ export function toJsonValue<T>(value: T): JsonValueOf<T> {
 	return (hasToJson(value) ? value.toJSON() : value) as JsonValueOf<T>;
 }
 
+// a URL, a Blob or a caller's own class states its string form this way
+export function hasOwnToString(
+	value: unknown,
+): value is { toString(): string } {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		value.toString !== Object.prototype.toString
+	);
+}
+
 export function jsonStringify(value: unknown): string {
 	return JSON.stringify(value, (_key, val) =>
 		typeof val === "bigint" ? val.toString() : val,
