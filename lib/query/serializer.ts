@@ -10,6 +10,8 @@ type Prepare = (name: string, value: unknown) => Prepared;
 // query-string sorts keys unless told not to, and the client owns the order
 const options = { sort: false, strict: true, encode: true } as const;
 
+const utf8 = new TextEncoder();
+
 // a scalar as query-string will encode it
 function text(name: string, value: unknown) {
 	// the spec's undefined value, which form writes as name=
@@ -114,7 +116,8 @@ function prepare(query: UnknownRecord, style: Prepare) {
 
 // query-string writes the separator raw, and the spec shows it encoded
 function encodeSeparator(serialized: string, separator: string) {
-	const encoded = `%${separator.codePointAt(0)?.toString(16).toUpperCase()}`;
+	// a byte is two hex digits, where toString(16) would drop a leading zero
+	const encoded = `%${utf8.encode(separator).toHex().toUpperCase()}`;
 
 	// strict encoding has already encoded every space and pipe in a name or
 	// value, so each one still raw is a separator
