@@ -36,8 +36,8 @@ function isStringifiable(value: unknown): value is Stringifiable {
 }
 
 /**
- * A primitive or a class with its own toString stringifies. Anything else
- * yields undefined, and the caller decides what that means where it stands
+ * A primitive stringifies, and so does a class that overrides `toString`.
+ * The caller decides what undefined means where it stands
  */
 export function stringifyScalar(value: unknown): string | undefined {
 	switch (true) {

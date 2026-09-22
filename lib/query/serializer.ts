@@ -1,9 +1,9 @@
 import type { QueryParameterStyle, QuerySerializer } from "../types.ts";
 import { isPlainObject, stringifyScalar, toJsonValue } from "../utils.ts";
 
-type UnencodedPair = readonly [name: string, value: string];
+type NameValuePair = readonly [name: string, value: string];
 
-type SerializeParameter = (name: string, value: unknown) => UnencodedPair[];
+type SerializeParameter = (name: string, value: unknown) => NameValuePair[];
 
 // a plain object skips toJSON, a legal member name in a query object
 function resolveQueryValue(input: unknown) {
@@ -24,12 +24,12 @@ function stringifyParameter(name: string, value: unknown) {
 }
 
 // form with explode, the OAS default. A member hoists past its parent name
-function explode(name: string, value: unknown): UnencodedPair[] {
+function explode(name: string, value: unknown): NameValuePair[] {
 	const resolvedValue = resolveQueryValue(value);
 
-	// a query has no null literal, so null and undefined mean the parameter
-	// is absent, as JSON.stringify treats undefined. An invalid Date lands
-	// here too, its toJSON having returned null
+	// a query string is text, so null and undefined mean the parameter is
+	// absent, as JSON.stringify treats undefined. An invalid Date lands here
+	// too, its toJSON having returned null
 	if (resolvedValue === null || resolvedValue === undefined) {
 		return [];
 	}
@@ -48,7 +48,7 @@ function explode(name: string, value: unknown): UnencodedPair[] {
 }
 
 // an object's members alternate name and value, as OAS shows for explode false
-function flattenForJoin(value: unknown): unknown[] {
+function flattenForJoin(value: unknown) {
 	if (Array.isArray(value)) {
 		return value;
 	}
@@ -61,11 +61,7 @@ function flattenForJoin(value: unknown): unknown[] {
 }
 
 // without explode, one value holds every item joined with the delimiter
-function join(
-	name: string,
-	value: unknown,
-	delimiter: string,
-): UnencodedPair[] {
+function join(name: string, value: unknown, delimiter: string) {
 	const resolvedValue = resolveQueryValue(value);
 
 	// absent, for the reason explode gives
@@ -77,13 +73,15 @@ function join(
 		.filter((item) => item !== null && item !== undefined)
 		.map((item) => stringifyParameter(name, resolveQueryValue(item)));
 
-	// a key with nothing to join would write tags= and a server would read
-	// one empty string where the caller sent none
+	// an empty join would write tags=, and a server reads that as one empty
+	// string
 	if (usable.length === 0) {
 		return [];
 	}
 
-	return [[name, usable.join(delimiter)]];
+	const pair: NameValuePair = [name, usable.join(delimiter)];
+
+	return [pair];
 }
 
 // deepObject brackets each member under the parent name, as at[gt]=1
@@ -91,7 +89,7 @@ function bracket(
 	name: string,
 	value: unknown,
 	nestedInArray = false,
-): UnencodedPair[] {
+): NameValuePair[] {
 	const resolvedValue = resolveQueryValue(value);
 
 	// absent, for the reason explode gives
