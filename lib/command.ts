@@ -1,4 +1,5 @@
 import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
+import { formExplodeSerializer } from "./query/serializer.ts";
 import type { HttpMethod, QuerySerializer } from "./types.ts";
 
 type JsonObject = { [Key in string]?: JsonValue };
@@ -25,21 +26,11 @@ export abstract class Command<
 	// level, so the deep-widened type is what is actually held
 	public readonly query: UndefinedOnPartialDeep<CommandQuery> | undefined;
 
-	// A generated command overrides this to build its serializer. The getter
-	// calls it once and keeps the result, so importing the module stays free
-	// and a command serializing many queries builds only one serializer.
-	// The annotation types the override, not this body
-	// oxlint-disable-next-line typescript/no-widening-return-type
-	protected buildQuerySerializer(): QuerySerializer | undefined {
-		return undefined;
-	}
-
-	#querySerializer: QuerySerializer | undefined;
-
-	public get serializeQuery(): QuerySerializer | undefined {
-		this.#querySerializer ??= this.buildQuerySerializer();
-		return this.#querySerializer;
-	}
+	// A generated command names one of the exported serializers, the one for
+	// the style its document states, so a module of a thousand commands
+	// shares the same five functions. Unset, it is form with explode, the
+	// OpenAPI default for a query parameter
+	public readonly querySerializer: QuerySerializer = formExplodeSerializer;
 
 	// Without these, unused generics make Command<A, X> ≡ Command<B, X>
 	// and the cross-client guard silently disappears
@@ -56,8 +47,8 @@ export abstract class Command<
 	) {
 		this.pathname = pathname;
 		this.body = body;
-		this.query = query;
-		this.headers = headers;
+		this.query = structuredClone(query);
+		this.headers = structuredClone(headers);
 	}
 
 	public serialize() {

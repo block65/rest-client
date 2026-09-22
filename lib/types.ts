@@ -30,15 +30,9 @@ export type FetcherMethod = (
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete" | "head";
 
 /**
- * A query parameter's `style` and `explode`, in the OpenAPI words. Explode
- * defaults to true for `form` and to false for the other styles
+ * Turns a command's query object into the search string after the `?`.
+ * The exported serializers write one OpenAPI style each
  */
-export type QueryParameterStyle = {
-	style?: "form" | "spaceDelimited" | "pipeDelimited" | "deepObject";
-	explode?: boolean;
-};
-
-/** Turns a command's query object into the search string after the `?` */
 export type QuerySerializer = (query: UnknownRecord) => string;
 
 export type RequestMethod<T = any> = (

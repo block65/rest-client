@@ -17,11 +17,13 @@ export { createIsomorphicNativeFetcher } from "./fetchers/isomorphic-native-fetc
 
 export { jsonStringify } from "../lib/utils.ts";
 
-// the serializers a command's buildQuerySerializer can return
-export { createQueryStringSerializer } from "../lib/query/query-string.ts";
+// the serializers a command's querySerializer names, one per OpenAPI style
 export {
-	createQuerySerializer,
-	defaultQuerySerializer,
+	deepObjectSerializer,
+	formExplodeSerializer,
+	formSerializer,
+	pipeDelimitedSerializer,
+	spaceDelimitedSerializer,
 } from "../lib/query/serializer.ts";
 
 export type WithoutUndefinedProperties<T extends object> = Simplify<{

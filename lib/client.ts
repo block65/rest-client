@@ -7,16 +7,12 @@ import {
 	ResponseValidationError,
 	ServiceError,
 } from "./errors.ts";
-import { createQuerySerializer } from "./query/serializer.ts";
 import type {
 	FetcherMethod,
 	ResolvableHeaders,
 	RuntimeOptions,
 } from "./types.ts";
 import { isPlainObject } from "./utils.ts";
-
-// every command that brings no serializer shares this one
-const serializeQueryByDefault = createQuerySerializer();
 
 const utf8 = new TextEncoder();
 
@@ -41,19 +37,19 @@ function compareUtf8Bytes(a: string, b: string) {
 	return bytesA.length - bytesB.length;
 }
 
-// both serializers keep insertion order, so sorting here sorts the URL
-function sortQueryKeys(
-	query: UnknownRecord,
+// every serializer keeps insertion order, so sorting here sorts the URL
+function sortQueryKeys<T extends UnknownRecord>(
+	query: T,
 	sort: true | ((a: string, b: string) => number),
 ) {
 	const order = sort === true ? compareUtf8Bytes : sort;
 
-	return Object.fromEntries(
-		Object.entries(query).toSorted(([a], [b]) => order(a, b)),
-	);
+	const sorted = Object.entries(query).toSorted(([a], [b]) => order(a, b));
+
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- reordering keeps the shape
+	return Object.fromEntries(sorted) as T;
 }
 
-// spreading an iterable Headers into an object drops every header
 function headersFrom(headers: Record<string, string> | Headers | undefined) {
 	return headers instanceof Headers ? Object.fromEntries(headers) : headers;
 }
@@ -206,14 +202,12 @@ export class RestServiceClient<
 
 	// the runtime hook rewrites the serialized URL, so it runs last
 	async #buildUrl(command: Command, runtimeOptions?: RuntimeOptions) {
-		const { pathname, query, serializeQuery } = command;
+		const { pathname, query } = command;
 
 		const url = new URL(`.${pathname}`, this.#base);
 
 		if (query) {
-			const serialize = serializeQuery ?? serializeQueryByDefault;
-
-			url.search = serialize(
+			url.search = command.querySerializer(
 				this.#sortQuery ? sortQueryKeys(query, this.#sortQuery) : query,
 			);
 		}

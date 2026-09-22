@@ -1,184 +1,170 @@
-import type { QueryParameterStyle, QuerySerializer } from "../types.ts";
-import { isPlainObject, stringifyScalar, maybeToJson } from "../utils.ts";
+import queryString from "query-string";
+import type { UnknownRecord } from "type-fest";
+import { isPlainObject, maybeToJson, stringifyScalar } from "../utils.ts";
 
-type NameValuePair = readonly [name: string, value: string];
+// what query-string encodes, one value or the items of an array
+type Prepared = Record<string, string | string[]>;
 
-type SerializeParameter = (name: string, value: unknown) => NameValuePair[];
+type Prepare = (name: string, value: unknown) => Prepared;
 
-// a plain object never reaches here, each style walks it first
-function stringifyParameter(name: string, value: unknown) {
-	const text = stringifyScalar(value);
+// query-string sorts keys unless told not to, and the client owns the order
+const options = { sort: false, strict: true, encode: true } as const;
 
-	if (text === undefined) {
+// a scalar as query-string will encode it
+function text(name: string, value: unknown) {
+	// the spec's undefined value, which form writes as name=
+	if (value === null) {
+		return "";
+	}
+
+	// each style writes one level, and the spec leaves anything deeper
+	// undefined
+	if (Array.isArray(value) || isPlainObject(value)) {
+		throw new TypeError(
+			`query parameter ${name} nests an array or object where the OpenAPI style allows a scalar`,
+		);
+	}
+
+	const scalar = stringifyScalar(value);
+
+	if (scalar === undefined) {
 		throw new TypeError(
 			`query parameter ${name} holds a ${typeof value} with no string form`,
 		);
 	}
 
-	return text;
+	// encodeURIComponent throws on a lone surrogate, this writes U+FFFD
+	return scalar.toWellFormed();
 }
 
-// form with `explode`, the OAS default. Each item or member becomes one pair
-function explode(name: string, value: unknown): NameValuePair[] {
-	const jsonValue = maybeToJson(value);
-
-	// a query string is text, so `null` and `undefined` mean the parameter is
-	// absent, as `JSON.stringify` treats undefined. An invalid `Date` lands here
-	// too, its `toJSON` having returned null
-	if (jsonValue === null || jsonValue === undefined) {
-		return [];
-	}
-
-	if (Array.isArray(jsonValue)) {
-		return jsonValue.flatMap((item) => explode(name, item));
-	}
-
-	if (isPlainObject(jsonValue)) {
-		return Object.entries(jsonValue).flatMap(([member, memberValue]) =>
-			explode(member, memberValue),
-		);
-	}
-
-	return [[name, stringifyParameter(name, jsonValue)]];
+function texts(name: string, items: unknown[]) {
+	return items.map((item) => text(name, maybeToJson(item)));
 }
 
 // an object's members alternate name and value, as OAS shows for explode false
-function maybeFlatten(value: unknown) {
-	if (Array.isArray(value)) {
-		return value;
-	}
-
-	if (isPlainObject(value)) {
-		return Object.entries(value).flat();
-	}
-
-	return [value];
+function flatten(name: string, members: UnknownRecord) {
+	return Object.entries(members).flatMap(([member, value]) => [
+		member,
+		text(name, maybeToJson(value)),
+	]);
 }
 
-// without explode, one value holds every item joined with the delimiter
-function join(name: string, value: unknown, delimiter: string) {
-	const jsonValue = maybeToJson(value);
-
-	// absent, for the reason explode gives
-	if (jsonValue === null || jsonValue === undefined) {
-		return [];
-	}
-
-	const usable = maybeFlatten(jsonValue)
-		.filter((item) => item !== null && item !== undefined)
-		.map((item) => stringifyParameter(name, maybeToJson(item)));
-
-	// an empty join would write tags=, and a server reads that as one empty
-	// string
-	if (usable.length === 0) {
-		return [];
-	}
-
-	const pair = [name, usable.join(delimiter)] satisfies NameValuePair;
-
-	return [pair];
-}
-
-// deepObject brackets each member under the parent name, as at[gt]=1
-function bracket(
-	name: string,
-	value: unknown,
-	nestedInArray = false,
-): NameValuePair[] {
-	const jsonValue = maybeToJson(value);
-
-	// absent, for the reason explode gives
-	if (jsonValue === null || jsonValue === undefined) {
-		return [];
-	}
-
-	if (Array.isArray(jsonValue)) {
-		const indexed =
-			nestedInArray ||
-			jsonValue.some((item) => isPlainObject(item) || Array.isArray(item));
-
-		return jsonValue.flatMap((item, index) =>
-			bracket(indexed ? `${name}[${index}]` : name, item, true),
-		);
-	}
-
-	if (isPlainObject(jsonValue)) {
-		return Object.entries(jsonValue).flatMap(([member, memberValue]) =>
-			bracket(`${name}[${member}]`, memberValue, false),
-		);
-	}
-
-	return [[name, stringifyParameter(name, jsonValue)]];
-}
-
-const delimiters = {
-	form: ",",
-	spaceDelimited: " ",
-	pipeDelimited: "|",
-} as const;
-
-// explode defaults to true for form and false otherwise, as OAS states
-function selectStyle({
-	style = "form",
-	explode: exploded = style === "form",
-}: QueryParameterStyle) {
-	if (style === "deepObject") {
-		return bracket;
-	}
-
-	// OAS 3.2 gives an exploded spaceDelimited or pipeDelimited array the
-	// same form as an exploded form array
-	if (exploded) {
-		return explode;
-	}
-
-	const delimiter = delimiters[style];
-
-	return function joinDelimited(name: string, value: unknown) {
-		return join(name, value, delimiter);
-	};
-}
-
-// MDN's recipe, plus toWellFormed so a lone surrogate writes U+FFFD
-function encodeRFC3986URIComponent(str: string) {
-	return encodeURIComponent(str.toWellFormed()).replaceAll(
-		/[!'()*]/g,
-		(char) => `%${char.codePointAt(0)?.toString(16).toUpperCase()}`,
+// each member becomes a parameter, named as the style renames it
+function spread(members: UnknownRecord, rename: (member: string) => string) {
+	return Object.fromEntries(
+		Object.entries(members).map(([member, value]) => [
+			rename(member),
+			text(member, maybeToJson(value)),
+		]),
 	);
 }
 
-/**
- * Serializes each parameter in the style named for it, the rest as form with
- * explode. Every name and value is RFC 3986 encoded once, so url.search
- * returns the serialized string unchanged
- */
-export function createQuerySerializer(
-	parameters: Readonly<Record<string, QueryParameterStyle>> = {},
-): QuerySerializer {
-	// each style resolves once, so a request does one lookup per parameter
-	const styles = new Map<string, SerializeParameter>();
-
-	for (const [name, parameter] of Object.entries(parameters)) {
-		styles.set(name, selectStyle(parameter));
+// form with explode, where an array repeats the name and an object drops it
+function explode(name: string, value: unknown) {
+	if (Array.isArray(value)) {
+		return { [name]: texts(name, value) };
 	}
 
-	return function serializeQuery(query) {
-		return Object.entries(query)
-			.flatMap(([name, value]) => (styles.get(name) ?? explode)(name, value))
-			.map(
-				([name, value]) =>
-					`${encodeRFC3986URIComponent(name)}=${encodeRFC3986URIComponent(value)}`,
-			)
-			.join("&");
-	};
+	if (isPlainObject(value)) {
+		return spread(value, (member) => member);
+	}
+
+	return { [name]: text(name, value) };
+}
+
+// without explode one value holds every item, and query-string joins them
+function join(name: string, value: unknown) {
+	if (Array.isArray(value)) {
+		return { [name]: texts(name, value) };
+	}
+
+	if (isPlainObject(value)) {
+		return { [name]: flatten(name, value) };
+	}
+
+	return { [name]: text(name, value) };
+}
+
+// deepObject brackets each member under the parent name, as at[gt]=1
+function bracket(name: string, value: unknown) {
+	if (isPlainObject(value)) {
+		return spread(value, (member) => `${name}[${member}]`);
+	}
+
+	// the spec defines deepObject for an object alone, and a command's other
+	// parameters still need writing, so those take the default style
+	return explode(name, value);
+}
+
+// a value with toJSON is written as JSON.stringify would show it
+function prepare(query: UnknownRecord, style: Prepare) {
+	const prepared: Prepared = {};
+
+	for (const [name, value] of Object.entries(query)) {
+		const jsonValue = maybeToJson(value);
+
+		// absent, as JSON.stringify leaves an undefined member
+		if (jsonValue !== undefined) {
+			Object.assign(prepared, style(name, jsonValue));
+		}
+	}
+
+	return prepared;
+}
+
+// query-string writes the separator raw, and the spec shows it encoded
+function encodeSeparator(serialized: string, separator: string) {
+	const encoded = `%${separator.codePointAt(0)?.toString(16).toUpperCase()}`;
+
+	// strict encoding has already encoded every space and pipe in a name or
+	// value, so each one still raw is a separator
+	return serialized.replaceAll(separator, encoded);
+}
+
+export function formExplodeSerializer(query: UnknownRecord) {
+	return queryString.stringify(prepare(query, explode), {
+		...options,
+		arrayFormat: "none",
+	});
 }
 
 /**
- * Every parameter as form with explode. A key repeats per array item, null
- * and undefined are dropped, an object's members write under the member
- * names with the parent name dropped
- *
- * @deprecated
- * @see createQuerySerializer
+ * `form` without `explode`, so items and members are joined with a comma.
+ * A command that names nothing writes `form` with `explode`, the OpenAPI
+ * default for a query parameter
  */
-export const defaultQuerySerializer = createQuerySerializer();
+export function formSerializer(query: UnknownRecord) {
+	return queryString.stringify(prepare(query, join), {
+		...options,
+		arrayFormat: "comma",
+	});
+}
+
+export function spaceDelimitedSerializer(query: UnknownRecord) {
+	return encodeSeparator(
+		queryString.stringify(prepare(query, join), {
+			...options,
+			arrayFormat: "separator",
+			arrayFormatSeparator: " ",
+		}),
+		" ",
+	);
+}
+
+export function pipeDelimitedSerializer(query: UnknownRecord) {
+	return encodeSeparator(
+		queryString.stringify(prepare(query, join), {
+			...options,
+			arrayFormat: "separator",
+			arrayFormatSeparator: "|",
+		}),
+		"|",
+	);
+}
+
+export function deepObjectSerializer(query: UnknownRecord) {
+	return queryString.stringify(prepare(query, bracket), {
+		...options,
+		arrayFormat: "none",
+	});
+}

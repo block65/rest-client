@@ -54,6 +54,12 @@ export function stringifyScalar(value: unknown): string | undefined {
 	}
 }
 
+/**
+ * Used by the generated `Command`s
+ *
+ * @param value The value to be JSON stringified.
+ * @returns The JSON string representation of the value
+ */
 export function jsonStringify(value: unknown): string {
 	return JSON.stringify(value, (_key, val) =>
 		typeof val === "bigint" ? val.toString() : val,
