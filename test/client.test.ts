@@ -2,15 +2,18 @@ import { createServer } from "node:http";
 import {
 	Command,
 	type QuerySerializer,
-	type QueryStyles,
 	RestServiceClient,
 	type RestServiceClientConfig,
 	ServiceError,
 	createIsomorphicNativeFetcher,
-	createQueryStringSerializer,
+	deepObjectSerializer,
+	formExplodeSerializer,
+	formSerializer,
+	pipeDelimitedSerializer,
+	spaceDelimitedSerializer,
 } from "@block65/rest-client";
 import getPort from "get-port";
-import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
+import type { JsonObject, UnknownRecord } from "type-fest";
 import {
 	afterAll,
 	assert,
@@ -30,13 +33,10 @@ const fetcher = createIsomorphicNativeFetcher({
 	retry: { minTimeout: 1, maxTimeout: 5 },
 });
 
-type Fake200CommandInput = {
-	hello: boolean;
-};
-class Fake200Command extends Command<Fake200CommandInput> {
+class Fake200Command extends Command {
 	public override method = "get" as const;
 
-	constructor(_body: Fake200CommandInput) {
+	constructor() {
 		super("/200");
 	}
 }
@@ -102,34 +102,22 @@ class FakeOverrideCommand extends Command<never, FakeMyHeadersOutput> {
 	}
 }
 
-function expected(entries: [string, string][]) {
-	return new URLSearchParams(entries).toString();
-}
-
-type Query = UndefinedOnPartialDeep<{ [k in string]?: JsonValue }>;
-
-class QueryCommand extends Command<never, unknown, Query> {
+// a command names its serializer, this one takes it so a test can pick
+class QueryCommand extends Command {
 	public override method = "get" as const;
-	public override readonly queryStyles: QueryStyles | undefined;
-	public override readonly querySerializer: QuerySerializer | undefined;
 
-	constructor(
-		query: Query,
-		styles?: QueryStyles,
-		serializer?: QuerySerializer,
-	) {
-		super("/200", null, query);
-		this.queryStyles = styles;
+	public override readonly querySerializer: QuerySerializer;
+
+	constructor(query: UnknownRecord, serializer = formExplodeSerializer) {
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test data
+		super("/query", null, query as JsonObject);
 		this.querySerializer = serializer;
 	}
 }
 
-// the URL fetch receives for the query
 async function serializeViaClient(
-	// untyped so a case can drive a value Query excludes by design
-	query: Record<string, unknown>,
+	query: UnknownRecord,
 	options: {
-		styles?: QueryStyles;
 		serializer?: QuerySerializer;
 		sortQuery?: RestServiceClientConfig["sortQuery"];
 	} = {},
@@ -140,10 +128,7 @@ async function serializeViaClient(
 		sortQuery: options.sortQuery,
 	});
 
-	await client.json(
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test data
-		new QueryCommand(query as Query, options.styles, options.serializer),
-	);
+	await client.json(new QueryCommand(query, options.serializer));
 
 	expect(fetch).toHaveBeenCalledOnce();
 	const [url] = fetch.mock.calls[0] ?? [];
@@ -167,11 +152,7 @@ describe("Client", () => {
 	});
 
 	test("200 OK!", async () => {
-		const res = await client.json(
-			new Fake200Command({
-				hello: true,
-			}),
-		);
+		const res = await client.json(new Fake200Command());
 
 		expect(res).toMatchSnapshot();
 	});
@@ -278,434 +259,54 @@ describe("Client", () => {
 		});
 	});
 
-	describe("query string building", () => {
-		test("array values become repeated keys (OpenAPI form/explode default)", async () => {
-			const url = await serializeViaClient({ tags: ["cat", "dog"] });
-			expect(url.search).toBe(
-				`?${expected([
-					["tags", "cat"],
-					["tags", "dog"],
-				])}`,
-			);
+	// the client's own job here is calling the command's serializer. What
+	// each style writes is asserted against the serializer directly
+	test("a command's serializer writes the search", async () => {
+		const url = await serializeViaClient(
+			{ tags: ["cat", "dog"] },
+			{ serializer: () => "fixed=1" },
+		);
+
+		expect(url.search).toBe("?fixed=1");
+	});
+
+	// each serializer a command can name, reaching the URL through the client
+	describe.each([
+		["formExplodeSerializer", formExplodeSerializer],
+		["formSerializer", formSerializer],
+		["spaceDelimitedSerializer", spaceDelimitedSerializer],
+		["pipeDelimitedSerializer", pipeDelimitedSerializer],
+		["deepObjectSerializer", deepObjectSerializer],
+	])("a command naming %s", (_name, serializer) => {
+		const query = {
+			limit: 10,
+			tags: ["cat", "dog"],
+			filter: { since: "2020", until: "2021" },
+		};
+
+		test("writes the URL", async () => {
+			const url = await serializeViaClient(query, { serializer });
+			expect(url.href).toMatchSnapshot();
 		});
 
-		test("null values are omitted entirely", async () => {
-			const url = await serializeViaClient({ a: null, c: "keep" });
-			expect(url.search).toBe(`?${expected([["c", "keep"]])}`);
+		test("writes the URL with sortQuery", async () => {
+			const url = await serializeViaClient(query, {
+				serializer,
+				sortQuery: true,
+			});
+			expect(url.href).toMatchSnapshot();
 		});
+	});
 
-		test("null inside arrays is skipped per-item", async () => {
-			const url = await serializeViaClient({ tags: ["cat", null, "dog"] });
-			expect(url.search).toBe(
-				`?${expected([
-					["tags", "cat"],
-					["tags", "dog"],
-				])}`,
-			);
-		});
+	test("a command without a query sends no search", async () => {
+		const fetch = vi.fn<typeof globalThis.fetch>(async () => Response.json({}));
+		const bare = new RestServiceClient("https://192.0.2.1", { fetch });
 
-		test("undefined values are omitted entirely (not stringified as 'undefined')", async () => {
-			const url = await serializeViaClient({ a: undefined, c: "keep" });
-			expect(url.search).toBe(`?${expected([["c", "keep"]])}`);
-		});
+		await bare.json(new Fake200Command());
 
-		test("scalar values stringify as before", async () => {
-			const url = await serializeViaClient({
-				id: 42,
-				flag: true,
-				name: "alice",
-			});
-			expect(url.search).toBe(
-				`?${expected([
-					["id", "42"],
-					["flag", "true"],
-					["name", "alice"],
-				])}`,
-			);
-		});
-
-		// almost every generated command lands on this default, and the cases
-		// below each take their style from a command's own `queryStyles`
-		describe("form, explode: true (the OAS default)", () => {
-			// OpenAI's ListAuditLogs effective_at states this style by omission,
-			// and an unhoisted object would go out as "[object Object]"
-			test("object members are hoisted and the parent name is dropped", async () => {
-				const url = await serializeViaClient({
-					effective_at: { gt: 1_700_000_000, lte: 1_700_000_100 },
-					limit: 20,
-					project_ids: ["proj_a", "proj_b"],
-				});
-
-				expect(url.search).toBe(
-					`?${expected([
-						["gt", "1700000000"],
-						["lte", "1700000100"],
-						["limit", "20"],
-						["project_ids", "proj_a"],
-						["project_ids", "proj_b"],
-					])}`,
-				);
-				expect(url.search).not.toContain("object+Object");
-			});
-
-			// the style is lossy here, so the generator warns when a document
-			// leaves an object-valued parameter's style unstated
-			test("two object params sharing a member name collide, by construction", async () => {
-				const url = await serializeViaClient({ a: { gt: 1 }, b: { gt: 2 } });
-				expect(url.search).toBe(
-					`?${expected([
-						["gt", "1"],
-						["gt", "2"],
-					])}`,
-				);
-			});
-
-			test("a nested object is hoisted again", async () => {
-				const url = await serializeViaClient({ a: { b: { c: 1 } } });
-				expect(url.search).toBe(`?${expected([["c", "1"]])}`);
-			});
-
-			test("an array inside an object repeats under the member name", async () => {
-				const url = await serializeViaClient({ range: { ids: ["a", "b"] } });
-				expect(url.search).toBe(
-					`?${expected([
-						["ids", "a"],
-						["ids", "b"],
-					])}`,
-				);
-			});
-
-			test("null and undefined members are omitted", async () => {
-				// exactOptionalPropertyTypes makes an explicitly-undefined member
-				// inexpressible here, but stripUndefined only clears the top level, so
-				// one really does reach serialization at runtime
-				const url = await serializeViaClient({
-					range: { gt: 1, skipNull: null, skipUndefined: undefined },
-				});
-				expect(url.search).toBe(`?${expected([["gt", "1"]])}`);
-			});
-
-			test("an object with no usable members contributes nothing", async () => {
-				const url = await serializeViaClient({ range: {}, keep: "yes" });
-				expect(url.search).toBe(`?${expected([["keep", "yes"]])}`);
-			});
-		});
-
-		describe("form, explode: false", () => {
-			const joined: QueryStyles = {
-				changes: { style: "form", explode: false },
-			};
-
-			// Docker's /images/create declares exactly this
-			test("an array joins its items with commas under one key", async () => {
-				const url = await serializeViaClient(
-					{ changes: ["ENV A=1", "ENV B=2"] },
-					{ styles: joined },
-				);
-
-				// expected() builds with URLSearchParams, which writes a space as
-				// + where the client writes %20
-				expect(url.search).toBe("?changes=ENV%20A%3D1%2CENV%20B%3D2");
-			});
-
-			test("an object joins as alternating member name and value", async () => {
-				const url = await serializeViaClient(
-					{ changes: { gt: 1, lte: 2 } },
-					{ styles: joined },
-				);
-				expect(url.search).toBe(`?${expected([["changes", "gt,1,lte,2"]])}`);
-			});
-
-			test("a scalar is unaffected", async () => {
-				const url = await serializeViaClient(
-					{ changes: "one" },
-					{ styles: joined },
-				);
-				expect(url.search).toBe(`?${expected([["changes", "one"]])}`);
-			});
-
-			test("nothing usable contributes no key at all", async () => {
-				const url = await serializeViaClient(
-					{ changes: [], keep: "yes" },
-					{ styles: joined },
-				);
-				expect(url.search).toBe(`?${expected([["keep", "yes"]])}`);
-			});
-
-			test("spaceDelimited and pipeDelimited change only the delimiter", async () => {
-				const spaced = await serializeViaClient(
-					{ a: [1, 2] },
-					{
-						styles: {
-							a: { style: "spaceDelimited", explode: false },
-						},
-					},
-				);
-
-				// the OAS example for spaceDelimited is percent encoded, id=3%204%205
-				expect(spaced.search).toBe("?a=1%202");
-
-				const piped = await serializeViaClient(
-					{ a: [1, 2] },
-					{
-						styles: {
-							a: { style: "pipeDelimited", explode: false },
-						},
-					},
-				);
-				expect(piped.search).toBe(`?${expected([["a", "1|2"]])}`);
-			});
-		});
-
-		describe("deepObject", () => {
-			const deep: QueryStyles = {
-				effective_at: { style: "deepObject", explode: true },
-				a: { style: "deepObject", explode: true },
-			};
-
-			test("object members are bracketed under the parent name", async () => {
-				const url = await serializeViaClient(
-					{ effective_at: { gt: 1_700_000_000, lte: 1_700_000_100 } },
-					{ styles: deep },
-				);
-				expect(url.search).toBe(
-					`?${expected([
-						["effective_at[gt]", "1700000000"],
-						["effective_at[lte]", "1700000100"],
-					])}`,
-				);
-			});
-
-			test("objects nested deeper than one level keep nesting brackets", async () => {
-				const url = await serializeViaClient(
-					{ a: { b: { c: 1 } } },
-					{ styles: deep },
-				);
-				expect(url.search).toBe(`?${expected([["a[b][c]", "1"]])}`);
-			});
-
-			test("an array inside an object repeats at the member path", async () => {
-				const url = await serializeViaClient(
-					{ a: { ids: ["x", "y"] } },
-					{ styles: deep },
-				);
-				expect(url.search).toBe(
-					`?${expected([
-						["a[ids]", "x"],
-						["a[ids]", "y"],
-					])}`,
-				);
-			});
-
-			// a[b]=1&a[b]=2 reads back as one object with a list at b, so an array
-			// of objects takes indices instead
-			test("objects inside an array are indexed", async () => {
-				const url = await serializeViaClient(
-					{ a: [{ b: 1 }, { b: 2 }] },
-					{ styles: deep },
-				);
-				expect(url.search).toBe(
-					`?${expected([
-						["a[0][b]", "1"],
-						["a[1][b]", "2"],
-					])}`,
-				);
-			});
-
-			// indexing the outer level alone would send a[1]=3, and that reads back
-			// as the scalar "3" instead of ["3"]
-			test("nested arrays are indexed rather than comma-joined", async () => {
-				const url = await serializeViaClient(
-					{ a: [[1, 2], [3]] },
-					{ styles: deep },
-				);
-				expect(url.search).toBe(
-					`?${expected([
-						["a[0][0]", "1"],
-						["a[0][1]", "2"],
-						["a[1][0]", "3"],
-					])}`,
-				);
-			});
-
-			test("two object params sharing a member name no longer collide", async () => {
-				const url = await serializeViaClient(
-					{ a: { gt: 1 }, effective_at: { gt: 2 } },
-					{ styles: deep },
-				);
-				expect(url.search).toBe(
-					`?${expected([
-						["a[gt]", "1"],
-						["effective_at[gt]", "2"],
-					])}`,
-				);
-			});
-		});
-
-		// A Date reaches the serializer as an ordinary toJSON implementor. Its
-		// enumerable members are empty and toString gives a timezone dependent
-		// locale string, leaving toJSON as the usable form
-		test("a Date serializes via toJSON as ISO, not a locale string", async () => {
-			// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop
-			const when = new Date(0);
-			const url = await serializeViaClient({ when });
-
-			expect(url.searchParams.get("when")).toBe("1970-01-01T00:00:00.000Z");
-			expect([...url.searchParams.keys()]).toStrictEqual(["when"]);
-		});
-
-		// toISOString throws RangeError on an invalid Date, and this serializer
-		// stays throw-free. toJSON returns null, which the null rule omits
-		test("an invalid Date is omitted rather than throwing", async () => {
-			const url = await serializeViaClient({
-				// only a Date holds an invalid instant, as Temporal throws on
-				// construction
-				// oxlint-disable-next-line unicorn-unported/prefer-temporal -- no Temporal
-				when: new Date(Number.NaN),
-				keep: "yes",
-			});
-
-			expect(url.search).toBe(`?${expected([["keep", "yes"]])}`);
-		});
-
-		test("any class implementing toJSON supplies its own value", async () => {
-			class Money {
-				public toJSON() {
-					return "5 USD";
-				}
-			}
-
-			const url = await serializeViaClient({ price: new Money() });
-			expect(url.searchParams.get("price")).toBe("5 USD");
-		});
-
-		// toJSON may legally return anything, so its result re-enters the normal
-		// rules instead of being stringified
-		test("a toJSON returning an object follows the object rules", async () => {
-			class Range {
-				public toJSON() {
-					return { gt: 1, lte: 2 };
-				}
-			}
-
-			const url = await serializeViaClient({ at: new Range() });
-			expect(url.search).toBe(
-				`?${expected([
-					["gt", "1"],
-					["lte", "2"],
-				])}`,
-			);
-		});
-
-		test("a toJSON returning an array follows the array rules", async () => {
-			class Tags {
-				public toJSON() {
-					return ["cat", "dog"];
-				}
-			}
-
-			const url = await serializeViaClient({ tags: new Tags() });
-			expect(url.search).toBe(
-				`?${expected([
-					["tags", "cat"],
-					["tags", "dog"],
-				])}`,
-			);
-		});
-
-		// toJSON is an opt-in for values that are opaque to the encoder. A plain
-		// object is not opaque, and `toJSON` is a legal member name in a query
-		// object, so the object rules win there
-		test("a plain object is still walked even if it carries a toJSON member", async () => {
-			const url = await serializeViaClient({
-				a: { gt: 1, toJSON: "not a hook" },
-			});
-
-			expect(url.search).toBe("?gt=1&toJSON=not%20a%20hook");
-		});
-
-		test("non-plain objects with no toJSON are left to their own toString", async () => {
-			class Point {
-				public toString() {
-					return "1,2";
-				}
-			}
-
-			const url = await serializeViaClient({ p: new Point() });
-			expect(url.searchParams.get("p")).toBe("1,2");
-		});
-
-		// a built-in where toJSON and toString agree, unchanged by the switch
-		test("a URL still serializes as its href", async () => {
-			const url = await serializeViaClient({
-				u: new URL("https://example.com/x"),
-			});
-			expect(url.searchParams.get("u")).toBe("https://example.com/x");
-		});
-
-		// almost every generated query is scalars and scalar arrays, and the
-		// default style leaves those bytes untouched, so assert the bytes
-		test("scalars and scalar arrays are byte-identical to the old encoding", async () => {
-			const url = await serializeViaClient({
-				id: 42,
-				flag: true,
-				name: "alice",
-				tags: ["cat", "dog"],
-			});
-
-			expect(url.search).toBe("?id=42&flag=true&name=alice&tags=cat&tags=dog");
-			expect(url.search).not.toContain("%5B");
-		});
-
-		describe("a command's own serializer", () => {
-			test("it replaces the default", async () => {
-				const url = await serializeViaClient(
-					{ tags: ["cat", "dog"] },
-					{ serializer: () => "fixed=1" },
-				);
-
-				expect(url.search).toBe("?fixed=1");
-			});
-
-			test("query-string writes the arrayFormat a repeated key cannot", async () => {
-				const url = await serializeViaClient(
-					{ tags: ["cat", "dog"] },
-					{ serializer: createQueryStringSerializer({ arrayFormat: "comma" }) },
-				);
-
-				expect(url.searchParams.get("tags")).toBe("cat,dog");
-			});
-
-			// the same query serializes to the same URL under either serializer
-			test("query-string keeps insertion order", async () => {
-				const url = await serializeViaClient(
-					{ z: 1, a: 2 },
-					{ serializer: createQueryStringSerializer() },
-				);
-
-				expect(url.search).toBe("?z=1&a=2");
-			});
-
-			test("query-string drops null and undefined as the default does", async () => {
-				const url = await serializeViaClient(
-					{ a: null, b: undefined, c: "keep" },
-					{ serializer: createQueryStringSerializer() },
-				);
-
-				expect(url.search).toBe("?c=keep");
-			});
-
-			test("query-string applies toJSON before encoding", async () => {
-				// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop
-				const when = new Date(0);
-				const url = await serializeViaClient(
-					{ when },
-					{ serializer: createQueryStringSerializer() },
-				);
-
-				expect(url.searchParams.get("when")).toBe("1970-01-01T00:00:00.000Z");
-			});
-		});
+		const [url] = fetch.mock.calls[0] ?? [];
+		assert(url instanceof URL);
+		expect(url.search).toBe("");
 	});
 
 	// 0f03f56 guarded the whole merge on this.#headers, so a headerless client
@@ -740,24 +341,63 @@ describe("Client", () => {
 	});
 
 	describe("sortQuery", () => {
-		const query: Query = { z: 1, m: [2, 3], a: 4 };
+		const queryParams = { z: 1, m: [2, 3], a: 4 };
+
+		// the client reorders before it hands over, so these assert what the
+		// serializer was given, not the URL that came back
+		test("the serializer is handed a sorted copy, values intact", async () => {
+			const serialize = vi.fn<QuerySerializer>(() => "");
+
+			await serializeViaClient(queryParams, {
+				sortQuery: true,
+				serializer: serialize,
+			});
+
+			expect(serialize).toHaveBeenCalledOnce();
+			const [handed] = serialize.mock.calls[0] ?? [];
+
+			expect(Object.keys(handed ?? {})).toStrictEqual(["a", "m", "z"]);
+			expect(handed).toStrictEqual(queryParams);
+		});
+
+		test("a comparator decides the order the serializer is handed", async () => {
+			const serialize = vi.fn<QuerySerializer>(() => "");
+
+			// written ascending so a descending comparator has to move them
+			await serializeViaClient(
+				{ a: 4, m: [2, 3], z: 1 },
+				{ sortQuery: (a, b) => b.localeCompare(a), serializer: serialize },
+			);
+
+			const [handed] = serialize.mock.calls[0] ?? [];
+			expect(Object.keys(handed ?? {})).toStrictEqual(["z", "m", "a"]);
+		});
+
+		test("unset hands the serializer the written order", async () => {
+			const serialize = vi.fn<QuerySerializer>(() => "");
+
+			await serializeViaClient(queryParams, { serializer: serialize });
+
+			const [handed] = serialize.mock.calls[0] ?? [];
+			expect(Object.keys(handed ?? {})).toStrictEqual(["z", "m", "a"]);
+		});
 
 		test("unset keeps the written order", async () => {
-			const url = await serializeViaClient(query);
+			const url = await serializeViaClient(queryParams);
 			expect(url.search).toBe("?z=1&m=2&m=3&a=4");
 		});
 
-		test("true sorts the keys the styles serializer writes", async () => {
-			const url = await serializeViaClient(query, { sortQuery: true });
+		test("true sorts the keys the default serializer writes", async () => {
+			const url = await serializeViaClient(queryParams, { sortQuery: true });
 			expect(url.search).toBe("?a=4&m=2&m=3&z=1");
 		});
 
-		test("true sorts the keys a command's own serializer writes", async () => {
-			const url = await serializeViaClient(query, {
+		test("true sorts the keys another style writes", async () => {
+			const url = await serializeViaClient(queryParams, {
 				sortQuery: true,
-				serializer: createQueryStringSerializer(),
+				serializer: formSerializer,
 			});
-			expect(url.search).toBe("?a=4&m=2&m=3&z=1");
+			expect(url.search).toBe("?a=4&m=2,3&z=1");
 		});
 
 		// UTF-16 puts the emoji's surrogates before U+FF01, code points after
@@ -770,9 +410,11 @@ describe("Client", () => {
 		});
 
 		test("a comparator decides the order", async () => {
-			const url = await serializeViaClient(query, {
-				sortQuery: (a, b) => b.localeCompare(a),
-			});
+			// written ascending so a descending comparator has to move them
+			const url = await serializeViaClient(
+				{ a: 4, m: [2, 3], z: 1 },
+				{ sortQuery: (a, b) => b.localeCompare(a) },
+			);
 			expect(url.search).toBe("?z=1&m=2&m=3&a=4");
 		});
 	});

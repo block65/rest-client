@@ -1,5 +1,6 @@
 import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
-import type { HttpMethod, QuerySerializer, QueryStyles } from "./types.ts";
+import { formExplodeSerializer } from "./query/serializer.ts";
+import type { HttpMethod, QuerySerializer } from "./types.ts";
 
 type JsonObject = { [Key in string]?: JsonValue };
 
@@ -25,13 +26,11 @@ export abstract class Command<
 	// level, so the deep-widened type is what is actually held
 	public readonly query: UndefinedOnPartialDeep<CommandQuery> | undefined;
 
-	// Lists the parameters where the document states something other than the
-	// OAS default. An unlisted parameter uses that default
-	public readonly queryStyles: QueryStyles | undefined;
-
-	// Replaces the styles above for the whole query, for a server the OAS
-	// styles cannot describe
-	public readonly querySerializer: QuerySerializer | undefined;
+	// A generated command names one of the exported serializers, the one for
+	// the style its document states, so a module of a thousand commands
+	// shares the same five functions. Unset, it is form with explode, the
+	// OpenAPI default for a query parameter
+	public readonly querySerializer: QuerySerializer = formExplodeSerializer;
 
 	// Without these, unused generics make Command<A, X> ≡ Command<B, X>
 	// and the cross-client guard silently disappears
@@ -48,8 +47,8 @@ export abstract class Command<
 	) {
 		this.pathname = pathname;
 		this.body = body;
-		this.query = query;
-		this.headers = headers;
+		this.query = structuredClone(query);
+		this.headers = structuredClone(headers);
 	}
 
 	public serialize() {

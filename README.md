@@ -65,9 +65,31 @@ new RestServiceClient(url, {
 
 The default fetcher retries idempotent (`GET`) requests and supports timeouts and merged abort signals.
 
+### Query parameter styles
+
+A command names the serializer for the OpenAPI `style` and `explode` its document states, from a set of five that write one style each. They are plain functions created once, so a module of a thousand generated commands shares the same five. A command that names nothing writes `form` with `explode`, the OpenAPI default for a query parameter:
+
+```ts
+import { deepObjectSerializer } from "@block65/rest-client";
+
+class ListAuditLogsCommand extends Command<Input, Output, Query> {
+	public override querySerializer = deepObjectSerializer;
+}
+```
+
+| Serializer                 | style            | explode | `["blue", "black"]`      | `{ R: 100, G: 200 }`                |
+| -------------------------- | ---------------- | ------- | ------------------------ | ----------------------------------- |
+| `formExplodeSerializer`    | `form`           | true    | `color=blue&color=black` | `R=100&G=200`                       |
+| `formSerializer`           | `form`           | false   | `color=blue,black`       | `color=R,100,G,200`                 |
+| `spaceDelimitedSerializer` | `spaceDelimited` | false   | `color=blue%20black`     | `color=R%20100%20G%20200`           |
+| `pipeDelimitedSerializer`  | `pipeDelimited`  | false   | `color=blue%7Cblack`     | `color=R%7C100%7CG%7C200`           |
+| `deepObjectSerializer`     | `deepObject`     |         | `color=blue&color=black` | `color%5BR%5D=100&color%5BG%5D=200` |
+
+Every name and value is percent-encoded once, outside RFC 3986's unreserved set, so `url.search` returns exactly what was written. A `null` is the spec's undefined value and writes `color=`, an `undefined` parameter is absent, and a value with `toJSON` is written as `JSON.stringify` would show it. The spec leaves a nested array or object undefined for every style, so one throws.
+
 ### Sorted query keys
 
-Both serializers write keys in the order the query object was built. `sortQuery` orders them first, by UTF-8 byte order or by a comparator, so a cache or a signature keyed on the URL sees one URL per query:
+Every serializer writes keys in the order the query object was built. `sortQuery` orders them first, by UTF-8 byte order or by a comparator, so a cache or a signature keyed on the URL sees one URL per query:
 
 ```ts
 new RestServiceClient(url, { sortQuery: true });

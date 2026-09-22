@@ -1,21 +1,105 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`the default serializer's output > a Date, through toJSON 1`] = `"at=1970-01-01T00%3A00%3A00.000Z"`;
+exports[`deepObject > a Date, through toJSON 1`] = `"at=1970-01-01T00%3A00%3A00.000Z"`;
 
-exports[`the default serializer's output > a lone surrogate 1`] = `"a=%EF%BF%BD"`;
+exports[`deepObject > a lone surrogate 1`] = `"color=%EF%BF%BD"`;
 
-exports[`the default serializer's output > a nested object, hoisted 1`] = `"gt=1&lte=2"`;
+exports[`deepObject > a value with no string form is refused by name 1`] = `[TypeError: query parameter color holds a value with no string form]`;
 
-exports[`the default serializer's output > a plain string 1`] = `"a=one"`;
+exports[`deepObject > an empty array 1`] = `"other=kept"`;
 
-exports[`the default serializer's output > a space 1`] = `"a=one%20two"`;
+exports[`deepObject > an undefined parameter 1`] = `"other=kept"`;
 
-exports[`the default serializer's output > an array 1`] = `"a=one&a=two"`;
+exports[`deepObject > parameters written out of order 1`] = `"z=1&a=2"`;
 
-exports[`the default serializer's output > null 1`] = `"b=keep"`;
+exports[`form, explode false > a Date, through toJSON 1`] = `"at=1970-01-01T00%3A00%3A00.000Z"`;
 
-exports[`the default serializer's output > reserved characters 1`] = `"a=a%26b%3Dc%23d%3Fe%2Ff"`;
+exports[`form, explode false > a lone surrogate 1`] = `"color=%EF%BF%BD"`;
 
-exports[`the default serializer's output > undefined 1`] = `"b=keep"`;
+exports[`form, explode false > a value with no string form is refused by name 1`] = `[TypeError: query parameter color holds a value with no string form]`;
 
-exports[`the default serializer's output > unicode 1`] = `"a=caf%C3%A9%20%F0%9F%8E%89"`;
+exports[`form, explode false > an empty array 1`] = `"other=kept"`;
+
+exports[`form, explode false > an undefined parameter 1`] = `"other=kept"`;
+
+exports[`form, explode false > parameters written out of order 1`] = `"z=1&a=2"`;
+
+exports[`form, explode true > a Date, through toJSON 1`] = `"at=1970-01-01T00%3A00%3A00.000Z"`;
+
+exports[`form, explode true > a lone surrogate 1`] = `"color=%EF%BF%BD"`;
+
+exports[`form, explode true > a value with no string form is refused by name 1`] = `[TypeError: query parameter color holds a value with no string form]`;
+
+exports[`form, explode true > an empty array 1`] = `"other=kept"`;
+
+exports[`form, explode true > an undefined parameter 1`] = `"other=kept"`;
+
+exports[`form, explode true > parameters written out of order 1`] = `"z=1&a=2"`;
+
+exports[`hostile input > NaN, negative zero and Infinity 1`] = `"a=NaN&b=0&c=Infinity"`;
+
+exports[`hostile input > a member name holding brackets and delimiters 1`] = `"o%5BR%5D%26x%3D1%5D=d"`;
+
+exports[`hostile input > a name holding the delimiters 1`] = `"a%26b%3Dc%23d=1"`;
+
+exports[`hostile input > a toJSON returning an object 1`] = `"a=x,1"`;
+
+exports[`hostile input > a toJSON returning undefined 1`] = `"b=1"`;
+
+exports[`hostile input > a value that is already encoded 1`] = `"a=%2520%2B"`;
+
+exports[`hostile input > an emoji, a paired surrogate 1`] = `"a=caf%C3%A9%20%F0%9F%8E%89"`;
+
+exports[`hostile input > an empty object 1`] = `"b=1"`;
+
+exports[`hostile input > an exploded member that takes another parameter's name is refused 1`] = `[TypeError: query parameter o writes a, which is already written]`;
+
+exports[`hostile input > an invalid Date, whose toJSON is null 1`] = `"a="`;
+
+exports[`nesting > deepObject refuses a nested object 1`] = `[TypeError: query parameter R nests an array or object where the OpenAPI style allows a scalar]`;
+
+exports[`nesting > deepObject refuses an array member 1`] = `[TypeError: query parameter R nests an array or object where the OpenAPI style allows a scalar]`;
+
+exports[`nesting > form refuses a nested object 1`] = `[TypeError: query parameter color nests an array or object where the OpenAPI style allows a scalar]`;
+
+exports[`nesting > form with explode refuses a nested object 1`] = `[TypeError: query parameter R nests an array or object where the OpenAPI style allows a scalar]`;
+
+exports[`nesting > pipeDelimited refuses a nested object 1`] = `[TypeError: query parameter color nests an array or object where the OpenAPI style allows a scalar]`;
+
+exports[`nesting > spaceDelimited refuses a nested object 1`] = `[TypeError: query parameter color nests an array or object where the OpenAPI style allows a scalar]`;
+
+exports[`percent-encoding > a comma in a value beside the comma between items 1`] = `"a=x%2Cy,z"`;
+
+exports[`percent-encoding > a name 1`] = `"a%20b=c"`;
+
+exports[`percent-encoding > a pipe in a value beside the pipe separator 1`] = `"a=x%7Cy%7Cz"`;
+
+exports[`percent-encoding > a space in a value beside the space separator 1`] = `"a=x%20y%20z"`;
+
+exports[`percent-encoding > reserved characters in a value 1`] = `"a=b%26c%3Dd%3Fe%23f%2Fg%2Bh"`;
+
+exports[`percent-encoding > the sub-delimiters encodeURIComponent leaves 1`] = `"a=%21%27%28%29%2A"`;
+
+exports[`pipeDelimited > a Date, through toJSON 1`] = `"at=1970-01-01T00%3A00%3A00.000Z"`;
+
+exports[`pipeDelimited > a lone surrogate 1`] = `"color=%EF%BF%BD"`;
+
+exports[`pipeDelimited > a value with no string form is refused by name 1`] = `[TypeError: query parameter color holds a value with no string form]`;
+
+exports[`pipeDelimited > an empty array 1`] = `"other=kept"`;
+
+exports[`pipeDelimited > an undefined parameter 1`] = `"other=kept"`;
+
+exports[`pipeDelimited > parameters written out of order 1`] = `"z=1&a=2"`;
+
+exports[`spaceDelimited > a Date, through toJSON 1`] = `"at=1970-01-01T00%3A00%3A00.000Z"`;
+
+exports[`spaceDelimited > a lone surrogate 1`] = `"color=%EF%BF%BD"`;
+
+exports[`spaceDelimited > a value with no string form is refused by name 1`] = `[TypeError: query parameter color holds a value with no string form]`;
+
+exports[`spaceDelimited > an empty array 1`] = `"other=kept"`;
+
+exports[`spaceDelimited > an undefined parameter 1`] = `"other=kept"`;
+
+exports[`spaceDelimited > parameters written out of order 1`] = `"z=1&a=2"`;

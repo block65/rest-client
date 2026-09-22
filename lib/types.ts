@@ -1,4 +1,4 @@
-import type { Jsonifiable } from "type-fest";
+import type { Jsonifiable, UnknownRecord } from "type-fest";
 
 export type JsonifiableObject =
 	| { [Key in string]?: Jsonifiable }
@@ -30,29 +30,10 @@ export type FetcherMethod = (
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete" | "head";
 
 /**
- * How a query parameter is written into a query string, from the `style` and
- * `explode` the OpenAPI document states for it. A generated command lists a
- * parameter here when its document departs from the OAS default of `form` with
- * `explode: true`. An unlisted parameter uses that default
+ * Turns a command's query object into the search string after the `?`.
+ * The exported serializers write one OpenAPI style each
  */
-export type QueryParameterStyle =
-	| "form"
-	| "spaceDelimited"
-	| "pipeDelimited"
-	| "deepObject";
-
-export type QueryParameterEncoding = {
-	style: QueryParameterStyle;
-	explode: boolean;
-};
-
-export type QueryStyles = Readonly<Record<string, QueryParameterEncoding>>;
-
-/**
- * Turns a command's query object into the search string that follows the `?`,
- * in place of queryStyles
- */
-export type QuerySerializer = (query: Record<string, unknown>) => string;
+export type QuerySerializer = (query: UnknownRecord) => string;
 
 export type RequestMethod<T = any> = (
 	params: RequestParameters,

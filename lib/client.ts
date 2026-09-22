@@ -1,4 +1,5 @@
 import type * as s from "@standard-schema/spec";
+import type { UnknownRecord } from "type-fest";
 import { createIsomorphicNativeFetcher } from "../src/fetchers/isomorphic-native-fetcher.ts";
 import type { Command } from "./command.ts";
 import {
@@ -6,7 +7,6 @@ import {
 	ResponseValidationError,
 	ServiceError,
 } from "./errors.ts";
-import { serializerForStyles } from "./query-serializer.ts";
 import type {
 	FetcherMethod,
 	ResolvableHeaders,
@@ -37,19 +37,19 @@ function compareUtf8Bytes(a: string, b: string) {
 	return bytesA.length - bytesB.length;
 }
 
-// both serializers keep insertion order, so sorting here sorts the URL
-function sortQueryKeys(
-	query: Record<string, unknown>,
+// every serializer keeps insertion order, so sorting here sorts the URL
+function sortQueryKeys<T extends UnknownRecord>(
+	query: T,
 	sort: true | ((a: string, b: string) => number),
 ) {
 	const order = sort === true ? compareUtf8Bytes : sort;
 
-	return Object.fromEntries(
-		Object.entries(query).toSorted(([a], [b]) => order(a, b)),
-	);
+	const sorted = Object.entries(query).toSorted(([a], [b]) => order(a, b));
+
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- reordering keeps the shape
+	return Object.fromEntries(sorted) as T;
 }
 
-// spreading an iterable Headers into an object drops every header
 function headersFrom(headers: Record<string, string> | Headers | undefined) {
 	return headers instanceof Headers ? Object.fromEntries(headers) : headers;
 }
@@ -202,14 +202,12 @@ export class RestServiceClient<
 
 	// the runtime hook rewrites the serialized URL, so it runs last
 	async #buildUrl(command: Command, runtimeOptions?: RuntimeOptions) {
-		const { pathname, query, querySerializer, queryStyles } = command;
+		const { pathname, query } = command;
 
 		const url = new URL(`.${pathname}`, this.#base);
 
 		if (query) {
-			const serialize = querySerializer ?? serializerForStyles(queryStyles);
-
-			url.search = serialize(
+			url.search = command.querySerializer(
 				this.#sortQuery ? sortQueryKeys(query, this.#sortQuery) : query,
 			);
 		}
