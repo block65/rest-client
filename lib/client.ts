@@ -17,16 +17,15 @@ import { isPlainObject } from "./utils.ts";
 const utf8 = new TextEncoder();
 
 // `<` on strings misorders astral characters, and a signing scheme uses bytes
-function byUtf8Bytes(a: string, b: string) {
+function compareUtf8Bytes(a: string, b: string) {
 	const bytesA = utf8.encode(a);
 	const bytesB = utf8.encode(b);
-	const remainingB = bytesB.values();
 
-	for (const byteA of bytesA) {
-		const { value: byteB, done } = remainingB.next();
+	for (const [i, byteA] of bytesA.entries()) {
+		const byteB = bytesB[i];
 
 		// b ran out first, so it is a prefix of a
-		if (done) {
+		if (byteB === undefined) {
 			return 1;
 		}
 
@@ -43,7 +42,7 @@ function sortQueryKeys(
 	query: Record<string, unknown>,
 	sort: true | ((a: string, b: string) => number),
 ) {
-	const order = sort === true ? byUtf8Bytes : sort;
+	const order = sort === true ? compareUtf8Bytes : sort;
 
 	return Object.fromEntries(
 		Object.entries(query).toSorted(([a], [b]) => order(a, b)),
