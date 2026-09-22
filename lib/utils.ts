@@ -22,7 +22,7 @@ function isJsonifiable(value: unknown): value is Jsonifiable {
 }
 
 /**
- * Applies the toJSON hook the way JSON.stringify does. A value defining
+ * Applies the `toJSON` hook the way JSON.stringify does. A value defining
  * toJSON supplies its wire form, and the caller encodes the result. Runs
  * once per position, so a toJSON returning `this` terminates
  */
