@@ -35,13 +35,13 @@ function explode(name: string, value: unknown): UnencodedPair[] {
 	}
 
 	if (Array.isArray(resolvedValue)) {
-		return resolvedValue.map((item) => explode(name, item)).flat();
+		return resolvedValue.flatMap((item) => explode(name, item));
 	}
 
 	if (isPlainObject(resolvedValue)) {
-		return Object.entries(resolvedValue)
-			.map(([member, memberValue]) => explode(member, memberValue))
-			.flat();
+		return Object.entries(resolvedValue).flatMap(([member, memberValue]) =>
+			explode(member, memberValue),
+		);
 	}
 
 	return [[name, stringifyParameter(name, resolvedValue)]];
@@ -104,19 +104,15 @@ function bracket(
 			nestedInArray ||
 			resolvedValue.some((item) => isPlainObject(item) || Array.isArray(item));
 
-		return resolvedValue
-			.map((item, index) =>
-				bracket(indexed ? `${name}[${index}]` : name, item, true),
-			)
-			.flat();
+		return resolvedValue.flatMap((item, index) =>
+			bracket(indexed ? `${name}[${index}]` : name, item, true),
+		);
 	}
 
 	if (isPlainObject(resolvedValue)) {
-		return Object.entries(resolvedValue)
-			.map(([member, memberValue]) =>
-				bracket(`${name}[${member}]`, memberValue, false),
-			)
-			.flat();
+		return Object.entries(resolvedValue).flatMap(([member, memberValue]) =>
+			bracket(`${name}[${member}]`, memberValue, false),
+		);
 	}
 
 	return [[name, stringifyParameter(name, resolvedValue)]];
@@ -175,8 +171,7 @@ export function createQuerySerializer(
 
 	return function serializeQuery(query) {
 		return Object.entries(query)
-			.map(([name, value]) => (styles.get(name) ?? explode)(name, value))
-			.flat()
+			.flatMap(([name, value]) => (styles.get(name) ?? explode)(name, value))
 			.map(
 				([name, value]) =>
 					`${encodeRFC3986URIComponent(name)}=${encodeRFC3986URIComponent(value)}`,
