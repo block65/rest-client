@@ -30,10 +30,10 @@ export type FetcherMethod = (
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete" | "head";
 
 /**
- * Writes one query parameter as unencoded name and value pairs. Each OAS
- * 3.2 style and explode combination a document can state is one encoder
+ * Writes one query parameter as name and value pairs, unencoded. Each OAS
+ * 3.2 style and explode combination a document can state is one writer
  */
-export type QueryEncoder = (
+export type QueryParameterWriter = (
 	name: string,
 	value: unknown,
 ) => (readonly [name: string, value: string])[];

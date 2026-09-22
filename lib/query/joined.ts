@@ -1,5 +1,5 @@
 import { isPlainObject } from "../utils.ts";
-import { type Pair, resolveQueryValue, scalar } from "./encoder.ts";
+import { type Pair, resolveQueryValue, scalar } from "./pair.ts";
 
 /**
  * One value holds an array's items, or an object's alternating member name

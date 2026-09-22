@@ -65,18 +65,18 @@ new RestServiceClient(url, {
 
 The default fetcher retries idempotent (`GET`) requests and supports timeouts and merged abort signals.
 
-### Query encoders
+### Query parameter writers
 
-A generated command names an encoder for each parameter whose OpenAPI document departs from the default of `form` with `explode`. Every other parameter takes the fallback, `encodeFormExploded` unless the second argument says otherwise:
+A generated command names a writer for each parameter whose OpenAPI document departs from the default of `form` with `explode`. Every other parameter takes the fallback, `writeFormExploded` unless the second argument says otherwise:
 
 ```ts
 public override querySerializer = createQuerySerializer({
-	changes: encodeFormJoined,
-	filter: encodeDeepObject,
+	changes: writeFormJoined,
+	filter: writeDeepObject,
 });
 ```
 
-The encoders are `encodeFormExploded`, `encodeFormJoined`, `encodeSpaceDelimited`, `encodePipeDelimited` and `encodeDeepObject`, one module each, so a bundle carries only the ones a client's commands name. `createQueryStringSerializer` remains for a server the OpenAPI styles cannot describe.
+The writers are `writeFormExploded`, `writeFormJoined`, `writeSpaceDelimited`, `writePipeDelimited` and `writeDeepObject`, one module each, so a bundle carries only the ones a client's commands name. A writer returns a parameter's pairs unencoded, and the serializer percent-encodes every pair once. `createQueryStringSerializer` remains for a server the OpenAPI styles cannot describe.
 
 ### Sorted query keys
 

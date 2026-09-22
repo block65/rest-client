@@ -2,7 +2,7 @@ import {
 	createQuerySerializer,
 	createQueryStringSerializer,
 	defaultQuerySerializer,
-	encodeFormJoined,
+	writeFormJoined,
 } from "@block65/rest-client";
 import { describe, expect, test } from "vitest";
 import { typedObjectEntries } from "../lib/utils.ts";
@@ -85,8 +85,8 @@ describe("the default serializer's output", () => {
 });
 
 describe("createQuerySerializer", () => {
-	test("a named parameter takes its encoder, the rest the fallback", () => {
-		const serialize = createQuerySerializer({ tags: encodeFormJoined });
+	test("a named parameter takes its writer, the rest the fallback", () => {
+		const serialize = createQuerySerializer({ tags: writeFormJoined });
 
 		expect(serialize({ tags: ["a", "b"], ids: [1, 2] })).toBe(
 			"tags=a%2Cb&ids=1&ids=2",
@@ -94,14 +94,14 @@ describe("createQuerySerializer", () => {
 	});
 
 	test("the fallback replaces form explode for unnamed parameters", () => {
-		const serialize = createQuerySerializer({}, encodeFormJoined);
+		const serialize = createQuerySerializer({}, writeFormJoined);
 
 		expect(serialize({ ids: [1, 2] })).toBe("ids=1%2C2");
 	});
 
 	// styles?.[name] read Object.prototype.constructor for this key
 	test("a parameter named constructor takes the fallback", () => {
-		const serialize = createQuerySerializer({ tags: encodeFormJoined });
+		const serialize = createQuerySerializer({ tags: writeFormJoined });
 
 		expect(serialize({ constructor: ["a", "b"] })).toBe(
 			"constructor=a&constructor=b",

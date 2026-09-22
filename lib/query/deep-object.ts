@@ -1,5 +1,5 @@
 import { isPlainObject } from "../utils.ts";
-import { type Pair, resolveQueryValue, scalar } from "./encoder.ts";
+import { type Pair, resolveQueryValue, scalar } from "./pair.ts";
 
 function deep(name: string, input: unknown, nestedInArray: boolean): Pair[] {
 	const value = resolveQueryValue(input);
@@ -30,6 +30,6 @@ function deep(name: string, input: unknown, nestedInArray: boolean): Pair[] {
 /**
  * `deepObject`. Each member bracketed under the parent name, as `at[gt]=1`
  */
-export function encodeDeepObject(name: string, value: unknown) {
+export function writeDeepObject(name: string, value: unknown) {
 	return deep(name, value, false);
 }

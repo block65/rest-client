@@ -25,7 +25,7 @@ export abstract class Command<
 	// level, so the deep-widened type is what is actually held
 	public readonly query: UndefinedOnPartialDeep<CommandQuery> | undefined;
 
-	// Names an encoder per parameter that departs from the OAS default, or
+	// Names a writer per parameter that departs from the OAS default, or
 	// replaces the whole query's serializer for a server OAS cannot describe
 	public readonly querySerializer: QuerySerializer | undefined;
 
