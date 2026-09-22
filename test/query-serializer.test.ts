@@ -6,6 +6,7 @@ import {
 	pipeDelimitedSerializer,
 	spaceDelimitedSerializer,
 } from "@block65/rest-client";
+import type { UnknownRecord } from "type-fest";
 import { describe, expect, test } from "vitest";
 import { typedObjectEntries } from "../lib/utils.ts";
 
@@ -194,5 +195,63 @@ describe("nesting", () => {
 		expect(() =>
 			deepObjectSerializer({ color: { R: [1, 2] } }),
 		).toThrowErrorMatchingSnapshot();
+	});
+});
+
+// input a caller did not write, such as a parsed request, reaches the query
+describe("hostile input", () => {
+	test.each([
+		[
+			"a name holding the delimiters",
+			formExplodeSerializer,
+			{ "a&b=c#d": "1" },
+		],
+		[
+			"a member name holding brackets and delimiters",
+			deepObjectSerializer,
+			{ o: { "R]&x=1": "d" } },
+		],
+		["a value that is already encoded", formExplodeSerializer, { a: "%20+" }],
+		["an emoji, a paired surrogate", formExplodeSerializer, { a: "café 🎉" }],
+		[
+			"NaN, negative zero and Infinity",
+			formExplodeSerializer,
+			{ a: Number.NaN, b: -0, c: Number.POSITIVE_INFINITY },
+		],
+		[
+			"an invalid Date, whose toJSON is null",
+			formExplodeSerializer,
+			// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop
+			{ a: new Date(Number.NaN) },
+		],
+		[
+			"a toJSON returning an object",
+			formSerializer,
+			{ a: { toJSON: () => ({ x: 1 }) } },
+		],
+		[
+			"a toJSON returning undefined",
+			formSerializer,
+			// oxlint-disable-next-line unicorn/no-useless-undefined -- the return is the case
+			{ a: { toJSON: () => undefined }, b: 1 },
+		],
+		["an empty object", deepObjectSerializer, { a: {}, b: 1 }],
+	])("%s", (_case, serialize, query) => {
+		expect(serialize(query)).toMatchSnapshot();
+	});
+
+	test("an exploded member that takes another parameter's name is refused", () => {
+		expect(() =>
+			formExplodeSerializer({ a: "1", o: { a: "2" } }),
+		).toThrowErrorMatchingSnapshot();
+	});
+
+	// query-string copies keys through a plain object, which swallows this one
+	test("a parameter named __proto__ is dropped and pollutes nothing", () => {
+		const query: unknown = JSON.parse('{"__proto__":{"polluted":"1"},"b":"1"}');
+
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- parsed test data
+		expect(formSerializer(query as UnknownRecord)).toBe("b=1");
+		expect("polluted" in {}).toBe(false);
 	});
 });

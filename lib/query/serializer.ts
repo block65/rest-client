@@ -100,18 +100,30 @@ function bracket(name: string, value: unknown) {
 
 // a value with toJSON is written as JSON.stringify would show it
 function prepare(query: UnknownRecord, style: Prepare) {
-	const prepared: Prepared = {};
+	const pairs: [written: string, value: string | string[]][] = [];
 
 	for (const [name, value] of Object.entries(query)) {
 		const jsonValue = maybeToJson(value);
 
 		// absent, as JSON.stringify leaves an undefined member
-		if (jsonValue !== undefined) {
-			Object.assign(prepared, style(name, jsonValue));
+		if (jsonValue === undefined) {
+			continue;
+		}
+
+		for (const pair of Object.entries(style(name, jsonValue))) {
+			// an exploded object drops its name, so a member can take the name
+			// of another parameter, and one of them would be lost
+			if (pairs.some(([written]) => written === pair[0])) {
+				throw new TypeError(
+					`query parameter ${name} writes ${pair[0]}, which is already written`,
+				);
+			}
+
+			pairs.push(pair);
 		}
 	}
 
-	return prepared;
+	return Object.fromEntries(pairs);
 }
 
 // query-string writes the separator raw, and the spec shows it encoded
