@@ -245,19 +245,21 @@ describe("Client", () => {
 		test("function receives default-built URL; return value is fetched as-is (presigned-style takeover)", async () => {
 			const command = new EchoCommand({ foo: "bar" });
 
-			const url = vi.fn<(built: URL) => URL>(() => {
-				const next = new URL(`http://0.0.0.0:${port}/echo`);
-				next.searchParams.set("signed", "xyz");
+			const rewriteUrl = vi.fn<(built: URL) => URL>(() => {
+				const signed = new URL(`http://0.0.0.0:${port}/echo`);
+				signed.searchParams.set("signed", "xyz");
 
-				return next;
+				return signed;
 			});
-			const res = await client.json<never, EchoOutput>(command, { url });
+			const res = await client.json<never, EchoOutput>(command, {
+				url: rewriteUrl,
+			});
 
-			expect(url).toHaveBeenCalledOnce();
-			const [received] = url.mock.calls[0] ?? [];
-			assert(received);
-			expect(received.pathname).toBe("/200");
-			expect(received.searchParams.get("foo")).toBe("bar");
+			expect(rewriteUrl).toHaveBeenCalledOnce();
+			const [built] = rewriteUrl.mock.calls[0] ?? [];
+			assert(built);
+			expect(built.pathname).toBe("/200");
+			expect(built.searchParams.get("foo")).toBe("bar");
 			expect(res.pathname).toBe("/echo");
 			expect(res.query).toStrictEqual({ signed: "xyz" });
 		});
