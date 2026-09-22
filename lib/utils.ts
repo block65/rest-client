@@ -28,8 +28,7 @@ type Stringifiable = { toString(): string };
 
 /**
  * Object's own toString yields "[object Object]", which says nothing about
- * the value and would reach the wire unnoticed. A class that overrides it
- * chose that text as its form
+ * the value and would reach the wire unnoticed
  */
 export function isStringifiable(value: unknown): value is Stringifiable {
 	return (
