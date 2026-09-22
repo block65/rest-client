@@ -11,7 +11,7 @@ export function isPlainObject(value: unknown): value is UnknownRecord {
 
 type Jsonifiable<T extends JsonPrimitive = JsonPrimitive> = { toJSON(): T };
 
-// the hook JSON.stringify honours, on a Date, a URL or a caller's own class
+// a Date, a URL or a caller's own class defines toJSON, and JSON.stringify calls it
 function isJsonifiable(value: unknown): value is Jsonifiable {
 	return (
 		typeof value === "object" &&
@@ -22,9 +22,9 @@ function isJsonifiable(value: unknown): value is Jsonifiable {
 }
 
 /**
- * Applies the `toJSON` hook the way JSON.stringify does. A value defining
+ * Applies the `toJSON` hook the way `JSON.stringify` does. A value defining
  * toJSON supplies its wire form, and the caller encodes the result. Runs
- * once per position, so a toJSON returning `this` terminates
+ * once per position, so a `toJSON` returning `this` terminates
  */
 export function toJsonValue<T>(value: T) {
 	return isJsonifiable(value) ? value.toJSON() : value;
