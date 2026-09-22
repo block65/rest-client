@@ -726,7 +726,7 @@ describe("Client", () => {
 		type Query = UndefinedOnPartialDeep<{ [k in string]?: JsonValue }>;
 
 		// what fetch receives after the `?`
-		async function requestedSearch(
+		async function serializeViaClient(
 			query: Query,
 			sortQuery: RestServiceClientConfig["sortQuery"],
 			serializer?: QuerySerializer,
@@ -759,17 +759,17 @@ describe("Client", () => {
 		const query: Query = { z: 1, m: [2, 3], a: 4 };
 
 		test("unset keeps the written order", async () => {
-			const search = await requestedSearch(query, undefined);
+			const search = await serializeViaClient(query, undefined);
 			expect(search).toBe("?z=1&m=2&m=3&a=4");
 		});
 
 		test("true sorts the keys the styles serializer writes", async () => {
-			const search = await requestedSearch(query, true);
+			const search = await serializeViaClient(query, true);
 			expect(search).toBe("?a=4&m=2&m=3&z=1");
 		});
 
 		test("true sorts the keys a command's own serializer writes", async () => {
-			const search = await requestedSearch(
+			const search = await serializeViaClient(
 				query,
 				true,
 				createQueryStringSerializer(),
@@ -779,7 +779,7 @@ describe("Client", () => {
 
 		// UTF-16 puts the emoji's surrogates before U+FF01, code points after
 		test("true orders an astral key after U+FF01", async () => {
-			const search = await requestedSearch(
+			const search = await serializeViaClient(
 				{ "\u{1F600}": 1, "\uFF01": 2 },
 				true,
 			);
@@ -790,7 +790,9 @@ describe("Client", () => {
 		});
 
 		test("a comparator decides the order", async () => {
-			const search = await requestedSearch(query, (a, b) => b.localeCompare(a));
+			const search = await serializeViaClient(query, (a, b) =>
+				b.localeCompare(a),
+			);
 			expect(search).toBe("?z=1&m=2&m=3&a=4");
 		});
 	});
