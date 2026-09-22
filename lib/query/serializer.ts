@@ -27,7 +27,9 @@ function stringifyParameter(name: string, value: unknown) {
 function explode(name: string, value: unknown): UnencodedPair[] {
 	const resolvedValue = resolveQueryValue(value);
 
-	// an invalid Date reaches here, its toJSON having returned null
+	// a query has no null literal, so null and undefined mean the parameter
+	// is absent, as JSON.stringify treats undefined. An invalid Date lands
+	// here too, its toJSON having returned null
 	if (resolvedValue === null || resolvedValue === undefined) {
 		return [];
 	}
@@ -66,6 +68,7 @@ function join(
 ): UnencodedPair[] {
 	const resolvedValue = resolveQueryValue(value);
 
+	// absent, for the reason explode gives
 	if (resolvedValue === null || resolvedValue === undefined) {
 		return [];
 	}
@@ -74,6 +77,8 @@ function join(
 		.filter((item) => item !== null && item !== undefined)
 		.map((item) => stringifyParameter(name, resolveQueryValue(item)));
 
+	// a key with nothing to join would write tags= and a server would read
+	// one empty string where the caller sent none
 	if (usable.length === 0) {
 		return [];
 	}
@@ -89,6 +94,7 @@ function bracket(
 ): UnencodedPair[] {
 	const resolvedValue = resolveQueryValue(value);
 
+	// absent, for the reason explode gives
 	if (resolvedValue === null || resolvedValue === undefined) {
 		return [];
 	}
