@@ -1,8 +1,8 @@
+import { stripUndefined } from "@block65/rest-client";
 import type { UndefinedOnPartialDeep } from "type-fest";
 import { expect, expectTypeOf, test } from "vitest";
 import { RestServiceClient } from "../lib/client.ts";
 import { Command } from "../lib/command.ts";
-import { stripUndefined } from "../src/main.ts";
 
 const fakeApiUrl = new URL("https://192.0.2.1");
 

@@ -1,4 +1,14 @@
 import { createServer } from "node:http";
+import {
+	Command,
+	type QuerySerializer,
+	type QueryStyles,
+	RestServiceClient,
+	type RestServiceClientConfig,
+	ServiceError,
+	createIsomorphicNativeFetcher,
+	createQueryStringSerializer,
+} from "@block65/rest-client";
 import getPort from "get-port";
 import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
 import {
@@ -10,16 +20,6 @@ import {
 	test,
 	vi,
 } from "vitest";
-import {
-	Command,
-	type QuerySerializer,
-	type QueryStyles,
-	RestServiceClient,
-	type RestServiceClientConfig,
-	ServiceError,
-	createIsomorphicNativeFetcher,
-	createQueryStringSerializer,
-} from "../src/main.ts";
 import { requestListener } from "./server.ts";
 
 const port = await getPort();

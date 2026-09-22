@@ -1,8 +1,9 @@
-import { describe, expect, test } from "vitest";
 import {
 	createQueryStringSerializer,
 	defaultQuerySerializer,
-} from "../src/main.ts";
+} from "@block65/rest-client";
+import { describe, expect, test } from "vitest";
+import { typedObjectEntries } from "../lib/utils.ts";
 
 // url.search is where the client puts a serialized query
 function parseSearch(serialized: string, name = "a") {
@@ -12,12 +13,12 @@ function parseSearch(serialized: string, name = "a") {
 	return { value: url.searchParams.get(name), search: url.search.slice(1) };
 }
 
-const serializers = [
-	["defaultQuerySerializer", defaultQuerySerializer],
-	["createQueryStringSerializer", createQueryStringSerializer()],
-] as const;
+const serializers = {
+	defaultQuerySerializer,
+	queryStringSerializer: createQueryStringSerializer(),
+} as const;
 
-describe.each(serializers)("%s", (_name, serialize) => {
+describe.each(typedObjectEntries(serializers))("%s", (_name, serialize) => {
 	test.each([
 		["a space", "one two three"],
 		["a plus", "a+b"],
