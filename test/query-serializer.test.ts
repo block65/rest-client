@@ -5,11 +5,11 @@ import {
 } from "../src/main.ts";
 
 // url.search is where the client puts a serialized query
-function roundTrip(serialized: string, name = "a") {
+function parseSearch(serialized: string, name = "a") {
 	const url = new URL("https://192.0.2.1/");
 	url.search = serialized;
 
-	return { read: url.searchParams.get(name), search: url.search.slice(1) };
+	return { value: url.searchParams.get(name), search: url.search.slice(1) };
 }
 
 const serializers = [
@@ -28,11 +28,11 @@ describe.each(serializers)("%s", (_name, serialize) => {
 		["unicode", "café 🎉"],
 		["a value that looks encoded", "%20%2B"],
 	])("%s reads back as it went in", (_case, value) => {
-		expect(roundTrip(serialize({ a: value })).read).toBe(value);
+		expect(parseSearch(serialize({ a: value })).value).toBe(value);
 	});
 
 	test("a name takes the same encoding as a value", () => {
-		expect(roundTrip(serialize({ "a b": "c" }), "a b").read).toBe("c");
+		expect(parseSearch(serialize({ "a b": "c" }), "a b").value).toBe("c");
 	});
 
 	// assigning to url.search re-encodes a space, a quote, # and < >, so the
@@ -40,12 +40,12 @@ describe.each(serializers)("%s", (_name, serialize) => {
 	test("url.search returns the bytes the serializer wrote", () => {
 		const search = serialize({ a: "one two", b: `"quoted"`, c: "x#y" });
 
-		expect(roundTrip(search).search).toBe(search);
+		expect(parseSearch(search).search).toBe(search);
 	});
 
 	// encodeURIComponent throws URIError on an unpaired surrogate
 	test("a lone surrogate writes U+FFFD rather than throwing", () => {
-		expect(roundTrip(serialize({ a: "\uD800" })).read).toBe("�");
+		expect(parseSearch(serialize({ a: "\uD800" })).value).toBe("�");
 	});
 });
 

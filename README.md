@@ -67,7 +67,7 @@ The default fetcher retries idempotent (`GET`) requests and supports timeouts an
 
 ### Sorted query keys
 
-Both serializers write keys in the order the query object was built. `sortQuery` orders them first, so a cache or a signature keyed on the URL sees one URL per query:
+Both serializers write keys in the order the query object was built. `sortQuery` orders them first, by UTF-8 byte order or by a comparator, so a cache or a signature keyed on the URL sees one URL per query:
 
 ```ts
 new RestServiceClient(url, { sortQuery: true });

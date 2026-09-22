@@ -14,16 +14,39 @@ import type {
 } from "./types.ts";
 import { isPlainObject } from "./utils.ts";
 
+const utf8 = new TextEncoder();
+
+// `<` on strings misorders astral characters, and a signing scheme uses bytes
+function byUtf8Bytes(a: string, b: string) {
+	const bytesA = utf8.encode(a);
+	const bytesB = utf8.encode(b);
+	const remainingB = bytesB.values();
+
+	for (const byteA of bytesA) {
+		const { value: byteB, done } = remainingB.next();
+
+		// b ran out first, so it is a prefix of a
+		if (done) {
+			return 1;
+		}
+
+		if (byteA !== byteB) {
+			return byteA - byteB;
+		}
+	}
+
+	return bytesA.length - bytesB.length;
+}
+
 // both serializers keep insertion order, so sorting here sorts the URL
-function sortKeys(
+function sortQueryKeys(
 	query: Record<string, unknown>,
 	sort: true | ((a: string, b: string) => number),
 ) {
-	const compare =
-		sort === true ? (a: string, b: string) => (a < b ? -1 : 1) : sort;
+	const order = sort === true ? byUtf8Bytes : sort;
 
 	return Object.fromEntries(
-		Object.entries(query).toSorted(([a], [b]) => compare(a, b)),
+		Object.entries(query).toSorted(([a], [b]) => order(a, b)),
 	);
 }
 
@@ -59,7 +82,7 @@ export type RestServiceClientConfig = {
 	/**
 	 * Orders every query's keys before serialization, so a cache or a
 	 * signature keyed on the URL sees the same URL however the caller built
-	 * the query. `true` sorts by code point, a comparator sorts by its result
+	 * the query. `true` sorts by UTF-8 byte order, a comparator by its result
 	 */
 	sortQuery?: boolean | ((a: string, b: string) => number) | undefined;
 } & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
@@ -186,7 +209,7 @@ export class RestServiceClient<
 
 		if (query) {
 			url.search = (querySerializer ?? serializerForStyles(queryStyles))(
-				this.#sortQuery ? sortKeys(query, this.#sortQuery) : query,
+				this.#sortQuery ? sortQueryKeys(query, this.#sortQuery) : query,
 			);
 		}
 

@@ -1,7 +1,15 @@
 import { createServer } from "node:http";
 import getPort from "get-port";
 import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
-import { afterAll, assert, beforeAll, describe, expect, test } from "vitest";
+import {
+	afterAll,
+	assert,
+	beforeAll,
+	describe,
+	expect,
+	test,
+	vi,
+} from "vitest";
 import {
 	Command,
 	type QuerySerializer,
@@ -717,52 +725,72 @@ describe("Client", () => {
 	describe("sortQuery", () => {
 		type Query = UndefinedOnPartialDeep<{ [k in string]?: JsonValue }>;
 
-		async function captureSorted(
+		// what fetch receives after the `?`
+		async function requestedSearch(
+			query: Query,
 			sortQuery: RestServiceClientConfig["sortQuery"],
 			serializer?: QuerySerializer,
 		) {
-			class SortedCommand extends Command<never, unknown, Query> {
+			class QueryCommand extends Command<never, unknown, Query> {
 				public override method = "get" as const;
 				public override querySerializer = serializer;
-				constructor() {
-					super("/200", null, { z: 1, m: [2, 3], a: 4 });
+				constructor(q: Query) {
+					super("/200", null, q);
 				}
 			}
 
-			const sortingClient = new RestServiceClient(
-				new URL(`http://0.0.0.0:${port}`),
-				{ fetcher, sortQuery },
+			const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+				Response.json({}),
 			);
-
-			let received: URL | undefined;
-			await sortingClient.json(new SortedCommand(), {
-				url: (u) => {
-					received = u;
-					return new URL(`http://0.0.0.0:${port}/200`);
-				},
+			const sortingClient = new RestServiceClient("https://192.0.2.1", {
+				fetch,
+				sortQuery,
 			});
-			assert(received);
 
-			return received.search;
+			await sortingClient.json(new QueryCommand(query));
+
+			expect(fetch).toHaveBeenCalledOnce();
+			const [url] = fetch.mock.calls[0] ?? [];
+			assert(url instanceof URL);
+
+			return url.search;
 		}
 
+		const query: Query = { z: 1, m: [2, 3], a: 4 };
+
 		test("unset keeps the written order", async () => {
-			const search = await captureSorted(undefined);
+			const search = await requestedSearch(query, undefined);
 			expect(search).toBe("?z=1&m=2&m=3&a=4");
 		});
 
 		test("true sorts the keys the styles serializer writes", async () => {
-			const search = await captureSorted(true);
+			const search = await requestedSearch(query, true);
 			expect(search).toBe("?a=4&m=2&m=3&z=1");
 		});
 
 		test("true sorts the keys a command's own serializer writes", async () => {
-			const search = await captureSorted(true, createQueryStringSerializer());
+			const search = await requestedSearch(
+				query,
+				true,
+				createQueryStringSerializer(),
+			);
 			expect(search).toBe("?a=4&m=2&m=3&z=1");
 		});
 
+		// UTF-16 puts the emoji's surrogates before U+FF01, code points after
+		test("true orders an astral key after U+FF01", async () => {
+			const search = await requestedSearch(
+				{ "\u{1F600}": 1, "\uFF01": 2 },
+				true,
+			);
+			expect([...new URLSearchParams(search).keys()]).toEqual([
+				"\uFF01",
+				"\u{1F600}",
+			]);
+		});
+
 		test("a comparator decides the order", async () => {
-			const search = await captureSorted((a, b) => b.localeCompare(a));
+			const search = await requestedSearch(query, (a, b) => b.localeCompare(a));
 			expect(search).toBe("?z=1&m=2&m=3&a=4");
 		});
 	});
