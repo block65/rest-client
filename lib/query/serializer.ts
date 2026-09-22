@@ -1,5 +1,5 @@
 import type { QueryParameterStyle, QuerySerializer } from "../types.ts";
-import { isPlainObject, stringifyScalar, toJsonValue } from "../utils.ts";
+import { isPlainObject, stringifyScalar, maybeToJson } from "../utils.ts";
 
 type NameValuePair = readonly [name: string, value: string];
 
@@ -20,7 +20,7 @@ function stringifyParameter(name: string, value: unknown) {
 
 // form with `explode`, the OAS default. Each item or member becomes one pair
 function explode(name: string, value: unknown): NameValuePair[] {
-	const jsonValue = toJsonValue(value);
+	const jsonValue = maybeToJson(value);
 
 	// a query string is text, so `null` and `undefined` mean the parameter is
 	// absent, as `JSON.stringify` treats undefined. An invalid `Date` lands here
@@ -57,7 +57,7 @@ function flattenForJoin(value: unknown) {
 
 // without explode, one value holds every item joined with the delimiter
 function join(name: string, value: unknown, delimiter: string) {
-	const jsonValue = toJsonValue(value);
+	const jsonValue = maybeToJson(value);
 
 	// absent, for the reason explode gives
 	if (jsonValue === null || jsonValue === undefined) {
@@ -66,7 +66,7 @@ function join(name: string, value: unknown, delimiter: string) {
 
 	const usable = flattenForJoin(jsonValue)
 		.filter((item) => item !== null && item !== undefined)
-		.map((item) => stringifyParameter(name, toJsonValue(item)));
+		.map((item) => stringifyParameter(name, maybeToJson(item)));
 
 	// an empty join would write tags=, and a server reads that as one empty
 	// string
@@ -85,7 +85,7 @@ function bracket(
 	value: unknown,
 	nestedInArray = false,
 ): NameValuePair[] {
-	const jsonValue = toJsonValue(value);
+	const jsonValue = maybeToJson(value);
 
 	// absent, for the reason explode gives
 	if (jsonValue === null || jsonValue === undefined) {

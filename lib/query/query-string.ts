@@ -1,13 +1,13 @@
 import queryString from "query-string";
 import type { QuerySerializer } from "../types.ts";
-import { toJsonValue } from "../utils.ts";
+import { maybeToJson } from "../utils.ts";
 
 // an array holds one key's repeated values, so its items resolve individually
 function resolve(value: unknown) {
-	const resolved = toJsonValue(value);
+	const resolved = maybeToJson(value);
 
 	return Array.isArray(resolved)
-		? resolved.map((item) => toJsonValue(item))
+		? resolved.map((item) => maybeToJson(item))
 		: resolved;
 }
 

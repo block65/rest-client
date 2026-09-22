@@ -20,7 +20,7 @@ function isJsonifiable(value: unknown): value is Jsonifiable {
 	);
 }
 
-export function toJsonValue<T>(value: T) {
+export function maybeToJson<T>(value: T) {
 	return isJsonifiable(value) ? value.toJSON() : value;
 }
 
