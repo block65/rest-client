@@ -1,4 +1,5 @@
 import type * as s from "@standard-schema/spec";
+import type { UnknownRecord } from "type-fest";
 import { createIsomorphicNativeFetcher } from "../src/fetchers/isomorphic-native-fetcher.ts";
 import type { Command } from "./command.ts";
 import {
@@ -39,7 +40,7 @@ function compareUtf8Bytes(a: string, b: string) {
 
 // both serializers keep insertion order, so sorting here sorts the URL
 function sortQueryKeys(
-	query: Record<string, unknown>,
+	query: UnknownRecord,
 	sort: true | ((a: string, b: string) => number),
 ) {
 	const order = sort === true ? compareUtf8Bytes : sort;
