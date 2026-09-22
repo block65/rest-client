@@ -5,11 +5,6 @@ type NameValuePair = readonly [name: string, value: string];
 
 type SerializeParameter = (name: string, value: unknown) => NameValuePair[];
 
-// a plain object skips toJSON, a legal member name in a query object
-function resolveQueryValue(input: unknown) {
-	return isPlainObject(input) ? input : toJsonValue(input);
-}
-
 // a plain object never reaches here, each style walks it first
 function stringifyParameter(name: string, value: unknown) {
 	const text = stringifyScalar(value);
@@ -25,26 +20,26 @@ function stringifyParameter(name: string, value: unknown) {
 
 // form with `explode`, the OAS default. Each item or member becomes one pair
 function explode(name: string, value: unknown): NameValuePair[] {
-	const resolvedValue = resolveQueryValue(value);
+	const jsonValue = toJsonValue(value);
 
 	// a query string is text, so `null` and `undefined` mean the parameter is
 	// absent, as `JSON.stringify` treats undefined. An invalid `Date` lands here
 	// too, its `toJSON` having returned null
-	if (resolvedValue === null || resolvedValue === undefined) {
+	if (jsonValue === null || jsonValue === undefined) {
 		return [];
 	}
 
-	if (Array.isArray(resolvedValue)) {
-		return resolvedValue.flatMap((item) => explode(name, item));
+	if (Array.isArray(jsonValue)) {
+		return jsonValue.flatMap((item) => explode(name, item));
 	}
 
-	if (isPlainObject(resolvedValue)) {
-		return Object.entries(resolvedValue).flatMap(([member, memberValue]) =>
+	if (isPlainObject(jsonValue)) {
+		return Object.entries(jsonValue).flatMap(([member, memberValue]) =>
 			explode(member, memberValue),
 		);
 	}
 
-	return [[name, stringifyParameter(name, resolvedValue)]];
+	return [[name, stringifyParameter(name, jsonValue)]];
 }
 
 // an object's members alternate name and value, as OAS shows for explode false
@@ -62,16 +57,16 @@ function flattenForJoin(value: unknown) {
 
 // without explode, one value holds every item joined with the delimiter
 function join(name: string, value: unknown, delimiter: string) {
-	const resolvedValue = resolveQueryValue(value);
+	const jsonValue = toJsonValue(value);
 
 	// absent, for the reason explode gives
-	if (resolvedValue === null || resolvedValue === undefined) {
+	if (jsonValue === null || jsonValue === undefined) {
 		return [];
 	}
 
-	const usable = flattenForJoin(resolvedValue)
+	const usable = flattenForJoin(jsonValue)
 		.filter((item) => item !== null && item !== undefined)
-		.map((item) => stringifyParameter(name, resolveQueryValue(item)));
+		.map((item) => stringifyParameter(name, toJsonValue(item)));
 
 	// an empty join would write tags=, and a server reads that as one empty
 	// string
@@ -90,30 +85,30 @@ function bracket(
 	value: unknown,
 	nestedInArray = false,
 ): NameValuePair[] {
-	const resolvedValue = resolveQueryValue(value);
+	const jsonValue = toJsonValue(value);
 
 	// absent, for the reason explode gives
-	if (resolvedValue === null || resolvedValue === undefined) {
+	if (jsonValue === null || jsonValue === undefined) {
 		return [];
 	}
 
-	if (Array.isArray(resolvedValue)) {
+	if (Array.isArray(jsonValue)) {
 		const indexed =
 			nestedInArray ||
-			resolvedValue.some((item) => isPlainObject(item) || Array.isArray(item));
+			jsonValue.some((item) => isPlainObject(item) || Array.isArray(item));
 
-		return resolvedValue.flatMap((item, index) =>
+		return jsonValue.flatMap((item, index) =>
 			bracket(indexed ? `${name}[${index}]` : name, item, true),
 		);
 	}
 
-	if (isPlainObject(resolvedValue)) {
-		return Object.entries(resolvedValue).flatMap(([member, memberValue]) =>
+	if (isPlainObject(jsonValue)) {
+		return Object.entries(jsonValue).flatMap(([member, memberValue]) =>
 			bracket(`${name}[${member}]`, memberValue, false),
 		);
 	}
 
-	return [[name, stringifyParameter(name, resolvedValue)]];
+	return [[name, stringifyParameter(name, jsonValue)]];
 }
 
 const delimiters = {
