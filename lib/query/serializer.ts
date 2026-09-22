@@ -74,7 +74,7 @@ function join(name: string, value: unknown, delimiter: string) {
 		return [];
 	}
 
-	const pair: NameValuePair = [name, usable.join(delimiter)];
+	const pair = [name, usable.join(delimiter)] satisfies NameValuePair;
 
 	return [pair];
 }
