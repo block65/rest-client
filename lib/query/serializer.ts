@@ -176,7 +176,9 @@ export function createQuerySerializer(
 /**
  * Every parameter as form with explode. A key repeats per array item, null
  * and undefined are dropped, an object's members write under the member
- * names with the parent name dropped. The
- * client uses this unless the command supplies a serializer
+ * names with the parent name dropped
+ *
+ * @deprecated
+ * @see createQuerySerializer
  */
 export const defaultQuerySerializer = createQuerySerializer();
