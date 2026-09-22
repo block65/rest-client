@@ -22,9 +22,9 @@ function isJsonifiable(value: unknown): value is Jsonifiable {
 }
 
 /**
- * Applies the `toJSON` hook the way `JSON.stringify` does. A value defining
- * toJSON supplies its wire form, and the caller encodes the result. Runs
- * once per position, so a `toJSON` returning `this` terminates
+ * Calls `toJSON` the way `JSON.stringify` does. A value defining `toJSON`
+ * supplies its wire form, and the caller encodes the result. Runs once per
+ * position, so a `toJSON` returning `this` terminates
  */
 export function toJsonValue<T>(value: T) {
 	return isJsonifiable(value) ? value.toJSON() : value;
