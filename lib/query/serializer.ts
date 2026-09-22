@@ -1,7 +1,7 @@
 import type { QueryParameterStyle, QuerySerializer } from "../types.ts";
 import { isPlainObject, isStringifiable, toJsonValue } from "../utils.ts";
 
-// unencoded, since the serializer applies RFC 3986 once to every pair alike
+// unencoded, or the serializer's own pass would turn every % into %25
 type NameValuePair = readonly [name: string, value: string];
 
 type SerializeParameter = (name: string, value: unknown) => NameValuePair[];
