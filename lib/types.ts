@@ -1,4 +1,4 @@
-import type { Jsonifiable } from "type-fest";
+import type { Jsonifiable, UnknownRecord } from "type-fest";
 
 export type JsonifiableObject =
 	| { [Key in string]?: Jsonifiable }
@@ -39,7 +39,7 @@ export type QueryParameterStyle = {
 };
 
 /** Turns a command's query object into the search string after the `?` */
-export type QuerySerializer = (query: Record<string, unknown>) => string;
+export type QuerySerializer = (query: UnknownRecord) => string;
 
 export type RequestMethod<T = any> = (
 	params: RequestParameters,

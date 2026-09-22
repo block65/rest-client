@@ -1,4 +1,4 @@
-import type { UnknownRecord } from "type-fest";
+import type { Entries, UnknownRecord } from "type-fest";
 
 export function isPlainObject(value: unknown): value is UnknownRecord {
 	if (Object.prototype.toString.call(value) !== "[object Object]") {
@@ -54,9 +54,7 @@ export function jsonStringify(value: unknown): string {
 	);
 }
 
-export function typedObjectEntries<T extends Record<string, unknown>>(
-	obj: T,
-): [keyof T, T[keyof T]][] {
+export function typedObjectEntries<T extends UnknownRecord>(obj: T) {
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- its the entire point on this fn
-	return Object.entries(obj) as [keyof T, T[keyof T]][];
+	return Object.entries(obj) as Entries<T>;
 }
