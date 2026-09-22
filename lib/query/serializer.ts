@@ -1,5 +1,5 @@
 import type { QueryParameterStyle, QuerySerializer } from "../types.ts";
-import { isPlainObject, isStringifiable, toJsonValue } from "../utils.ts";
+import { isPlainObject, stringifyScalar, toJsonValue } from "../utils.ts";
 
 type UnencodedPair = readonly [name: string, value: string];
 
@@ -11,21 +11,16 @@ function resolveQueryValue(input: unknown) {
 }
 
 // a plain object never reaches here, each style walks it first
-function stringifyScalar(name: string, value: unknown) {
-	switch (true) {
-		case typeof value === "string":
-			return value;
-		case typeof value === "number":
-		case typeof value === "boolean":
-		case typeof value === "bigint":
-			return value.toString();
-		case isStringifiable(value):
-			return value.toString();
-		default:
-			throw new TypeError(
-				`query parameter ${name} holds a ${typeof value} with no string form`,
-			);
+function stringifyParameter(name: string, value: unknown) {
+	const text = stringifyScalar(value);
+
+	if (text === undefined) {
+		throw new TypeError(
+			`query parameter ${name} holds a ${typeof value} with no string form`,
+		);
 	}
+
+	return text;
 }
 
 // form with explode, the OAS default. A member hoists past its parent name
@@ -48,7 +43,7 @@ function explode(name: string, value: unknown): UnencodedPair[] {
 			pairs.push(...explode(member, memberValue));
 		}
 	} else {
-		pairs.push([name, stringifyScalar(name, resolvedValue)]);
+		pairs.push([name, stringifyParameter(name, resolvedValue)]);
 	}
 
 	return pairs;
@@ -85,7 +80,7 @@ function join(name: string, input: unknown, delimiter: string) {
 
 	for (const part of joinableParts(value)) {
 		if (part !== null && part !== undefined) {
-			usable.push(stringifyScalar(name, resolveQueryValue(part)));
+			usable.push(stringifyParameter(name, resolveQueryValue(part)));
 		}
 	}
 
@@ -125,7 +120,7 @@ function bracket(
 			pairs.push(...bracket(`${name}[${member}]`, memberValue, false));
 		}
 	} else {
-		pairs.push([name, stringifyScalar(name, value)]);
+		pairs.push([name, stringifyParameter(name, value)]);
 	}
 
 	return pairs;

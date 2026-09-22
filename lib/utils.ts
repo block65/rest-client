@@ -26,16 +26,32 @@ export function toJsonValue<T>(value: T) {
 
 type Stringifiable = { toString(): string };
 
-/**
- * Object's own toString yields "[object Object]", which says nothing about
- * the value and would reach the wire unnoticed
- */
-export function isStringifiable(value: unknown): value is Stringifiable {
+// Object's own toString yields "[object Object]", which says nothing
+function isStringifiable(value: unknown): value is Stringifiable {
 	return (
 		typeof value === "object" &&
 		value !== null &&
 		value.toString !== Object.prototype.toString
 	);
+}
+
+/**
+ * A primitive or a class with its own toString stringifies. Anything else
+ * yields undefined, and the caller decides what that means where it stands
+ */
+export function stringifyScalar(value: unknown): string | undefined {
+	switch (true) {
+		case typeof value === "string":
+			return value;
+		case typeof value === "number":
+		case typeof value === "boolean":
+		case typeof value === "bigint":
+			return value.toString();
+		case isStringifiable(value):
+			return value.toString();
+		default:
+			return;
+	}
 }
 
 export function jsonStringify(value: unknown): string {
