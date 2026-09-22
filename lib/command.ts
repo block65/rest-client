@@ -1,5 +1,5 @@
 import type { JsonValue, UndefinedOnPartialDeep } from "type-fest";
-import type { HttpMethod, QuerySerializer, QueryStyles } from "./types.ts";
+import type { HttpMethod, QuerySerializer } from "./types.ts";
 
 type JsonObject = { [Key in string]?: JsonValue };
 
@@ -25,12 +25,8 @@ export abstract class Command<
 	// level, so the deep-widened type is what is actually held
 	public readonly query: UndefinedOnPartialDeep<CommandQuery> | undefined;
 
-	// Lists the parameters where the document states something other than the
-	// OAS default. An unlisted parameter uses that default
-	public readonly queryStyles: QueryStyles | undefined;
-
-	// Replaces the styles above for the whole query, for a server the OAS
-	// styles cannot describe
+	// Names an encoder per parameter that departs from the OAS default, or
+	// replaces the whole query's serializer for a server OAS cannot describe
 	public readonly querySerializer: QuerySerializer | undefined;
 
 	// Without these, unused generics make Command<A, X> ≡ Command<B, X>

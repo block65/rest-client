@@ -1,6 +1,8 @@
 import {
+	createQuerySerializer,
 	createQueryStringSerializer,
 	defaultQuerySerializer,
+	encodeFormJoined,
 } from "@block65/rest-client";
 import { describe, expect, test } from "vitest";
 import { typedObjectEntries } from "../lib/utils.ts";
@@ -79,5 +81,30 @@ describe("the default serializer's output", () => {
 
 		expect(url.searchParams.get("a")).toBe(value);
 		expect(url.search.slice(1)).toBe(defaultQuerySerializer({ a: value }));
+	});
+});
+
+describe("createQuerySerializer", () => {
+	test("a named parameter takes its encoder, the rest the fallback", () => {
+		const serialize = createQuerySerializer({ tags: encodeFormJoined });
+
+		expect(serialize({ tags: ["a", "b"], ids: [1, 2] })).toBe(
+			"tags=a%2Cb&ids=1&ids=2",
+		);
+	});
+
+	test("the fallback replaces form explode for unnamed parameters", () => {
+		const serialize = createQuerySerializer({}, encodeFormJoined);
+
+		expect(serialize({ ids: [1, 2] })).toBe("ids=1%2C2");
+	});
+
+	// styles?.[name] read Object.prototype.constructor for this key
+	test("a parameter named constructor takes the fallback", () => {
+		const serialize = createQuerySerializer({ tags: encodeFormJoined });
+
+		expect(serialize({ constructor: ["a", "b"] })).toBe(
+			"constructor=a&constructor=b",
+		);
 	});
 });

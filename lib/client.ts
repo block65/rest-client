@@ -6,7 +6,7 @@ import {
 	ResponseValidationError,
 	ServiceError,
 } from "./errors.ts";
-import { serializerForStyles } from "./query-serializer.ts";
+import { defaultQuerySerializer } from "./query/serializer.ts";
 import type {
 	FetcherMethod,
 	ResolvableHeaders,
@@ -202,12 +202,12 @@ export class RestServiceClient<
 
 	// the runtime hook rewrites the serialized URL, so it runs last
 	async #buildUrl(command: Command, runtimeOptions?: RuntimeOptions) {
-		const { pathname, query, querySerializer, queryStyles } = command;
+		const { pathname, query, querySerializer } = command;
 
 		const url = new URL(`.${pathname}`, this.#base);
 
 		if (query) {
-			const serialize = querySerializer ?? serializerForStyles(queryStyles);
+			const serialize = querySerializer ?? defaultQuerySerializer;
 
 			url.search = serialize(
 				this.#sortQuery ? sortQueryKeys(query, this.#sortQuery) : query,
