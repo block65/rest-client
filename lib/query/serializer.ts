@@ -23,13 +23,13 @@ function stringifyParameter(name: string, value: unknown) {
 	return text;
 }
 
-// form with explode, the OAS default. A member hoists past its parent name
+// form with `explode`, the OAS default. A member hoists past its parent name
 function explode(name: string, value: unknown): NameValuePair[] {
 	const resolvedValue = resolveQueryValue(value);
 
-	// a query string is text, so null and undefined mean the parameter is
-	// absent, as JSON.stringify treats undefined. An invalid Date lands here
-	// too, its toJSON having returned null
+	// a query string is text, so `null` and `undefined` mean the parameter is
+	// absent, as `JSON.stringify` treats undefined. An invalid `Date` lands here
+	// too, its `toJSON` having returned null
 	if (resolvedValue === null || resolvedValue === undefined) {
 		return [];
 	}
