@@ -23,7 +23,7 @@ function stringifyParameter(name: string, value: unknown) {
 	return text;
 }
 
-// form with `explode`, the OAS default. A member hoists past its parent name
+// form with `explode`, the OAS default. Each item or member becomes one pair
 function explode(name: string, value: unknown): NameValuePair[] {
 	const resolvedValue = resolveQueryValue(value);
 
@@ -180,7 +180,8 @@ export function createQuerySerializer(
 
 /**
  * Every parameter as form with explode. A key repeats per array item, null
- * and undefined are dropped, a nested object's members are hoisted. The
+ * and undefined are dropped, an object's members write under the member
+ * names with the parent name dropped. The
  * client uses this unless the command supplies a serializer
  */
 export const defaultQuerySerializer = createQuerySerializer();
