@@ -184,8 +184,8 @@ importers:
         version: 9.5.1
     devDependencies:
       '@block65/shared-config':
-        specifier: ^0.4.0
-        version: 0.4.0(@block65/oxlint-tsgolint@7.0.200200)(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)(fallow@3.27.0)(oxfmt@0.68.0)
+        specifier: ^0.5.0
+        version: 0.5.0(@block65/oxlint-tsgolint@7.0.200200)(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)(fallow@3.27.0)(oxfmt@0.68.0)
       '@block65/tsconfig':
         specifier: ^0.3.1
         version: 0.3.1
@@ -242,8 +242,8 @@ packages:
     os: [linux]
     libc: [glibc]
 
-  '@block65/oxlint-plugin@0.10.0':
-    resolution: {integrity: sha512-fgBpZdqTXtmIFjhppYvtFc7HnVOz7jh2IvG8GopZ5fSIuClwdB2YBm7cwOEOAYJI9q8nOPcFlZxHiBZ0E4UAgA==}
+  '@block65/oxlint-plugin@0.11.0':
+    resolution: {integrity: sha512-68MuNjQkloeKt4B4rQdW5jYoWK/e+6WB11uOmPC66R/sZdMMgi7yqA+YCG8wJRJPy4/NSK7zAdt1JiRoOBp+kA==}
     engines: {node: '>=24'}
     peerDependencies:
       oxlint: ^1.83.0
@@ -275,8 +275,8 @@ packages:
       vite-plus:
         optional: true
 
-  '@block65/shared-config@0.4.0':
-    resolution: {integrity: sha512-fpTjOSt+F+EVnI9r4hdUMTh1UAn9+BY8U+DtURs61Cej7zaXH13+Pz/Ns4hFt7Y8UA+Oc0nBlPT02b22CpHhUg==}
+  '@block65/shared-config@0.5.0':
+    resolution: {integrity: sha512-f7iXlaPc0GozRwUHzGxZ9hMrBGC6Ay07zTLt96A2zJ0YXsfyq0NkSOYe58nupTyu5P4rk/+lxjZPearGL/ORVg==}
     engines: {node: '>=24'}
     peerDependencies:
       fallow: ^3.27.0
@@ -1536,7 +1536,7 @@ snapshots:
   '@block65/oxlint-binding-linux-x64-gnu@1.83.0':
     optional: true
 
-  '@block65/oxlint-plugin@0.10.0(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)':
+  '@block65/oxlint-plugin@0.11.0(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)':
     dependencies:
       css-tree: 3.2.1
       eslint-plugin-unicorn: 74.0.0(eslint@10.10.0)
@@ -1561,9 +1561,9 @@ snapshots:
       '@block65/oxlint-binding-linux-x64-gnu': 1.83.0
       oxlint-tsgolint: '@block65/oxlint-tsgolint@7.0.200200'
 
-  '@block65/shared-config@0.4.0(@block65/oxlint-tsgolint@7.0.200200)(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)(fallow@3.27.0)(oxfmt@0.68.0)':
+  '@block65/shared-config@0.5.0(@block65/oxlint-tsgolint@7.0.200200)(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)(fallow@3.27.0)(oxfmt@0.68.0)':
     dependencies:
-      '@block65/oxlint-plugin': 0.10.0(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)
+      '@block65/oxlint-plugin': 0.11.0(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)
     optionalDependencies:
       fallow: 3.27.0
       oxfmt: 0.68.0

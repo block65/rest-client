@@ -138,7 +138,7 @@ async function serializeViaClient(
 }
 
 describe("Client", () => {
-	const client = new RestServiceClient(new URL(`http://0.0.0.0:${port}`), {
+	const client = new RestServiceClient(new URL(`http://127.0.0.1:${port}`), {
 		fetcher,
 		headers: {
 			"x-build-id": "test/123",
@@ -171,9 +171,6 @@ describe("Client", () => {
 		).rejects.toThrowErrorMatchingSnapshot('"Data should be array"');
 	});
 
-	// undici appends sec-fetch-* metadata for a potentially trustworthy URL
-	// alone, and the test server runs on http://0.0.0.0. Moving it to
-	// 127.0.0.1 puts those headers in the snapshot
 	test("Headers", async () => {
 		const command = new FakeMyHeadersCommand();
 		const res = await client.json(command, {
@@ -227,7 +224,7 @@ describe("Client", () => {
 			const command = new EchoCommand({ foo: "bar" });
 
 			const rewriteUrl = vi.fn<(built: URL) => URL>(() => {
-				const signed = new URL(`http://0.0.0.0:${port}/echo`);
+				const signed = new URL(`http://127.0.0.1:${port}/echo`);
 				signed.searchParams.set("signed", "xyz");
 
 				return signed;
@@ -251,7 +248,7 @@ describe("Client", () => {
 			const res = await client.json<never, EchoOutput>(command, {
 				url: async () => {
 					await Promise.resolve();
-					return `http://0.0.0.0:${port}/echo?from=string`;
+					return `http://127.0.0.1:${port}/echo?from=string`;
 				},
 			});
 
@@ -313,7 +310,7 @@ describe("Client", () => {
 	// sent an empty set, dropping the content-type json() adds
 	describe("client configured without headers", () => {
 		const bareClient = new RestServiceClient(
-			new URL(`http://0.0.0.0:${port}`),
+			new URL(`http://127.0.0.1:${port}`),
 			{ fetcher },
 		);
 

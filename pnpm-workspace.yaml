@@ -8,8 +8,8 @@ minimumReleaseAgeExclude:
   - "@block65/oxlint-tsgolint-linux-x64@7.0.200200"
   - "@block65/oxlint-tsgolint@7.0.200200"
   - "@block65/oxlint@1.83.0"
-  - "@block65/oxlint-plugin@0.10.0"
-  - "@block65/shared-config@0.4.0"
+  - "@block65/oxlint-plugin@0.11.0"
+  - "@block65/shared-config@0.5.0"
 
 overrides:
   oxlint: npm:@block65/oxlint@>=1.83.0
