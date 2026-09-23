@@ -13,7 +13,7 @@ describe("Fetcher", () => {
 	beforeAll(async () => {
 		const port = await getPort();
 		server.listen(port);
-		base = new URL(`http://0.0.0.0:${port}`);
+		base = new URL(`http://127.0.0.1:${port}`);
 	});
 
 	test("200 OK!", async () => {
