@@ -74,6 +74,14 @@ class FakeJsonErrorCommand extends Command {
 	}
 }
 
+class FakeEventStreamCommand extends Command<never, Uint8Array> {
+	public override method = "get" as const;
+
+	constructor() {
+		super("/event-stream");
+	}
+}
+
 type FakeMyHeadersOutput = Record<string, string>;
 
 // fake headers
@@ -202,6 +210,35 @@ describe("Client", () => {
 		assert(err instanceof ServiceError);
 		expect(err.response).toBeInstanceOf(Response);
 		expect(err.response.status).toBe(400);
+	});
+
+	describe("stream()", () => {
+		test("hands back the body of a success as a stream", async () => {
+			const stream = await client.stream(new FakeEventStreamCommand());
+
+			const text = await new Response(stream).text();
+
+			expect(text).toBe("event: ping\ndata: {}\n\n");
+		});
+
+		test("rejects a JSON refusal as a ServiceError carrying its response", async () => {
+			const err = await client
+				.stream(new FakeJsonErrorCommand())
+				.catch((error: unknown) => error);
+
+			assert(err instanceof ServiceError);
+			expect(err.message).toBe("Data should be array");
+			expect(err.response.status).toBe(400);
+		});
+
+		test("rejects a refusal with a non-JSON body by its status", async () => {
+			const err = await client
+				.stream(new Fake404Command())
+				.catch((error: unknown) => error);
+
+			assert(err instanceof ServiceError);
+			expect(err.response.status).toBe(404);
+		});
 	});
 
 	describe("runtimeOptions.url", () => {

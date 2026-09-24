@@ -287,7 +287,18 @@ export class RestServiceClient<
 		command: Command<InputType, OutputType>,
 		runtimeOptions?: RuntimeOptions,
 	): Promise<ReadableStream<OutputType>> {
-		const { body } = await this.response(command, runtimeOptions);
+		const { res, body } = await this.response(command, runtimeOptions);
+
+		if (res.status >= 400) {
+			// a refusal the fetcher left unparsed still holds the connection
+			if (body instanceof ReadableStream) {
+				await body.cancel().catch(() => {
+					// already errored, and so already released
+				});
+			}
+
+			throw ServiceError.fromResponse(res, body);
+		}
 
 		if (body instanceof ReadableStream) {
 			// the fetcher hands over the stream untyped, so the command's chunk
