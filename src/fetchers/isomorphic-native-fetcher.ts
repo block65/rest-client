@@ -129,7 +129,7 @@ export function createIsomorphicNativeFetcher(
 
 				const res2 = await intoFetcherResponse(res, url);
 
-				// transient failures throw a plain error so p-retry re-attempts them
+				// a transient status throws so p-retry re-attempts it
 				if (
 					!res.ok &&
 					(res.status >= 500 || retryableStatuses.has(res.status))

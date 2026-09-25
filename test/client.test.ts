@@ -44,7 +44,6 @@ class Fake200Command extends Command {
 type Fake404CommandInput = never;
 type Fake404CommandOutput = never;
 
-// 404
 class Fake404Command extends Command<
 	Fake404CommandInput,
 	Fake404CommandOutput
@@ -56,7 +55,6 @@ class Fake404Command extends Command<
 	}
 }
 
-// 500
 class Fake500Command extends Command {
 	public override method = "get" as const;
 
@@ -65,7 +63,6 @@ class Fake500Command extends Command {
 	}
 }
 
-// json-error
 class FakeJsonErrorCommand extends Command {
 	public override method = "get" as const;
 
@@ -84,7 +81,6 @@ class FakeEventStreamCommand extends Command<never, Uint8Array> {
 
 type FakeMyHeadersOutput = Record<string, string>;
 
-// fake headers
 class FakeMyHeadersCommand extends Command<never, FakeMyHeadersOutput> {
 	public override method = "get" as const;
 
@@ -343,8 +339,6 @@ describe("Client", () => {
 		expect(url.search).toBe("");
 	});
 
-	// 0f03f56 guarded the whole merge on this.#headers, so a headerless client
-	// sent an empty set, dropping the content-type json() adds
 	describe("client configured without headers", () => {
 		const bareClient = new RestServiceClient(
 			new URL(`http://127.0.0.1:${port}`),
