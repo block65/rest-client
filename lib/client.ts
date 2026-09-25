@@ -296,8 +296,10 @@ export class RestServiceClient<
 		if (res.status >= 400) {
 			// a refusal the fetcher left unparsed still holds the connection
 			if (body instanceof ReadableStream) {
-				await body.cancel().catch(() => {
-					// already errored, and so already released
+				// an errored stream is already released, and the caller needs the
+				// refusal, so a cancel failure is only logged
+				await body.cancel().catch((error: unknown) => {
+					this.#log("refusal body cancel failed", error);
 				});
 			}
 

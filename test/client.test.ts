@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import {
 	Command,
+	type FetcherMethod,
 	type QuerySerializer,
 	RestServiceClient,
 	type RestServiceClientConfig,
@@ -234,6 +235,37 @@ describe("Client", () => {
 
 			assert(err instanceof ServiceError);
 			expect(err.response.status).toBe(404);
+		});
+
+		test("logs a refusal body that fails to cancel, and still rejects with the refusal", async () => {
+			const bodyError = new Error("socket hang up");
+			const logger = vi.fn<(msg: string, ...args: unknown[]) => void>();
+			const erroringClient = new RestServiceClient(
+				new URL("http://127.0.0.1"),
+				{
+					logger,
+					fetcher: vi.fn<FetcherMethod>(async ({ url }) => ({
+						url,
+						res: new Response(null, { status: 401 }),
+						body: new ReadableStream({
+							start(controller) {
+								controller.error(bodyError);
+							},
+						}),
+					})),
+				},
+			);
+
+			const err = await erroringClient
+				.stream(new Fake404Command())
+				.catch((error: unknown) => error);
+
+			assert(err instanceof ServiceError);
+			expect(err.response.status).toBe(401);
+			expect(logger).toHaveBeenCalledWith(
+				"[rest-client] refusal body cancel failed",
+				bodyError,
+			);
 		});
 	});
 
