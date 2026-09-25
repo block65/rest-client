@@ -105,7 +105,7 @@ function prepare(query: UnknownRecord, style: Prepare) {
 	for (const [name, value] of Object.entries(query)) {
 		const jsonValue = maybeToJson(value);
 
-		// absent, as JSON.stringify leaves an undefined member
+		// absent, as JSON.stringify drops an undefined member
 		if (jsonValue === undefined) {
 			continue;
 		}

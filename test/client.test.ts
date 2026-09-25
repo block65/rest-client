@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import {
 	Command,
+	type FetcherMethod,
 	type QuerySerializer,
 	RestServiceClient,
 	type RestServiceClientConfig,
@@ -44,7 +45,6 @@ class Fake200Command extends Command {
 type Fake404CommandInput = never;
 type Fake404CommandOutput = never;
 
-// 404
 class Fake404Command extends Command<
 	Fake404CommandInput,
 	Fake404CommandOutput
@@ -56,7 +56,6 @@ class Fake404Command extends Command<
 	}
 }
 
-// 500
 class Fake500Command extends Command {
 	public override method = "get" as const;
 
@@ -65,7 +64,6 @@ class Fake500Command extends Command {
 	}
 }
 
-// json-error
 class FakeJsonErrorCommand extends Command {
 	public override method = "get" as const;
 
@@ -74,9 +72,16 @@ class FakeJsonErrorCommand extends Command {
 	}
 }
 
+class FakeEventStreamCommand extends Command<never, Uint8Array> {
+	public override method = "get" as const;
+
+	constructor() {
+		super("/event-stream");
+	}
+}
+
 type FakeMyHeadersOutput = Record<string, string>;
 
-// fake headers
 class FakeMyHeadersCommand extends Command<never, FakeMyHeadersOutput> {
 	public override method = "get" as const;
 
@@ -195,13 +200,73 @@ describe("Client", () => {
 	});
 
 	test("JSON error attaches response to thrown ServiceError", async () => {
-		const err = await client
+		const rejection = await client
 			.json(new FakeJsonErrorCommand())
-			.catch((error: unknown) => error);
+			.catch((err: unknown) => err);
 
-		assert(err instanceof ServiceError);
-		expect(err.response).toBeInstanceOf(Response);
-		expect(err.response.status).toBe(400);
+		assert(rejection instanceof ServiceError);
+		expect(rejection.response).toBeInstanceOf(Response);
+		expect(rejection.response.status).toBe(400);
+	});
+
+	describe("stream()", () => {
+		test("hands back the body of a success as a stream", async () => {
+			const stream = await client.stream(new FakeEventStreamCommand());
+
+			const text = await new Response(stream).text();
+
+			expect(text).toBe("event: ping\ndata: {}\n\n");
+		});
+
+		test("rejects a JSON refusal as a ServiceError carrying its response", async () => {
+			const rejection = await client
+				.stream(new FakeJsonErrorCommand())
+				.catch((err: unknown) => err);
+
+			assert(rejection instanceof ServiceError);
+			expect(rejection.message).toBe("Data should be array");
+			expect(rejection.response.status).toBe(400);
+		});
+
+		test("rejects a refusal with a non-JSON body by its status", async () => {
+			const rejection = await client
+				.stream(new Fake404Command())
+				.catch((err: unknown) => err);
+
+			assert(rejection instanceof ServiceError);
+			expect(rejection.response.status).toBe(404);
+		});
+
+		test("logs a refusal body that fails to cancel, and still rejects with the refusal", async () => {
+			const bodyError = new Error("socket hang up");
+			const logger = vi.fn<(msg: string, ...args: unknown[]) => void>();
+			const erroringClient = new RestServiceClient(
+				new URL("http://127.0.0.1"),
+				{
+					logger,
+					fetcher: vi.fn<FetcherMethod>(async ({ url }) => ({
+						url,
+						res: new Response(null, { status: 401 }),
+						body: new ReadableStream({
+							start(controller) {
+								controller.error(bodyError);
+							},
+						}),
+					})),
+				},
+			);
+
+			const rejection = await erroringClient
+				.stream(new Fake404Command())
+				.catch((err: unknown) => err);
+
+			assert(rejection instanceof ServiceError);
+			expect(rejection.response.status).toBe(401);
+			expect(logger).toHaveBeenCalledWith(
+				"[rest-client] refusal body cancel failed",
+				bodyError,
+			);
+		});
 	});
 
 	describe("runtimeOptions.url", () => {
@@ -306,8 +371,6 @@ describe("Client", () => {
 		expect(url.search).toBe("");
 	});
 
-	// 0f03f56 guarded the whole merge on this.#headers, so a headerless client
-	// sent an empty set, dropping the content-type json() adds
 	describe("client configured without headers", () => {
 		const bareClient = new RestServiceClient(
 			new URL(`http://127.0.0.1:${port}`),

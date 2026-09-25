@@ -37,7 +37,7 @@ function compareUtf8Bytes(a: string, b: string) {
 	return bytesA.length - bytesB.length;
 }
 
-// every serializer keeps insertion order, so sorting here sorts the URL
+// serializers keep insertion order, so this sets the URL's top-level order
 function sortQueryKeys<T extends UnknownRecord>(
 	query: T,
 	sort: true | ((a: string, b: string) => number),
@@ -79,9 +79,10 @@ export type RestServiceClientConfig = {
 	credentials?: "include" | "omit" | "same-origin" | undefined;
 	responseValidator?: ((response: unknown) => boolean) | undefined;
 	/**
-	 * Orders every query's keys before serialization, so a cache or a
-	 * signature keyed on the URL sees the same URL however the caller built
-	 * the query. `true` sorts by UTF-8 byte order, a comparator by its result
+	 * Orders the query's top-level keys before serialization, so a cache or a
+	 * signature keyed on the URL sees the same URL for any order the caller
+	 * wrote them in. An object parameter's members keep their order. `true`
+	 * sorts by UTF-8 byte order, a comparator by its result
 	 */
 	sortQuery?: boolean | ((a: string, b: string) => number) | undefined;
 } & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
@@ -127,7 +128,7 @@ export class RestServiceClient<
 		this.#logger?.(`[rest-client] ${msg}`, ...args);
 	}
 
-	// a schema on the Command is what triggers validation and loads valibot
+	// a schema on the Command is what triggers validation
 	async #maybeValidate<
 		TInput extends ClientInput,
 		TOutput extends ClientOutput,
@@ -279,7 +280,10 @@ export class RestServiceClient<
 		throw ServiceError.fromResponse(res, body);
 	}
 
-	// public API for streaming responses
+	/**
+	 * Resolves a success's body as a stream. A status from 400 rejects with a
+	 * ServiceError, as json() does
+	 */
 	public async stream<
 		InputType extends ClientInput,
 		OutputType extends ClientOutput,
@@ -287,7 +291,20 @@ export class RestServiceClient<
 		command: Command<InputType, OutputType>,
 		runtimeOptions?: RuntimeOptions,
 	): Promise<ReadableStream<OutputType>> {
-		const { body } = await this.response(command, runtimeOptions);
+		const { res, body } = await this.response(command, runtimeOptions);
+
+		if (res.status >= 400) {
+			// a refusal the fetcher left unparsed still holds the connection
+			if (body instanceof ReadableStream) {
+				// an errored stream is already released, and the caller needs the
+				// refusal, so a cancel failure is only logged
+				await body.cancel().catch((err: unknown) => {
+					this.#log("refusal body cancel failed", err);
+				});
+			}
+
+			throw ServiceError.fromResponse(res, body);
+		}
 
 		if (body instanceof ReadableStream) {
 			// the fetcher hands over the stream untyped, so the command's chunk

@@ -66,6 +66,10 @@ export function requestListener(req: IncomingMessage, res: ServerResponse) {
 				} satisfies SerializedError<StatusCode>),
 			);
 			break;
+		case "/event-stream":
+			res.writeHead(200, { "content-type": "text/event-stream" });
+			res.end("event: ping\ndata: {}\n\n");
+			break;
 		case "/unresponsive":
 			// do nothing
 			break;

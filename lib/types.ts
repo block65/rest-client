@@ -57,7 +57,7 @@ export type RuntimeOptions = {
 	url?: ((url: URL) => URL | string | Promise<URL | string>) | undefined;
 	headers?: Record<string, string> | undefined | Headers;
 	signal?: AbortSignal;
-	/** @deprecated  */
+	/** @deprecated Ignored. Call json() for a JSON request */
 	json?: boolean;
 };
 

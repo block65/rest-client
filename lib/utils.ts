@@ -36,8 +36,9 @@ function isStringifiable(value: unknown): value is Stringifiable {
 }
 
 /**
- * A primitive stringifies, and so does a class that overrides `toString`.
- * The caller decides what undefined means where it stands
+ * A string, number, boolean or bigint stringifies, and so does an object
+ * that overrides Object's `toString`, an array included. The caller decides
+ * what undefined means where it stands
  */
 export function stringifyScalar(value: unknown): string | undefined {
 	switch (true) {
@@ -55,10 +56,8 @@ export function stringifyScalar(value: unknown): string | undefined {
 }
 
 /**
- * Used by the generated `Command`s
- *
- * @param value The value to be JSON stringified.
- * @returns The JSON string representation of the value
+ * JSON.stringify that writes a bigint as its decimal string instead of
+ * throwing. The generated `Command`s use it
  */
 export function jsonStringify(value: unknown): string {
 	return JSON.stringify(value, (_key, val) =>
@@ -67,6 +66,6 @@ export function jsonStringify(value: unknown): string {
 }
 
 export function typedObjectEntries<T extends UnknownRecord>(obj: T) {
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- its the entire point on this fn
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- narrowing Object.entries to the record's entries is the point
 	return Object.entries(obj) as Entries<T>;
 }

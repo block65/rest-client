@@ -101,13 +101,13 @@ describe("response validation (schema presence drives it)", () => {
 		});
 
 		const command = new GetAccountCommand();
-		const err = await client.json(command).catch((error: unknown) => error);
+		const rejection = await client.json(command).catch((err: unknown) => err);
 
-		assert(err instanceof ResponseValidationError);
-		expect(err.command).toBe(command);
-		expect(err.url.toString()).toContain("/account");
-		expect(err.message).toContain("GET");
-		expect(err.cause).toBeDefined();
+		assert(rejection instanceof ResponseValidationError);
+		expect(rejection.command).toBe(command);
+		expect(rejection.url.toString()).toContain("/account");
+		expect(rejection.message).toContain("GET");
+		expect(rejection.cause).toBeDefined();
 	});
 
 	test("also validates send() responses", async () => {

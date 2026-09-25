@@ -6,6 +6,10 @@ export default defineConfig({
 
 	groups: { vitest: "on", valibot: "on" },
 
+	rules: {
+		"unicorn/catch-error-name": ["error", { name: "err" }],
+	},
+
 	overrides: [
 		{
 			// null and BigInt are what these tests drive through the client

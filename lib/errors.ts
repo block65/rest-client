@@ -50,8 +50,8 @@ export class ServiceError extends CustomError {
 }
 
 /**
- * Wraps a response-validation failure with the command and URL context. A bare
- * ValiError names the schema that failed but not the request behind it
+ * Wraps a response-validation failure with the command and URL behind it,
+ * which the schema's issues do not name
  */
 export class ResponseValidationError extends CustomError {
 	override code = CustomError.INVALID_ARGUMENT;
@@ -71,7 +71,7 @@ export class ResponseValidationError extends CustomError {
 }
 
 /**
- * A request-validation failure safe to surface to API callers, built from
+ * A validation failure safe to surface to callers, built from
  * Standard Schema issues so it works with any spec-compliant validator
  */
 export class PublicValidationError extends CustomError {

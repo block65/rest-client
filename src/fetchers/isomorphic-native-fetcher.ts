@@ -129,7 +129,7 @@ export function createIsomorphicNativeFetcher(
 
 				const res2 = await intoFetcherResponse(res, url);
 
-				// transient failures throw a plain error so p-retry re-attempts them
+				// a transient status throws so p-retry re-attempts it
 				if (
 					!res.ok &&
 					(res.status >= 500 || retryableStatuses.has(res.status))
@@ -153,13 +153,13 @@ export function createIsomorphicNativeFetcher(
 						retries: 0,
 						signal: combinedSignal,
 					},
-		).catch((error: unknown) => {
+		).catch((err: unknown) => {
 			// retries exhausted — resolve with the final response so non-ok
 			// handling stays the caller's job, with or without retry config
-			if (error instanceof RetryableStatusError) {
-				return error.res;
+			if (err instanceof RetryableStatusError) {
+				return err.res;
 			}
-			throw error;
+			throw err;
 		});
 	};
 }

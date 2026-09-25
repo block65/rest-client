@@ -127,13 +127,13 @@ describe("Fetcher", () => {
 			timeout: 100,
 		});
 
-		const err = await fetcher({
+		const rejection = await fetcher({
 			method: "get",
 			url: new URL("/unresponsive", base),
-		}).catch((error) => error);
+		}).catch((err) => err);
 
-		expect(err).toBeInstanceOf(DOMException);
-		expect(err.code).toBe(DOMException.TIMEOUT_ERR);
+		expect(rejection).toBeInstanceOf(DOMException);
+		expect(rejection.code).toBe(DOMException.TIMEOUT_ERR);
 	}, 150);
 
 	describe("retry semantics", () => {
@@ -205,14 +205,14 @@ describe("Fetcher", () => {
 
 		setTimeout(() => controller.abort(), 100);
 
-		const err = await fetcher({
+		const rejection = await fetcher({
 			method: "get",
 			url: new URL("/unresponsive", base),
 			signal: controller.signal,
-		}).catch((error) => error);
+		}).catch((err) => err);
 
-		expect(err).toBeInstanceOf(DOMException);
-		expect(err.code).toBe(DOMException.ABORT_ERR);
+		expect(rejection).toBeInstanceOf(DOMException);
+		expect(rejection.code).toBe(DOMException.ABORT_ERR);
 
 		expect(() => controller.signal.throwIfAborted()).toThrowError(DOMException);
 	}, 150);
