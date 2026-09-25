@@ -200,13 +200,13 @@ describe("Client", () => {
 	});
 
 	test("JSON error attaches response to thrown ServiceError", async () => {
-		const err = await client
+		const rejection = await client
 			.json(new FakeJsonErrorCommand())
-			.catch((error: unknown) => error);
+			.catch((err: unknown) => err);
 
-		assert(err instanceof ServiceError);
-		expect(err.response).toBeInstanceOf(Response);
-		expect(err.response.status).toBe(400);
+		assert(rejection instanceof ServiceError);
+		expect(rejection.response).toBeInstanceOf(Response);
+		expect(rejection.response.status).toBe(400);
 	});
 
 	describe("stream()", () => {
@@ -219,22 +219,22 @@ describe("Client", () => {
 		});
 
 		test("rejects a JSON refusal as a ServiceError carrying its response", async () => {
-			const err = await client
+			const rejection = await client
 				.stream(new FakeJsonErrorCommand())
-				.catch((error: unknown) => error);
+				.catch((err: unknown) => err);
 
-			assert(err instanceof ServiceError);
-			expect(err.message).toBe("Data should be array");
-			expect(err.response.status).toBe(400);
+			assert(rejection instanceof ServiceError);
+			expect(rejection.message).toBe("Data should be array");
+			expect(rejection.response.status).toBe(400);
 		});
 
 		test("rejects a refusal with a non-JSON body by its status", async () => {
-			const err = await client
+			const rejection = await client
 				.stream(new Fake404Command())
-				.catch((error: unknown) => error);
+				.catch((err: unknown) => err);
 
-			assert(err instanceof ServiceError);
-			expect(err.response.status).toBe(404);
+			assert(rejection instanceof ServiceError);
+			expect(rejection.response.status).toBe(404);
 		});
 
 		test("logs a refusal body that fails to cancel, and still rejects with the refusal", async () => {
@@ -256,12 +256,12 @@ describe("Client", () => {
 				},
 			);
 
-			const err = await erroringClient
+			const rejection = await erroringClient
 				.stream(new Fake404Command())
-				.catch((error: unknown) => error);
+				.catch((err: unknown) => err);
 
-			assert(err instanceof ServiceError);
-			expect(err.response.status).toBe(401);
+			assert(rejection instanceof ServiceError);
+			expect(rejection.response.status).toBe(401);
 			expect(logger).toHaveBeenCalledWith(
 				"[rest-client] refusal body cancel failed",
 				bodyError,

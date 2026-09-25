@@ -298,8 +298,8 @@ export class RestServiceClient<
 			if (body instanceof ReadableStream) {
 				// an errored stream is already released, and the caller needs the
 				// refusal, so a cancel failure is only logged
-				await body.cancel().catch((error: unknown) => {
-					this.#log("refusal body cancel failed", error);
+				await body.cancel().catch((err: unknown) => {
+					this.#log("refusal body cancel failed", err);
 				});
 			}
 
