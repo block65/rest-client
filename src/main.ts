@@ -10,7 +10,7 @@ export {
 // types needed as peer dep for generated clients
 export * from "../lib/types.ts";
 
-export { Command } from "../lib/command.ts";
+export { Command, SequentialMediaCommand } from "../lib/command.ts";
 
 // a good standard/basic fetcher factory
 export { createIsomorphicNativeFetcher } from "./fetchers/isomorphic-native-fetcher.ts";
@@ -46,4 +46,12 @@ export function stripUndefined<T extends object>(obj: OptionalToUndefined<T>) {
 export {
 	RestServiceClient,
 	type RestServiceClientConfig,
+	maybeResponseSchema as responseSchemaOf,
 } from "../lib/client.ts";
+
+// parse-sse reaches a bundle only through EventStreamCommand
+export {
+	type EventData,
+	EventStreamCommand,
+	type StreamEvent,
+} from "../lib/event-stream.ts";

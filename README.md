@@ -25,7 +25,7 @@ import { GetAccountCommand } from "./generated/commands.ts";
 const client = new RestServiceClient("https://api.example.com", {
 	headers: {
 		"x-build-id": "abc123",
-		authorization: () => Promise.resolve(`Bearer ${await getToken()}`),
+		authorization: async () => `Bearer ${await getToken()}`,
 	},
 });
 
@@ -38,7 +38,37 @@ const account = await client.json(new GetAccountCommand({ accountId: "1234" }));
 
 - `client.json(command)` — sets `content-type: application/json`, returns the parsed body. Throws `ServiceError` on `>=400`.
 - `client.send(command)` — same as above but inherits the command's content type.
-- `client.stream(command)` — returns a `ReadableStream<Uint8Array>` for non-JSON / streaming responses.
+- `client.stream(command)` — returns the response body as a `ReadableStream<Uint8Array>`, unparsed whatever its content type. Throws `ServiceError` on `>=400`.
+
+### Sequential media types
+
+A response with an OpenAPI 3.2 sequential media type is a stream of items. Its command extends a `SequentialMediaCommand` subclass for the media type, which sends that type as `accept` and parses the bytes, so `client.stream()` yields items rather than bytes. `json()` and `send()` do not accept such a command.
+
+`EventStreamCommand` covers `text/event-stream`. Each event arrives as `{ event, data, id?, retry? }`, and `eventData` names the events whose `data` is JSON:
+
+```ts
+import { EventStreamCommand } from "@block65/rest-client";
+
+type ActivityEvent =
+	| { event: "transfer"; data: { id: string; bytes: number } }
+	| { event: "reset"; data: string };
+
+class StreamActivityCommand extends EventStreamCommand<never, ActivityEvent> {
+	public override readonly eventData = { transfer: "json" } as const;
+
+	constructor() {
+		super("/activity");
+	}
+}
+
+const events = await client.stream(new StreamActivityCommand(), { signal });
+
+for await (const { event, data } of events) {
+	// ...
+}
+```
+
+A static `itemSchema` on the command class, OpenAPI's name for the schema of one item, checks each item as it arrives. A mismatch errors the stream with `ResponseValidationError`.
 
 ### Resolvable headers
 
@@ -64,6 +94,8 @@ new RestServiceClient(url, {
 ```
 
 The default fetcher retries idempotent (`GET`) requests and supports timeouts and merged abort signals.
+
+A replacement fetcher must honour `FetcherParams.raw`, which `stream()` sets: it hands a successful body back as the response's `ReadableStream`, unparsed. A fetcher that parses it anyway makes `stream()` throw a `TypeError`.
 
 ### Query parameter styles
 

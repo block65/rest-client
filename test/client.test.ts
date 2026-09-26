@@ -5,6 +5,7 @@ import {
 	type QuerySerializer,
 	RestServiceClient,
 	type RestServiceClientConfig,
+	SequentialMediaCommand,
 	ServiceError,
 	createIsomorphicNativeFetcher,
 	deepObjectSerializer,
@@ -21,6 +22,7 @@ import {
 	beforeAll,
 	describe,
 	expect,
+	expectTypeOf,
 	test,
 	vi,
 } from "vitest";
@@ -72,7 +74,31 @@ class FakeJsonErrorCommand extends Command {
 	}
 }
 
-class FakeEventStreamCommand extends Command<never, Uint8Array> {
+class Fake204Command extends Command {
+	public override method = "get" as const;
+
+	constructor() {
+		super("/204");
+	}
+}
+
+class FakeVendorJsonCommand extends Command {
+	public override method = "get" as const;
+
+	constructor() {
+		super("/vendor-json");
+	}
+}
+
+class FakeJsonSeqCommand extends Command {
+	public override method = "get" as const;
+
+	constructor() {
+		super("/json-seq");
+	}
+}
+
+class FakeEventStreamCommand extends Command {
 	public override method = "get" as const;
 
 	constructor() {
@@ -162,6 +188,18 @@ describe("Client", () => {
 		expect(res).toMatchSnapshot();
 	});
 
+	test("a +json vendor type is parsed as JSON", async () => {
+		await expect(client.send(new FakeVendorJsonCommand())).resolves.toEqual({
+			login: "octocat",
+		});
+	});
+
+	test("a JSON text sequence is left as a stream", async () => {
+		await expect(client.send(new FakeJsonSeqCommand())).resolves.toBeInstanceOf(
+			ReadableStream,
+		);
+	});
+
 	test("404", async () => {
 		await expect(client.json(new Fake404Command())).rejects.toMatchSnapshot();
 	});
@@ -216,6 +254,65 @@ describe("Client", () => {
 			const text = await new Response(stream).text();
 
 			expect(text).toBe("event: ping\ndata: {}\n\n");
+		});
+
+		test("hands back a JSON success unparsed", async () => {
+			const stream = await client.stream(new Fake200Command());
+
+			await expect(new Response(stream).text()).resolves.toBe("[1,2,3]");
+		});
+
+		test("types a plain command's stream as bytes", async () => {
+			const stream = await client.stream(new FakeEventStreamCommand());
+
+			expectTypeOf(stream).toEqualTypeOf<
+				ReadableStream<Uint8Array<ArrayBuffer>>
+			>();
+
+			await stream.cancel();
+		});
+
+		test("yields the items a sequential media command parses", async () => {
+			class FakeTextCommand extends SequentialMediaCommand<never, string> {
+				public override method = "get" as const;
+
+				public readonly mediaType = "text/event-stream";
+
+				constructor() {
+					super("/event-stream");
+				}
+
+				public parse(body: ReadableStream<Uint8Array<ArrayBuffer>>) {
+					return body.pipeThrough(new TextDecoderStream());
+				}
+			}
+
+			const stream = await client.stream(new FakeTextCommand());
+
+			expectTypeOf(stream).toEqualTypeOf<ReadableStream<string>>();
+			await expect(
+				Array.fromAsync(stream).then((texts) => texts.join("")),
+			).resolves.toBe("event: ping\ndata: {}\n\n");
+		});
+
+		test("hands back an empty body as an empty stream", async () => {
+			const stream = await client.stream(new Fake204Command());
+
+			await expect(new Response(stream).text()).resolves.toBe("");
+		});
+
+		test("rejects a body a custom fetcher parsed anyway", async () => {
+			const parsingClient = new RestServiceClient(new URL("http://127.0.0.1"), {
+				fetcher: vi.fn<FetcherMethod>(async ({ url }) => ({
+					url,
+					res: new Response(null, { status: 200 }),
+					body: [1, 2, 3],
+				})),
+			});
+
+			await expect(parsingClient.stream(new Fake200Command())).rejects.toThrow(
+				TypeError,
+			);
 		});
 
 		test("rejects a JSON refusal as a ServiceError carrying its response", async () => {
@@ -403,8 +500,7 @@ describe("Client", () => {
 	describe("sortQuery", () => {
 		const queryParams = { z: 1, m: [2, 3], a: 4 };
 
-		// the client reorders before it hands over, so these assert what the
-		// serializer was given, not the URL that came back
+		// a spy serializer shows the client's key order before a style writes it
 		test("the serializer is handed a sorted copy, values intact", async () => {
 			const serialize = vi.fn<QuerySerializer>(() => "");
 

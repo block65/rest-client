@@ -69,3 +69,27 @@ export abstract class Command<
 		};
 	}
 }
+
+export type CommandQueryObject = UndefinedOnPartialDeep<JsonObject>;
+
+/**
+ * A command with an OpenAPI 3.2 sequential media type for its success body,
+ * a stream of items. The subclass for each media type parses its bytes, and
+ * stream() yields the items. json() and send() refuse it at the type level
+ */
+export abstract class SequentialMediaCommand<
+	CommandInput = unknown,
+	CommandItem = unknown,
+	CommandQuery extends CommandQueryObject = CommandQueryObject,
+	CommandHeaders extends Record<string, string> = Record<string, string>,
+> extends Command<CommandInput, CommandItem, CommandQuery, CommandHeaders> {
+	// type-only, so json() and send() can refuse it
+	declare readonly "~sequential": true;
+
+	// sent as accept
+	public abstract readonly mediaType: string;
+
+	public abstract parse(
+		body: ReadableStream<Uint8Array<ArrayBuffer>>,
+	): ReadableStream<CommandItem>;
+}

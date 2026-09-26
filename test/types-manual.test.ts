@@ -47,7 +47,7 @@ test("manual command", async () => {
 	expectTypeOf(result).toMatchTypeOf<RandomOutput>();
 });
 
-// the deep-widened shape stripUndefined leaves behind, as Command sees it
+// a deepObject parameter's query type, exact-optional as codegen declares it
 type DeepObjectQuery = {
 	effective_at?: { gt?: `${number}`; lte?: `${number}` };
 	project_ids?: readonly string[];
