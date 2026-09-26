@@ -2,16 +2,11 @@ import {
 	type ServerSentEvent,
 	ServerSentEventTransformStream,
 } from "parse-sse";
-import type { RestServiceClient } from "./client.ts";
-import { maybeResponseSchema } from "./client.ts";
-import type { Command } from "./command.ts";
-import { PublicValidationError, ResponseValidationError } from "./errors.ts";
-import type { RuntimeOptions } from "./types.ts";
+import { type CommandQueryObject, SequentialMediaCommand } from "./command.ts";
 
 /**
  * Maps an event name to the format of its `data`. An event not listed is
- * text. Generated commands declare it as `static eventData`, lean and
- * validated alike
+ * text
  */
 export type EventData = Readonly<Record<string, "json" | "text">>;
 
@@ -21,18 +16,6 @@ export type StreamEvent = {
 	id?: string;
 	retry?: number;
 };
-
-function eventDataOf(command: Command): EventData {
-	const ctor = command.constructor;
-
-	if ("eventData" in ctor && typeof ctor.eventData === "object") {
-		// the generated static is an EventData literal
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generated
-		return ctor.eventData as EventData;
-	}
-
-	return {};
-}
 
 function toStreamEvent(message: ServerSentEvent, eventData: EventData) {
 	const data: unknown =
@@ -49,59 +32,41 @@ function toStreamEvent(message: ServerSentEvent, eventData: EventData) {
 }
 
 /**
- * Follows a text/event-stream response as parsed events, `data` decoded by
- * the command's `eventData`. Where the command class declares a
- * `responseSchema`, as the validated commands do, each event is checked
- * against it, and a mismatch errors the stream with ResponseValidationError
+ * A text/event-stream response, one item per event. parse-sse drops
+ * comments and events with empty data, as the HTML spec does
  */
-export async function events<InputType, Item>(
-	client: RestServiceClient,
-	command: Command<InputType, Item>,
-	runtimeOptions?: RuntimeOptions,
-): Promise<ReadableStream<Item>> {
-	const bytes = await client.stream(command, {
-		...runtimeOptions,
-		headers: {
-			accept: "text/event-stream",
-			...Object.fromEntries(new Headers(runtimeOptions?.headers)),
-		},
-	});
+export abstract class EventStreamCommand<
+	CommandInput = unknown,
+	CommandEvent extends StreamEvent = StreamEvent,
+	CommandQuery extends CommandQueryObject = CommandQueryObject,
+	CommandHeaders extends Record<string, string> = Record<string, string>,
+> extends SequentialMediaCommand<
+	CommandInput,
+	CommandEvent,
+	CommandQuery,
+	CommandHeaders
+> {
+	public readonly mediaType = "text/event-stream";
 
-	const eventData = eventDataOf(command);
-	const schema = maybeResponseSchema(command);
+	public readonly eventData: EventData = {};
 
-	return bytes
-		.pipeThrough(new TextDecoderStream())
-		.pipeThrough(new ServerSentEventTransformStream())
-		.pipeThrough(
-			new TransformStream<ServerSentEvent, Item>({
-				async transform(message, controller) {
-					const item = toStreamEvent(message, eventData);
+	public parse(body: ReadableStream<Uint8Array<ArrayBuffer>>) {
+		const { eventData } = this;
 
-					if (!schema) {
-						// the command's output type describes its events
+		return body
+			.pipeThrough(new TextDecoderStream())
+			.pipeThrough(new ServerSentEventTransformStream())
+			.pipeThrough(
+				new TransformStream<ServerSentEvent, CommandEvent>({
+					transform(message, controller) {
+						// toStreamEvent fixes the shape, and the command's event type
+						// narrows names and data unchecked, as json() narrows a body
 						// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- by design
-						controller.enqueue(item as Item);
+						const event = toStreamEvent(message, eventData) as CommandEvent;
 
-						return;
-					}
-
-					const result = await schema["~standard"].validate(item);
-
-					if (result.issues) {
-						controller.error(
-							new ResponseValidationError(
-								command,
-								undefined,
-								PublicValidationError.fromIssues(result.issues),
-							),
-						);
-
-						return;
-					}
-
-					controller.enqueue(result.value);
-				},
-			}),
-		);
+						controller.enqueue(event);
+					},
+				}),
+			);
+	}
 }

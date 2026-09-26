@@ -1,9 +1,9 @@
 import {
-	Command,
+	type Command,
+	EventStreamCommand,
 	ResponseValidationError,
 	RestServiceClient,
 	createIsomorphicNativeFetcher,
-	events,
 } from "@block65/rest-client";
 import * as v from "valibot";
 import { assert, expect, expectTypeOf, test, vi } from "vitest";
@@ -25,10 +25,10 @@ const activityMessageSchema = v.variant("event", [
 
 type ActivityMessage = v.InferOutput<typeof activityMessageSchema>;
 
-class StreamActivityCommand extends Command<never, ActivityMessage> {
+class StreamActivityCommand extends EventStreamCommand<never, ActivityMessage> {
 	public override method = "get" as const;
 
-	static eventData = { transfer: "json" } as const;
+	public override readonly eventData = { transfer: "json" } as const;
 
 	constructor() {
 		super("/activity");
@@ -36,7 +36,7 @@ class StreamActivityCommand extends Command<never, ActivityMessage> {
 }
 
 class ValidatedStreamActivityCommand extends StreamActivityCommand {
-	static responseSchema = activityMessageSchema;
+	static itemSchema = activityMessageSchema;
 }
 
 function clientFor(body: string) {
@@ -79,7 +79,7 @@ const feed = [
 test("yields events with JSON data decoded, comments dropped", async () => {
 	const { client, fetch } = clientFor(feed);
 
-	const stream = await events(client, new StreamActivityCommand());
+	const stream = await client.stream(new StreamActivityCommand());
 
 	expectTypeOf(stream).toEqualTypeOf<ReadableStream<ActivityMessage>>();
 
@@ -98,18 +98,45 @@ test("validates each event when the command declares a schema", async () => {
 		["event: transfer", "id: 9", 'data: {"id":"t2"}', "", ""].join("\n"),
 	);
 
-	const stream = await events(client, new ValidatedStreamActivityCommand());
+	const stream = await client.stream(new ValidatedStreamActivityCommand());
 
 	const rejection = await collect(stream).catch((err: unknown) => err);
 
 	assert(rejection instanceof ResponseValidationError);
-	expect(rejection.message).toContain("/activity");
+	expect(rejection.url.pathname).toBe("/activity");
 });
 
 test("passes valid events through a declared schema", async () => {
 	const { client } = clientFor(feed);
 
-	const stream = await events(client, new ValidatedStreamActivityCommand());
+	const stream = await client.stream(new ValidatedStreamActivityCommand());
 
 	await expect(collect(stream)).resolves.toHaveLength(2);
+});
+
+test("a runtime accept header overrides the media type", async () => {
+	const { client, fetch } = clientFor(feed);
+
+	const stream = await client.stream(new StreamActivityCommand(), {
+		headers: { accept: "text/event-stream;q=1" },
+	});
+	await stream.cancel();
+
+	const [, init] = fetch.mock.calls[0] ?? [];
+
+	expect(new Headers(init?.headers).get("accept")).toBe(
+		"text/event-stream;q=1",
+	);
+});
+
+test("json() and send() refuse a sequential media command", () => {
+	const { client } = clientFor(feed);
+
+	expectTypeOf<StreamActivityCommand>().not.toExtend<
+		Parameters<typeof client.json>[0]
+	>();
+	expectTypeOf<StreamActivityCommand>().not.toExtend<
+		Parameters<typeof client.send>[0]
+	>();
+	expectTypeOf<Command>().toExtend<Parameters<typeof client.json>[0]>();
 });

@@ -50,20 +50,19 @@ export class ServiceError extends CustomError {
 }
 
 /**
- * Wraps a response-validation failure with the command behind it, and the
- * URL where one is known, which the schema's issues do not name
+ * Wraps a response-validation failure with the command and URL behind it,
+ * which the schema's issues do not name
  */
 export class ResponseValidationError extends CustomError {
 	override code = CustomError.INVALID_ARGUMENT;
 
 	public command: Command;
 
-	// events() validates items after stream() has resolved, where the URL is gone
-	public url: URL | undefined;
+	public url: URL;
 
-	constructor(command: Command, url: URL | undefined, cause: unknown) {
+	constructor(command: Command, url: URL, cause: unknown) {
 		super(
-			`Response validation failed: ${command.method.toUpperCase()} ${url?.toString() ?? command.pathname}`,
+			`Response validation failed: ${command.method.toUpperCase()} ${url.toString()}`,
 			cause,
 		);
 		this.command = command;

@@ -1,7 +1,7 @@
 import type * as s from "@standard-schema/spec";
 import type { UnknownRecord } from "type-fest";
 import { createIsomorphicNativeFetcher } from "../src/fetchers/isomorphic-native-fetcher.ts";
-import type { Command } from "./command.ts";
+import { type Command, SequentialMediaCommand } from "./command.ts";
 import {
 	PublicValidationError,
 	ResponseValidationError,
@@ -10,7 +10,6 @@ import {
 import type {
 	FetcherMethod,
 	ResolvableHeaders,
-	ResponseStream,
 	RuntimeOptions,
 } from "./types.ts";
 import { isPlainObject } from "./utils.ts";
@@ -61,21 +60,53 @@ function isStandardSchema<TInput, TOutput>(
 	return isPlainObject(schema) && "~standard" in schema;
 }
 
+// a static on the command's class, inherited statics included
+function maybeStaticSchema<TInput, TOutput>(
+	command: Command,
+	name: "responseSchema" | "itemSchema",
+) {
+	const schema: unknown = Reflect.get(command.constructor, name);
+
+	return isStandardSchema<TInput, TOutput>(schema) ? schema : undefined;
+}
+
 /**
  * Finds a `responseSchema` on the command's class. json() and send()
- * validate a whole body with it, and events() each event
+ * validate a whole body with it
  */
 export function maybeResponseSchema<TInput, TOutput>(
 	command: Command<TInput, TOutput>,
 ) {
-	const ctor = command.constructor;
-	if (
-		"responseSchema" in ctor &&
-		isStandardSchema<TInput, TOutput>(ctor.responseSchema)
-	) {
-		return ctor.responseSchema;
+	return maybeStaticSchema<TInput, TOutput>(command, "responseSchema");
+}
+
+// a sequential media type's item schema, per OpenAPI 3.2's itemSchema
+function maybeItemSchema<TInput, TItem>(
+	command: SequentialMediaCommand<TInput, TItem>,
+) {
+	return maybeStaticSchema<TItem, TItem>(command, "itemSchema");
+}
+
+// stream() yields items, so json() and send() refuse a sequential command
+type NotSequential = { readonly "~sequential"?: never };
+
+function toByteStream(body: unknown) {
+	if (body instanceof ReadableStream) {
+		return body as ReadableStream<Uint8Array<ArrayBuffer>>;
 	}
-	return;
+
+	if (body === null) {
+		return new ReadableStream<Uint8Array<ArrayBuffer>>({
+			start(controller) {
+				controller.close();
+			},
+		});
+	}
+
+	// a fetcher that ignores `raw` hands over a parsed body, its bytes spent
+	throw new TypeError(
+		"stream() received a parsed body; the fetcher must honour `raw`",
+	);
 }
 
 export type RestServiceClientConfig = {
@@ -260,7 +291,7 @@ export class RestServiceClient<
 		InputType extends ClientInput,
 		OutputType extends ClientOutput,
 	>(
-		command: Command<InputType, OutputType>,
+		command: Command<InputType, OutputType> & NotSequential,
 		runtimeOptions?: RuntimeOptions,
 	): Promise<OutputType> {
 		const { res, body, url } = await this.response(command, {
@@ -283,7 +314,7 @@ export class RestServiceClient<
 		InputType extends ClientInput,
 		OutputType extends ClientOutput,
 	>(
-		command: Command<InputType, OutputType>,
+		command: Command<InputType, OutputType> & NotSequential,
 		runtimeOptions?: RuntimeOptions,
 	): Promise<OutputType> {
 		const { res, body, url } = await this.response(command, runtimeOptions);
@@ -296,17 +327,38 @@ export class RestServiceClient<
 	}
 
 	/**
-	 * Resolves a success's body as the response's own byte stream, JSON
-	 * included. A status from 400 rejects with a ServiceError, as json() does
+	 * Resolves with the body's bytes, unparsed, JSON included. A sequential
+	 * media command's bytes are parsed into its items, each checked against
+	 * the class's `itemSchema` where it declares one. A status of 400 or above
+	 * rejects with a ServiceError
 	 */
-	public async stream<
-		InputType extends ClientInput,
-		OutputType extends ClientOutput,
-	>(
+	public stream<InputType extends ClientInput, ItemType extends ClientOutput>(
+		command: SequentialMediaCommand<InputType, ItemType>,
+		runtimeOptions?: RuntimeOptions,
+	): Promise<ReadableStream<ItemType>>;
+
+	public stream<InputType extends ClientInput, OutputType extends ClientOutput>(
 		command: Command<InputType, OutputType>,
 		runtimeOptions?: RuntimeOptions,
-	): Promise<ResponseStream<OutputType>> {
-		const { res, body } = await this.#fetch(command, runtimeOptions, true);
+	): Promise<ReadableStream<Uint8Array<ArrayBuffer>>>;
+
+	public async stream(command: Command, runtimeOptions?: RuntimeOptions) {
+		const sequential =
+			command instanceof SequentialMediaCommand ? command : undefined;
+
+		const { res, body, url } = await this.#fetch(
+			command,
+			sequential
+				? {
+						...runtimeOptions,
+						headers: {
+							accept: sequential.mediaType,
+							...headersFrom(runtimeOptions?.headers),
+						},
+					}
+				: runtimeOptions,
+			true,
+		);
 
 		if (res.status >= 400) {
 			if (body instanceof ReadableStream) {
@@ -321,21 +373,36 @@ export class RestServiceClient<
 			throw ServiceError.fromResponse(res, body);
 		}
 
-		if (body instanceof ReadableStream) {
-			return body;
+		const bytes = toByteStream(body);
+
+		if (!sequential) {
+			return bytes;
 		}
 
-		if (body === null) {
-			return new ReadableStream<Uint8Array<ArrayBuffer>>({
-				start(controller) {
-					controller.close();
+		const items = sequential.parse(bytes);
+		const schema = maybeItemSchema(sequential);
+
+		if (!schema) {
+			return items;
+		}
+
+		return items.pipeThrough(
+			new TransformStream({
+				async transform(item, controller) {
+					const result = await schema["~standard"].validate(item);
+
+					// a rejected transform errors the stream with its reason
+					if (result.issues) {
+						throw new ResponseValidationError(
+							command,
+							url,
+							PublicValidationError.fromIssues(result.issues),
+						);
+					}
+
+					controller.enqueue(result.value);
 				},
-			});
-		}
-
-		// a custom fetcher that ignores `raw` has already consumed the body
-		throw new TypeError(
-			"stream() received a parsed body; the fetcher must honour `raw`",
+			}),
 		);
 	}
 }

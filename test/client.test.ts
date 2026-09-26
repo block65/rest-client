@@ -5,8 +5,8 @@ import {
 	type QuerySerializer,
 	RestServiceClient,
 	type RestServiceClientConfig,
+	SequentialMediaCommand,
 	ServiceError,
-	type StreamItem,
 	createIsomorphicNativeFetcher,
 	deepObjectSerializer,
 	formExplodeSerializer,
@@ -262,23 +262,37 @@ describe("Client", () => {
 			await expect(new Response(stream).text()).resolves.toBe("[1,2,3]");
 		});
 
-		test("labels the stream with the command's item type", async () => {
-			class FakeTickCommand extends Command<never, { tick: number }> {
+		test("types a plain command's stream as bytes", async () => {
+			const stream = await client.stream(new FakeEventStreamCommand());
+
+			expectTypeOf(stream).toEqualTypeOf<
+				ReadableStream<Uint8Array<ArrayBuffer>>
+			>();
+
+			await stream.cancel();
+		});
+
+		test("yields the items a sequential media command parses", async () => {
+			class FakeTextCommand extends SequentialMediaCommand<never, string> {
 				public override method = "get" as const;
+
+				public readonly mediaType = "text/event-stream";
 
 				constructor() {
 					super("/event-stream");
 				}
+
+				public parse(body: ReadableStream<Uint8Array<ArrayBuffer>>) {
+					return body.pipeThrough(new TextDecoderStream());
+				}
 			}
 
-			const stream = await client.stream(new FakeTickCommand());
+			const stream = await client.stream(new FakeTextCommand());
 
-			expectTypeOf(stream).toExtend<ReadableStream<Uint8Array>>();
-			expectTypeOf<StreamItem<typeof stream>>().toEqualTypeOf<{
-				tick: number;
-			}>();
-
-			await stream.cancel();
+			expectTypeOf(stream).toEqualTypeOf<ReadableStream<string>>();
+			await expect(
+				Array.fromAsync(stream).then((texts) => texts.join("")),
+			).resolves.toBe("event: ping\ndata: {}\n\n");
 		});
 
 		test("hands back an empty body as an empty stream", async () => {
