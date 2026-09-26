@@ -156,7 +156,6 @@ export class RestServiceClient<
 			);
 		}
 
-		// the schema may transform, so the parsed value replaces the raw body
 		const result = await schema["~standard"].validate(body);
 
 		if (result.issues) {
@@ -167,6 +166,7 @@ export class RestServiceClient<
 			);
 		}
 
+		// the schema may transform, so its output replaces the body
 		return result.value;
 	}
 
@@ -309,10 +309,10 @@ export class RestServiceClient<
 		const { res, body } = await this.#fetch(command, runtimeOptions, true);
 
 		if (res.status >= 400) {
-			// a refusal the fetcher left unparsed still holds the connection
 			if (body instanceof ReadableStream) {
-				// an errored stream is already released, and the caller needs the
-				// refusal, so a cancel failure is only logged
+				// an unread body holds its connection until cancelled. An errored
+				// stream is already released, so a failed cancel is only logged
+				// and the ServiceError still throws
 				await body.cancel().catch((err: unknown) => {
 					this.#log("refusal body cancel failed", err);
 				});

@@ -69,7 +69,8 @@ function isJsonMediaType(contentType: string | null) {
 }
 
 async function intoFetcherResponse(res: Response, url: URL, raw: boolean) {
-	// a refusal is parsed even when raw, so ServiceError reads its message
+	// an error status's JSON is parsed even when raw, so ServiceError reads
+	// its message
 	if (isJsonMediaType(res.headers.get("content-type")) && !(raw && res.ok)) {
 		// res.json() resolves to unknown, and a parsed JSON body is Jsonifiable
 		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- JSON body

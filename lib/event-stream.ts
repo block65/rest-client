@@ -9,9 +9,9 @@ import { PublicValidationError, ResponseValidationError } from "./errors.ts";
 import type { RuntimeOptions } from "./types.ts";
 
 /**
- * How an event's `data` is decoded, keyed by event name. A generated command
- * declares it as `static eventData` on the lean commands too, so every
- * import decodes
+ * Maps an event name to the format of its `data`. An event not listed is
+ * text. Generated commands declare it as `static eventData`, lean and
+ * validated alike
  */
 export type EventData = Readonly<Record<string, "json" | "text">>;
 
