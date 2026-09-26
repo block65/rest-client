@@ -10,6 +10,7 @@ import {
 import type {
 	FetcherMethod,
 	ResolvableHeaders,
+	ResponseStream,
 	RuntimeOptions,
 } from "./types.ts";
 import { isPlainObject } from "./utils.ts";
@@ -60,7 +61,11 @@ function isStandardSchema<TInput, TOutput>(
 	return isPlainObject(schema) && "~standard" in schema;
 }
 
-function getCommandResponseSchema<TInput, TOutput>(
+/**
+ * Lets a stream's parser validate each item in dev, where the command's class
+ * declares a schema. Only the parser sees whole items
+ */
+export function responseSchemaOf<TInput, TOutput>(
 	command: Command<TInput, TOutput>,
 ) {
 	const ctor = command.constructor;
@@ -133,7 +138,7 @@ export class RestServiceClient<
 		TInput extends ClientInput,
 		TOutput extends ClientOutput,
 	>(command: Command<TInput, TOutput>, body: unknown, url: URL) {
-		const schema = getCommandResponseSchema<TInput, TOutput>(command);
+		const schema = responseSchemaOf<TInput, TOutput>(command);
 
 		if (!schema) {
 			// no schema, so the body is returned as the command declares it
@@ -169,6 +174,14 @@ export class RestServiceClient<
 		InputType extends ClientInput,
 		OutputType extends ClientOutput,
 	>(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
+		return this.#fetch(command, runtimeOptions, false);
+	}
+
+	async #fetch(
+		command: Command,
+		runtimeOptions: RuntimeOptions | undefined,
+		raw: boolean,
+	) {
 		const { method } = command;
 
 		const url = await this.#buildUrl(command, runtimeOptions);
@@ -188,6 +201,8 @@ export class RestServiceClient<
 			headers,
 
 			...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),
+
+			...(raw && { raw }),
 		});
 
 		this.#log(
@@ -281,8 +296,8 @@ export class RestServiceClient<
 	}
 
 	/**
-	 * Resolves a success's body as a stream. A status from 400 rejects with a
-	 * ServiceError, as json() does
+	 * Resolves a success's body as the response's own byte stream, JSON
+	 * included. A status from 400 rejects with a ServiceError, as json() does
 	 */
 	public async stream<
 		InputType extends ClientInput,
@@ -290,8 +305,8 @@ export class RestServiceClient<
 	>(
 		command: Command<InputType, OutputType>,
 		runtimeOptions?: RuntimeOptions,
-	): Promise<ReadableStream<OutputType>> {
-		const { res, body } = await this.response(command, runtimeOptions);
+	): Promise<ResponseStream<OutputType>> {
+		const { res, body } = await this.#fetch(command, runtimeOptions, true);
 
 		if (res.status >= 400) {
 			// a refusal the fetcher left unparsed still holds the connection
@@ -307,19 +322,20 @@ export class RestServiceClient<
 		}
 
 		if (body instanceof ReadableStream) {
-			// the fetcher hands over the stream untyped, so the command's chunk
-			// type stands
-			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- untyped
-			return body as ReadableStream<OutputType>;
+			return body;
 		}
 
-		return new ReadableStream<OutputType>({
-			start(controller) {
-				// a non-stream body is the parsed response the command declares
-				// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- by design
-				controller.enqueue(body as OutputType);
-				controller.close();
-			},
-		});
+		if (body === null) {
+			return new ReadableStream<Uint8Array>({
+				start(controller) {
+					controller.close();
+				},
+			});
+		}
+
+		// a custom fetcher that ignores `raw` has already consumed the body
+		throw new TypeError(
+			"stream() received a parsed body; the fetcher must honour `raw`",
+		);
 	}
 }

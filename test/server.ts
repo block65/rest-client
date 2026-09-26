@@ -25,6 +25,16 @@ export function requestListener(req: IncomingMessage, res: ServerResponse) {
 			res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
 			res.end(JSON.stringify([1, 2, 3]));
 			break;
+		case "/vendor-json":
+			res.writeHead(200, {
+				"content-type": "application/vnd.github+json; charset=utf-8",
+			});
+			res.end(JSON.stringify({ login: "octocat" }));
+			break;
+		case "/json-seq":
+			res.writeHead(200, { "content-type": "application/json-seq" });
+			res.end('\u001E{"a":1}\n\u001E{"a":2}\n');
+			break;
 		case "/204":
 			res.writeHead(204);
 			res.end();

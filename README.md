@@ -38,7 +38,7 @@ const account = await client.json(new GetAccountCommand({ accountId: "1234" }));
 
 - `client.json(command)` — sets `content-type: application/json`, returns the parsed body. Throws `ServiceError` on `>=400`.
 - `client.send(command)` — same as above but inherits the command's content type.
-- `client.stream(command)` — returns a `ReadableStream<Uint8Array>` for non-JSON / streaming responses.
+- `client.stream(command)` — returns the response body as a `ReadableStream<Uint8Array>`, unparsed whatever its content type. Throws `ServiceError` on `>=400`.
 
 ### Resolvable headers
 

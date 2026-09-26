@@ -57,11 +57,20 @@ class RetryableStatusError extends Error {
 	}
 }
 
-async function intoFetcherResponse(res: Response, url: URL) {
-	const contentType = res.headers.get("content-type");
+// `+json` is RFC 6839's suffix, as in application/vnd.github+json
+function isJsonMediaType(contentType: string | null) {
+	const essence = contentType?.split(";")[0]?.trim().toLowerCase();
 
-	// auto parse JSON
-	if (contentType?.includes("/json")) {
+	if (!essence) {
+		return false;
+	}
+
+	return essence.endsWith("/json") || essence.endsWith("+json");
+}
+
+async function intoFetcherResponse(res: Response, url: URL, raw: boolean) {
+	// a refusal is parsed even when raw, so ServiceError reads its message
+	if (isJsonMediaType(res.headers.get("content-type")) && !(raw && res.ok)) {
 		// res.json() resolves to unknown, and a parsed JSON body is Jsonifiable
 		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- JSON body
 		const responseJson = (await res.json()) as Jsonifiable;
@@ -95,7 +104,7 @@ export function createIsomorphicNativeFetcher(
 	} = {},
 ): FetcherMethod {
 	return async (params: FetcherParams) => {
-		const { url, method, body, headers, credentials, signal } = params;
+		const { url, method, body, headers, credentials, signal, raw } = params;
 		const { fetch = globalThis.fetch, ...rest } = options;
 
 		const combinedSignal = multiSignal(
@@ -127,7 +136,7 @@ export function createIsomorphicNativeFetcher(
 					...(finalBody === undefined ? {} : { body: finalBody }),
 				});
 
-				const res2 = await intoFetcherResponse(res, url);
+				const res2 = await intoFetcherResponse(res, url, raw ?? false);
 
 				// a transient status throws so p-retry re-attempts it
 				if (
