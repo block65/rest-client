@@ -10,7 +10,8 @@ import type { RuntimeOptions } from "./types.ts";
 
 /**
  * How an event's `data` is decoded, keyed by event name. A generated command
- * declares it as `static eventData`, so decoding runs in production as well
+ * declares it as `static eventData` on the lean commands too, so every
+ * import decodes
  */
 export type EventData = Readonly<Record<string, "json" | "text">>;
 
@@ -50,7 +51,7 @@ function toStreamEvent(message: ServerSentEvent, eventData: EventData) {
 /**
  * Follows a text/event-stream response as parsed events, `data` decoded by
  * the command's `eventData`. Where the command class declares a
- * `responseSchema` (the validated commands, in dev) each event is checked
+ * `responseSchema`, as the validated commands do, each event is checked
  * against it, and a mismatch errors the stream with ResponseValidationError
  */
 export async function events<InputType, Item>(

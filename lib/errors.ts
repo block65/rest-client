@@ -50,8 +50,8 @@ export class ServiceError extends CustomError {
 }
 
 /**
- * Wraps a response-validation failure with the command and URL behind it,
- * which the schema's issues do not name
+ * Wraps a response-validation failure with the command behind it, and the
+ * URL where one is known, which the schema's issues do not name
  */
 export class ResponseValidationError extends CustomError {
 	override code = CustomError.INVALID_ARGUMENT;

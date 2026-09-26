@@ -486,8 +486,7 @@ describe("Client", () => {
 	describe("sortQuery", () => {
 		const queryParams = { z: 1, m: [2, 3], a: 4 };
 
-		// the client reorders before it hands over, so these assert what the
-		// serializer was given, not the URL that came back
+		// a spy serializer shows the client's key order before a style writes it
 		test("the serializer is handed a sorted copy, values intact", async () => {
 			const serialize = vi.fn<QuerySerializer>(() => "");
 

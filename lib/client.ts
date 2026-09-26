@@ -62,8 +62,8 @@ function isStandardSchema<TInput, TOutput>(
 }
 
 /**
- * Lets a stream's parser validate each item in dev, where the command's class
- * declares a schema. Only the parser sees whole items
+ * Finds a `responseSchema` on the command's class. json() and send()
+ * validate a whole body with it, and events() each event
  */
 export function maybeResponseSchema<TInput, TOutput>(
 	command: Command<TInput, TOutput>,

@@ -115,8 +115,8 @@ export function createIsomorphicNativeFetcher(
 
 		return pRetry(
 			async (_attempt: number) => {
-				// fetch reads a copy, so a later write to the caller's Uint8Array
-				// leaves the request as it was
+				// fetch sends a view on a SharedArrayBuffer as its toString, "0,0",
+				// so the bytes go over on a copy in a plain ArrayBuffer
 				const finalBody =
 					body instanceof Uint8Array ? new Uint8Array(body).buffer : body;
 
@@ -150,7 +150,7 @@ export function createIsomorphicNativeFetcher(
 			},
 			method === "get"
 				? {
-						retries: 3, // default
+						retries: 3, // this fetcher's default, where p-retry's is 10
 						onFailedAttempt() {
 							combinedSignal.throwIfAborted();
 						},
