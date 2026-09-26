@@ -41,11 +41,11 @@ function compareUtf8Bytes(a: string, b: string) {
 // serializers keep insertion order, so this sets the URL's top-level order
 function sortQueryKeys<T extends UnknownRecord>(
 	query: T,
-	sort: true | ((a: string, b: string) => number),
+	compareFnOrBool: true | ((a: string, b: string) => number),
 ) {
-	const order = sort === true ? compareUtf8Bytes : sort;
+	const compare = compareFnOrBool === true ? compareUtf8Bytes : compareFnOrBool;
 
-	const sorted = Object.entries(query).toSorted(([a], [b]) => order(a, b));
+	const sorted = Object.entries(query).toSorted(([a], [b]) => compare(a, b));
 
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- reordering keeps the shape
 	return Object.fromEntries(sorted) as T;
@@ -65,7 +65,7 @@ function isStandardSchema<TInput, TOutput>(
  * Lets a stream's parser validate each item in dev, where the command's class
  * declares a schema. Only the parser sees whole items
  */
-export function responseSchemaOf<TInput, TOutput>(
+export function maybeResponseSchema<TInput, TOutput>(
 	command: Command<TInput, TOutput>,
 ) {
 	const ctor = command.constructor;
@@ -138,7 +138,7 @@ export class RestServiceClient<
 		TInput extends ClientInput,
 		TOutput extends ClientOutput,
 	>(command: Command<TInput, TOutput>, body: unknown, url: URL) {
-		const schema = responseSchemaOf<TInput, TOutput>(command);
+		const schema = maybeResponseSchema<TInput, TOutput>(command);
 
 		if (!schema) {
 			// no schema, so the body is returned as the command declares it

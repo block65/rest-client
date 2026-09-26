@@ -3,7 +3,7 @@ import {
 	ServerSentEventTransformStream,
 } from "parse-sse";
 import type { RestServiceClient } from "./client.ts";
-import { responseSchemaOf } from "./client.ts";
+import { maybeResponseSchema } from "./client.ts";
 import type { Command } from "./command.ts";
 import { PublicValidationError, ResponseValidationError } from "./errors.ts";
 import type { RuntimeOptions } from "./types.ts";
@@ -67,7 +67,7 @@ export async function events<InputType, Item>(
 	});
 
 	const eventData = eventDataOf(command);
-	const schema = responseSchemaOf(command);
+	const schema = maybeResponseSchema(command);
 
 	return bytes
 		.pipeThrough(new TextDecoderStream())

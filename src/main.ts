@@ -46,7 +46,7 @@ export function stripUndefined<T extends object>(obj: OptionalToUndefined<T>) {
 export {
 	RestServiceClient,
 	type RestServiceClientConfig,
-	responseSchemaOf,
+	maybeResponseSchema as responseSchemaOf,
 } from "../lib/client.ts";
 
 // parse-sse reaches a bundle only through events()
