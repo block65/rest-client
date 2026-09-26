@@ -326,7 +326,7 @@ export class RestServiceClient<
 		}
 
 		if (body === null) {
-			return new ReadableStream<Uint8Array>({
+			return new ReadableStream<Uint8Array<ArrayBuffer>>({
 				start(controller) {
 					controller.close();
 				},

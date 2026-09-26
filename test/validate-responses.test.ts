@@ -105,7 +105,7 @@ describe("response validation (schema presence drives it)", () => {
 
 		assert(rejection instanceof ResponseValidationError);
 		expect(rejection.command).toBe(command);
-		expect(rejection.url.toString()).toContain("/account");
+		expect(rejection.url?.toString()).toContain("/account");
 		expect(rejection.message).toContain("GET");
 		expect(rejection.cause).toBeDefined();
 	});

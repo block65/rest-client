@@ -58,11 +58,12 @@ export class ResponseValidationError extends CustomError {
 
 	public command: Command;
 
-	public url: URL;
+	// events() validates items after stream() has resolved, where the URL is gone
+	public url: URL | undefined;
 
-	constructor(command: Command, url: URL, cause: unknown) {
+	constructor(command: Command, url: URL | undefined, cause: unknown) {
 		super(
-			`Response validation failed: ${command.method.toUpperCase()} ${url.toString()}`,
+			`Response validation failed: ${command.method.toUpperCase()} ${url?.toString() ?? command.pathname}`,
 			cause,
 		);
 		this.command = command;

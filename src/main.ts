@@ -48,3 +48,10 @@ export {
 	type RestServiceClientConfig,
 	responseSchemaOf,
 } from "../lib/client.ts";
+
+// parse-sse reaches a bundle only through events()
+export {
+	type EventData,
+	type StreamEvent,
+	events,
+} from "../lib/event-stream.ts";

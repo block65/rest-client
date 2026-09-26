@@ -42,7 +42,7 @@ function multiSignal(...signals: (AbortSignal | undefined)[]) {
 
 type IsomorphicFetcherResponse =
 	| FetcherResponse<Jsonifiable>
-	| FetcherResponse<ReadableStream<Uint8Array> | null>;
+	| FetcherResponse<ReadableStream<Uint8Array<ArrayBuffer>> | null>;
 
 // transient statuses worth another attempt, below the 5xx range
 const retryableStatuses = new Set([408, 425, 429]);
@@ -85,7 +85,7 @@ async function intoFetcherResponse(res: Response, url: URL, raw: boolean) {
 		body: res.body,
 		url: res.url ? new URL(res.url) : url,
 		res,
-	} satisfies FetcherResponse<ReadableStream<Uint8Array> | null>;
+	} satisfies FetcherResponse<ReadableStream<Uint8Array<ArrayBuffer>> | null>;
 }
 
 function timeoutSignal(timeout: number | undefined) {
