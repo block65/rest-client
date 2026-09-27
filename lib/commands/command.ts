@@ -43,7 +43,7 @@ export abstract class Command<
 		UndefinedOnPartialDeep<NoInfer<CommandOutput>>
 	>;
 
-	// Without these, unused generics make Command<A, X> ≡ Command<B, X>
+	// without these, unused generics make Command<A, X> ≡ Command<B, X>
 	// and the cross-client guard silently disappears
 	declare readonly "~input"?: CommandInput;
 	declare readonly "~output"?: CommandOutput;
@@ -84,7 +84,7 @@ export abstract class Command<
 		return JSON.stringify(this.toJSON());
 	}
 
-	// public API, overriding Object.prototype.toString
+	// commands stringify as their JSON, e.g. in template literals and logs
 	public toString() {
 		return this.serialize();
 	}

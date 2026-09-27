@@ -46,7 +46,7 @@ export abstract class SequentialMediaCommand<
 	// items are checked by their data, through dataSchema
 	declare public readonly responseSchema?: never;
 
-	// a TransformStream pipes once, so parse() creates one per response
+	// a stream pipes once, so parse() creates a transformer per response
 	public abstract readonly createTransformer: () => ReadableWritablePair<
 		SequentialMediaChunk,
 		Uint8Array<ArrayBuffer>

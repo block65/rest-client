@@ -81,9 +81,9 @@ export type RestServiceClientConfig = {
 	responseValidator?: ((response: unknown) => boolean) | undefined;
 	/**
 	 * Orders the query's top-level keys before serialization, so a query gives
-	 * the same URL for any order of its keys. An object
-	 * parameter's members keep their order. `true`
-	 * sorts by UTF-8 byte order, a comparator by its result
+	 * the same URL for any order of its keys. An object parameter's members
+	 * keep their order. `true` sorts by UTF-8 byte order, a comparator by its
+	 * result
 	 */
 	sortQuery?: boolean | ((a: string, b: string) => number) | undefined;
 } & ({ fetcher?: FetcherMethod } | { fetch?: typeof globalThis.fetch });
@@ -279,15 +279,20 @@ export class RestServiceClient<
 	}
 
 	/**
-	 * Resolves with the body's bytes, unparsed, JSON included. A sequential
-	 * media command's bytes are parsed into its items, and a parse failure
-	 * errors the stream. A status of 400 or above rejects with a ServiceError
+	 * Resolves with the items parsed from the body. A decode or validation
+	 * failure errors the stream with a ResponseValidationError. A status of 400
+	 * or above rejects with a ServiceError
 	 */
 	public stream<InputType extends ClientInput, ItemType extends ClientOutput>(
 		command: Command<InputType, ItemType> & { readonly "~sequential": true },
 		runtimeOptions?: RuntimeOptions,
 	): Promise<ReadableStream<ItemType>>;
 
+	/**
+	 * Resolves with the body's bytes, unparsed for any content type, or an empty
+	 * stream for a bodiless response. A status of 400 or above rejects with a
+	 * ServiceError
+	 */
 	public stream<InputType extends ClientInput, OutputType extends ClientOutput>(
 		command: Command<InputType, OutputType>,
 		runtimeOptions?: RuntimeOptions,

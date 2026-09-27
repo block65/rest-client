@@ -50,8 +50,8 @@ export class ServiceError extends CustomError {
 }
 
 /**
- * Wraps a failure to decode or validate a response body with the command and
- * URL behind it, which the cause does not name
+ * Wraps a response body's validation failure, or a sequential item's decode
+ * failure, with the command and URL behind it, which the cause does not name
  */
 export class ResponseValidationError extends CustomError {
 	override code = CustomError.INVALID_ARGUMENT;
