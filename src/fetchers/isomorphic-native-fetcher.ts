@@ -47,7 +47,7 @@ type IsomorphicFetcherResponse =
 // transient statuses worth another attempt, below the 5xx range
 const retryableStatuses = new Set([408, 425, 429]);
 
-// holds the parsed response, so exhausted retries resolve with it
+// holds the fetcher response, so exhausted retries resolve with it
 class RetryableStatusError extends Error {
 	public readonly res: IsomorphicFetcherResponse;
 

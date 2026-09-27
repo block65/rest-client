@@ -38,7 +38,7 @@ const account = await client.json(new GetAccountCommand({ accountId: "1234" }));
 
 - `client.json(command)` — sets `content-type: application/json`, returns the parsed body. Throws `ServiceError` on `>=400`.
 - `client.send(command)` — same as above but inherits the command's content type.
-- `client.stream(command)` — returns the response body as a `ReadableStream<Uint8Array>`, unparsed whatever its content type. Throws `ServiceError` on `>=400`.
+- `client.stream(command)` — returns the response body as a `ReadableStream<Uint8Array>`, unparsed whatever its content type, for a command without a sequential media type (see below). Throws `ServiceError` on `>=400`.
 
 ### Sequential media types
 
@@ -91,7 +91,7 @@ new RestServiceClient(url, {
 
 The default fetcher retries idempotent (`GET`) requests and supports timeouts and merged abort signals.
 
-A replacement fetcher must honour `FetcherParams.raw`, which `stream()` sets: it hands a successful body back as the response's `ReadableStream`, unparsed. A fetcher that parses it anyway makes `stream()` throw a `TypeError`.
+A replacement fetcher must honour `FetcherParams.raw`, which `stream()` sets: it hands a successful body back as the response's `ReadableStream`, unparsed. A fetcher that parses it anyway makes `stream()` reject with a `TypeError`.
 
 ### Query parameter styles
 
@@ -126,7 +126,7 @@ new RestServiceClient(url, { sortQuery: (a, b) => a.localeCompare(b) });
 
 ### Response validation via `responseSchema`
 
-When a command sets a `responseSchema` (any [Standard Schema](https://standardschema.dev) validator, such as [valibot](https://valibot.dev)), the client automatically runs the schema against successful responses — useful for coercing JSON-unsafe types like `int64` strings into `BigInt`.
+When a command sets a `responseSchema` (any [Standard Schema](https://standardschema.dev) validator, such as [valibot](https://valibot.dev)), the client automatically runs the schema against successful `json()` and `send()` responses — useful for coercing JSON-unsafe types like `int64` strings into `BigInt`.
 
 Schema presence on the command is the sole trigger; there is no client-level flag. Consumers opt in by importing from the codegen's validated commands file (lean imports skip schema attachment, so no validator loads and there's no bundle cost).
 
