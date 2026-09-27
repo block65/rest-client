@@ -219,6 +219,21 @@ describe("Client", () => {
 		await expect(nullClient.json(new Fake200Command())).resolves.toBeNull();
 	});
 
+	test("passes the configured credentials to fetch", async () => {
+		const fetch = vi.fn<typeof globalThis.fetch>(async () => Response.json({}));
+		const credentialsClient = new RestServiceClient(
+			new URL("http://127.0.0.1"),
+			{ fetch, credentials: "include" },
+		);
+
+		await credentialsClient.json(new Fake200Command());
+
+		expect(fetch).toHaveBeenCalledWith(
+			expect.any(URL),
+			expect.objectContaining({ credentials: "include" }),
+		);
+	});
+
 	test("404", async () => {
 		await expect(client.json(new Fake404Command())).rejects.toMatchSnapshot();
 	});
