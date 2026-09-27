@@ -59,7 +59,8 @@ function toByteStream(body: unknown) {
 		return body as ReadableStream<Uint8Array<ArrayBuffer>>;
 	}
 
-	if (body === null) {
+	// a fetcher may leave a bodiless response's body unset
+	if (body === null || body === undefined) {
 		return new ReadableStream<Uint8Array<ArrayBuffer>>({
 			start(controller) {
 				controller.close();

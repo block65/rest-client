@@ -1,5 +1,8 @@
 import { ServerSentEventTransformStream } from "parse-sse";
-import { type CommandQueryObject } from "./command.ts";
+import {
+	type CommandHeadersObject,
+	type CommandQueryObject,
+} from "./command.ts";
 import { SequentialMediaCommand } from "./sequential-media.ts";
 
 export type ParsedStreamEvent<TData = string> = {
@@ -13,7 +16,7 @@ export type ParsedStreamEvent<TData = string> = {
 	 */
 	lastEventId: string;
 
-	retry?: number;
+	retry: number | undefined;
 };
 
 /**
@@ -39,7 +42,7 @@ export abstract class EventStreamCommand<
 	TCommandInput = unknown,
 	TCommandOutput = unknown,
 	TCommandQuery extends CommandQueryObject = CommandQueryObject,
-	TCommandHeaders extends Record<string, string> = Record<string, string>,
+	TCommandHeaders extends CommandHeadersObject = CommandHeadersObject,
 > extends SequentialMediaCommand<
 	TCommandInput,
 	TCommandOutput,

@@ -338,6 +338,43 @@ describe("Client", () => {
 			await expect(new Response(stream).text()).resolves.toBe("");
 		});
 
+		test("hands back a body a custom fetcher left unset as an empty stream", async () => {
+			const bodilessClient = new RestServiceClient(
+				new URL("http://127.0.0.1"),
+				{
+					fetcher: vi.fn<FetcherMethod>(async ({ url }) => ({
+						url,
+						res: new Response(null, { status: 204 }),
+					})),
+				},
+			);
+
+			const stream = await bodilessClient.stream(new Fake204Command());
+
+			await expect(new Response(stream).text()).resolves.toBe("");
+		});
+
+		test("hands back a JSON redirect unparsed", async () => {
+			const redirectClient = new RestServiceClient(
+				new URL("http://127.0.0.1"),
+				{
+					fetch: vi.fn<typeof globalThis.fetch>(
+						async () =>
+							new Response('{"location":"/elsewhere"}', {
+								status: 302,
+								headers: { "content-type": "application/json" },
+							}),
+					),
+				},
+			);
+
+			const stream = await redirectClient.stream(new Fake200Command());
+
+			await expect(new Response(stream).text()).resolves.toBe(
+				'{"location":"/elsewhere"}',
+			);
+		});
+
 		test("rejects a body a custom fetcher parsed anyway", async () => {
 			const parsingClient = new RestServiceClient(new URL("http://127.0.0.1"), {
 				fetcher: vi.fn<FetcherMethod>(async ({ url }) => ({

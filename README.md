@@ -42,20 +42,16 @@ const account = await client.json(new GetAccountCommand({ accountId: "1234" }));
 
 ### Sequential media types
 
-A response with an OpenAPI 3.2 sequential media type is a stream of items. Its command extends a `SequentialMediaCommand` subclass for the media type, which sends that type as `accept` and parses the bytes, so `client.stream()` yields items rather than bytes. `json()` and `send()` do not accept such a command.
+A response with an OpenAPI 3.2 sequential media type is a stream of items. Its command extends a `SequentialMediaCommand` subclass for the media type, which names that type and splits the body into items, so `client.stream()` yields items rather than bytes, and sends the media type as `accept` unless the runtime headers set one. `json()` and `send()` do not accept such a command.
 
-`EventStreamCommand` covers `text/event-stream`. Each event arrives as `{ event, data, id?, retry? }`, and `eventData` names the events whose `data` is JSON:
+`EventStreamCommand` covers `text/event-stream`. Its second type parameter is the type of one event's `data`, and each event arrives as `{ type, data, lastEventId, retry }` with `data` decoded as JSON:
 
 ```ts
 import { EventStreamCommand } from "@block65/rest-client";
 
-type ActivityEvent =
-	| { event: "transfer"; data: { id: string; bytes: number } }
-	| { event: "reset"; data: string };
+type Transfer = { id: string; bytes: number };
 
-class StreamActivityCommand extends EventStreamCommand<never, ActivityEvent> {
-	public override readonly eventData = { transfer: "json" } as const;
-
+class StreamActivityCommand extends EventStreamCommand<never, Transfer> {
 	constructor() {
 		super("/activity");
 	}
@@ -63,12 +59,12 @@ class StreamActivityCommand extends EventStreamCommand<never, ActivityEvent> {
 
 const events = await client.stream(new StreamActivityCommand(), { signal });
 
-for await (const { event, data } of events) {
+for await (const { type, data } of events) {
 	// ...
 }
 ```
 
-A static `itemSchema` on the command class, OpenAPI's name for the schema of one item, checks each item as it arrives. A mismatch errors the stream with `ResponseValidationError`.
+A command sets `dataTransformer` to `textDataTransformer` when its data is not JSON. A `dataSchema` on the command, any Standard Schema, checks each event's decoded data as it arrives, and a mismatch errors the stream with `ResponseValidationError`.
 
 ### Resolvable headers
 
@@ -130,7 +126,7 @@ new RestServiceClient(url, { sortQuery: (a, b) => a.localeCompare(b) });
 
 ### Response validation via `responseSchema`
 
-When a generated command class exposes a static `responseSchema` (any [Standard Schema](https://standardschema.dev) validator, such as [valibot](https://valibot.dev)), the client automatically runs the schema against successful responses — useful for coercing JSON-unsafe types like `int64` strings into `BigInt`.
+When a command sets a `responseSchema` (any [Standard Schema](https://standardschema.dev) validator, such as [valibot](https://valibot.dev)), the client automatically runs the schema against successful responses — useful for coercing JSON-unsafe types like `int64` strings into `BigInt`.
 
 Schema presence on the command is the sole trigger; there is no client-level flag. Consumers opt in by importing from the codegen's validated commands file (lean imports skip schema attachment, so no validator loads and there's no bundle cost).
 

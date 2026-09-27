@@ -70,8 +70,11 @@ function isJsonMediaType(contentType: string | null) {
 
 async function intoFetcherResponse(res: Response, url: URL, raw: boolean) {
 	// an error status's JSON is parsed even when raw, so ServiceError reads
-	// its message
-	if (isJsonMediaType(res.headers.get("content-type")) && !(raw && res.ok)) {
+	// its message. The client treats a status below 400 as success
+	if (
+		isJsonMediaType(res.headers.get("content-type")) &&
+		!(raw && res.status < 400)
+	) {
 		// res.json() resolves to unknown, and a parsed JSON body is Jsonifiable
 		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- JSON body
 		const responseJson = (await res.json()) as Jsonifiable;
