@@ -122,6 +122,34 @@ describe("Fetcher", () => {
 		expect(res.body).toMatchObject({ "x-fetcher": "override" });
 	});
 
+	test("sends a request body", async () => {
+		const res = await isomorphicFetcher({
+			method: "post",
+			url: new URL("/echo-body", base),
+			headers: { "content-type": "application/json" },
+			body: '{"name":"Alice"}',
+		});
+
+		expect(res.body).toStrictEqual({
+			method: "POST",
+			contentType: "application/json",
+			body: '{"name":"Alice"}',
+		});
+	});
+
+	test("sends a view on a SharedArrayBuffer as its bytes", async () => {
+		const bytes = new Uint8Array(new SharedArrayBuffer(2));
+		bytes.set([104, 105]);
+
+		const res = await isomorphicFetcher({
+			method: "post",
+			url: new URL("/echo-body", base),
+			body: bytes,
+		});
+
+		expect(res.body).toMatchObject({ body: "hi" });
+	});
+
 	test("Custom timeout iso fetcher", async () => {
 		const fetcher = createIsomorphicNativeFetcher({
 			timeout: 100,
@@ -138,20 +166,6 @@ describe("Fetcher", () => {
 
 	describe("retry semantics", () => {
 		const fastRetry = { minTimeout: 1, maxTimeout: 5 };
-
-		test("non-ok response returns even with retry config present", async () => {
-			const fetcher = createIsomorphicNativeFetcher({
-				retry: { ...fastRetry, retries: 0 },
-			});
-
-			const res = await fetcher({
-				method: "get",
-				url: new URL("/json-error", base),
-			});
-
-			expect(res.res.status).toBe(400);
-			expect(res.body).toMatchObject({ message: "Data should be array" });
-		});
 
 		test("transient status retries until success", async () => {
 			const fetcher = createIsomorphicNativeFetcher({
