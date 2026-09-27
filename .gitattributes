@@ -1,0 +1,3 @@
+# openapi-codegen output. A conflict keeps this branch's copy and stops the
+# merge for it to be regenerated. GitHub collapses it in diffs
+test/fixtures/test1/** -merge linguist-generated

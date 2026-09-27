@@ -27,11 +27,13 @@
 		"query-string": "^9.5.1"
 	},
 	"devDependencies": {
-		"@block65/shared-config": "^0.5.0",
+		"@block65/shared-config": "^0.6.0",
 		"@block65/tsconfig": "^0.3.1",
+		"@hono/standard-validator": "^0.4.0",
 		"@types/node": "^26.6.2",
 		"fallow": "^3.27.0",
 		"get-port": "^7.2.0",
+		"hono": "^4.13.9",
 		"oxfmt": "^0.68.0",
 		"oxlint": "^1.83.0",
 		"oxlint-tsgolint": "^7.0.2002",
