@@ -34,8 +34,7 @@ export type FetcherMethod = (
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete" | "head";
 
 /**
- * Turns a command's query object into the search string after the `?`.
- * The exported serializers write one OpenAPI style each
+ * Turns a command's query object into the search string after the `?`
  */
 export type QuerySerializer = (query: UnknownRecord) => string;
 

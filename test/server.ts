@@ -47,8 +47,8 @@ export function requestListener(req: IncomingMessage, res: ServerResponse) {
 		case "/my-headers":
 			res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
 
-			// which sec-fetch headers undici sends moves with the node version,
-			// so the snapshots leave this one out
+			// undici sends this header on some Node versions only, so the
+			// snapshots omit it
 			{
 				const { ["sec-fetch-mode"]: fetchMode, ...headers } = req.headers;
 				void fetchMode;
@@ -81,7 +81,7 @@ export function requestListener(req: IncomingMessage, res: ServerResponse) {
 			res.end("event: ping\ndata: {}\n\n");
 			break;
 		case "/unresponsive":
-			// do nothing
+			// never responds, so a request waits until its signal aborts
 			break;
 		default:
 			if (req.url?.startsWith("/echo")) {

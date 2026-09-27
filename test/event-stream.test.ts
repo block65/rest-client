@@ -1,7 +1,9 @@
 import {
 	type Command,
 	EventStreamCommand,
+	type ParsedStreamEvent,
 	ResponseValidationError,
+	createEventStreamTransformer,
 	RestServiceClient,
 	createIsomorphicNativeFetcher,
 } from "@block65/rest-client";
@@ -10,25 +12,13 @@ import { assert, expect, expectTypeOf, test, vi } from "vitest";
 
 const transferSchema = v.strictObject({ id: v.string(), bytes: v.number() });
 
-const activityMessageSchema = v.variant("event", [
-	v.strictObject({
-		event: v.literal("transfer"),
-		id: v.string(),
-		data: transferSchema,
-	}),
-	v.strictObject({
-		event: v.literal("reset"),
-		id: v.string(),
-		data: v.string(),
-	}),
-]);
+// a transfer event's data is the transfer, a reset event's its sequence number
+const activityDataSchema = v.union([transferSchema, v.number()]);
 
-type ActivityMessage = v.InferOutput<typeof activityMessageSchema>;
+type ActivityData = v.InferOutput<typeof activityDataSchema>;
 
-class StreamActivityCommand extends EventStreamCommand<never, ActivityMessage> {
+class StreamActivityCommand extends EventStreamCommand<never, ActivityData> {
 	public override method = "get" as const;
-
-	public override readonly eventData = { transfer: "json" } as const;
 
 	constructor() {
 		super("/activity");
@@ -36,7 +26,7 @@ class StreamActivityCommand extends EventStreamCommand<never, ActivityMessage> {
 }
 
 class ValidatedStreamActivityCommand extends StreamActivityCommand {
-	static itemSchema = activityMessageSchema;
+	public override readonly dataSchema = activityDataSchema;
 }
 
 function clientFor(body: string) {
@@ -81,16 +71,41 @@ test("yields events with JSON data decoded, comments dropped", async () => {
 
 	const stream = await client.stream(new StreamActivityCommand());
 
-	expectTypeOf(stream).toEqualTypeOf<ReadableStream<ActivityMessage>>();
+	expectTypeOf(stream).toEqualTypeOf<
+		ReadableStream<ParsedStreamEvent<ActivityData>>
+	>();
 
 	await expect(collect(stream)).resolves.toStrictEqual([
-		{ event: "reset", id: "7", data: "7" },
-		{ event: "transfer", id: "8", data: { id: "t1", bytes: 3 } },
+		{ type: "reset", lastEventId: "7", data: 7, retry: undefined },
+		{
+			type: "transfer",
+			lastEventId: "8",
+			data: { id: "t1", bytes: 3 },
+			retry: undefined,
+		},
 	]);
 
 	const [, init] = fetch.mock.calls[0] ?? [];
 
 	expect(new Headers(init?.headers).get("accept")).toBe("text/event-stream");
+});
+
+test("splits an event-stream body into events with their data as text", async () => {
+	const events = new Response(feed).body?.pipeThrough(
+		createEventStreamTransformer(),
+	);
+
+	assert(events);
+
+	await expect(collect(events)).resolves.toStrictEqual([
+		{ type: "reset", lastEventId: "7", data: "7", retry: undefined },
+		{
+			type: "transfer",
+			lastEventId: "8",
+			data: '{"id":"t1","bytes":3}',
+			retry: undefined,
+		},
+	]);
 });
 
 test("validates each event when the command declares a schema", async () => {

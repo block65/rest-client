@@ -6,6 +6,7 @@ import {
 	RestServiceClient,
 	type RestServiceClientConfig,
 	SequentialMediaCommand,
+	type SequentialMediaChunk,
 	ServiceError,
 	createIsomorphicNativeFetcher,
 	deepObjectSerializer,
@@ -13,6 +14,7 @@ import {
 	formJoinSerializer,
 	pipeDelimitedSerializer,
 	spaceDelimitedSerializer,
+	textDataTransformer,
 } from "@block65/rest-client";
 import getPort from "get-port";
 import type { JsonObject, UnknownRecord } from "type-fest";
@@ -133,14 +135,13 @@ class FakeOverrideCommand extends Command<never, FakeMyHeadersOutput> {
 	}
 }
 
-// a command names its serializer, this one takes it so a test can pick
 class QueryCommand extends Command {
 	public override method = "get" as const;
 
 	public override readonly querySerializer: QuerySerializer;
 
 	constructor(query: UnknownRecord, serializer = formExplodeSerializer) {
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test data
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a test query may hold values outside JsonObject
 		super("/query", null, query as JsonObject);
 		this.querySerializer = serializer;
 	}
@@ -198,6 +199,24 @@ describe("Client", () => {
 		await expect(client.send(new FakeJsonSeqCommand())).resolves.toBeInstanceOf(
 			ReadableStream,
 		);
+	});
+
+	test("a success without a body resolves undefined", async () => {
+		await expect(client.send(new Fake204Command())).resolves.toBeUndefined();
+		await expect(client.json(new Fake204Command())).resolves.toBeUndefined();
+	});
+
+	test("a JSON null body resolves null", async () => {
+		const nullClient = new RestServiceClient(new URL("http://127.0.0.1"), {
+			fetch: vi.fn<typeof globalThis.fetch>(
+				async () =>
+					new Response("null", {
+						headers: { "content-type": "application/json" },
+					}),
+			),
+		});
+
+		await expect(nullClient.json(new Fake200Command())).resolves.toBeNull();
 	});
 
 	test("404", async () => {
@@ -278,20 +297,38 @@ describe("Client", () => {
 
 				public readonly mediaType = "text/event-stream";
 
+				public override readonly dataTransformer = textDataTransformer;
+
 				constructor() {
 					super("/event-stream");
 				}
 
-				public parse(body: ReadableStream<Uint8Array<ArrayBuffer>>) {
-					return body.pipeThrough(new TextDecoderStream());
-				}
+				// each decoded text chunk is one item
+				public readonly createTransformer = () => {
+					const decoder = new TextDecoderStream();
+
+					return {
+						writable: decoder.writable,
+						readable: decoder.readable.pipeThrough(
+							new TransformStream<string, SequentialMediaChunk>({
+								transform: (data, controller) => {
+									controller.enqueue({ data });
+								},
+							}),
+						),
+					};
+				};
 			}
 
 			const stream = await client.stream(new FakeTextCommand());
 
-			expectTypeOf(stream).toEqualTypeOf<ReadableStream<string>>();
+			expectTypeOf(stream).toEqualTypeOf<
+				ReadableStream<SequentialMediaChunk>
+			>();
 			await expect(
-				Array.fromAsync(stream).then((texts) => texts.join("")),
+				Array.fromAsync(stream).then((items) =>
+					items.map((item) => item.data).join(""),
+				),
 			).resolves.toBe("event: ping\ndata: {}\n\n");
 		});
 
@@ -429,7 +466,7 @@ describe("Client", () => {
 		expect(url.search).toBe("?fixed=1");
 	});
 
-	// each serializer a command can name, reaching the URL through the client
+	// each exported serializer, end to end through the client
 	describe.each([
 		["formExplodeSerializer", formExplodeSerializer],
 		["formJoinSerializer", formJoinSerializer],

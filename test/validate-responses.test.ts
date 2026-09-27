@@ -20,7 +20,7 @@ type BillingAccount = v.InferOutput<typeof billingAccountSchema>;
 class GetAccountCommand extends Command<unknown, BillingAccount> {
 	public override method = "get" as const;
 
-	static responseSchema = billingAccountSchema;
+	public override readonly responseSchema = billingAccountSchema;
 
 	constructor() {
 		super("/account");
@@ -73,7 +73,7 @@ describe("jsonStringify", () => {
 });
 
 describe("response validation (schema presence drives it)", () => {
-	test("parses response through static responseSchema when present", async () => {
+	test("parses the response through responseSchema when present", async () => {
 		const client = new RestServiceClient(fakeUrl, {
 			fetcher: makeFetcher({ id: "123", name: "Alice" }),
 		});

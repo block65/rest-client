@@ -1,23 +1,18 @@
-import type * as s from "@standard-schema/spec";
 import type { UnknownRecord } from "type-fest";
 import { createIsomorphicNativeFetcher } from "../src/fetchers/isomorphic-native-fetcher.ts";
-import { type Command, SequentialMediaCommand } from "./command.ts";
-import {
-	PublicValidationError,
-	ResponseValidationError,
-	ServiceError,
-} from "./errors.ts";
+import { type Command } from "./commands/command.ts";
+import { SequentialMediaCommand } from "./commands/sequential-media.ts";
+import { ResponseValidationError, ServiceError } from "./errors.ts";
 import type {
 	FetcherMethod,
 	ResolvableHeaders,
 	RuntimeOptions,
 } from "./types.ts";
-import { isPlainObject } from "./utils.ts";
 
 const utf8 = new TextEncoder();
 
-// `<` on strings misorders astral characters, and a signing scheme uses bytes
-function compareUtf8Bytes(a: string, b: string) {
+// code point order, where `<` misorders astral characters as UTF-16 units
+function utf8Compare(a: string, b: string) {
 	const bytesA = utf8.encode(a);
 	const bytesB = utf8.encode(b);
 
@@ -42,7 +37,7 @@ function sortQueryKeys<T extends UnknownRecord>(
 	query: T,
 	compareFnOrBool: true | ((a: string, b: string) => number),
 ) {
-	const compare = compareFnOrBool === true ? compareUtf8Bytes : compareFnOrBool;
+	const compare = compareFnOrBool === true ? utf8Compare : compareFnOrBool;
 
 	const sorted = Object.entries(query).toSorted(([a], [b]) => compare(a, b));
 
@@ -50,41 +45,8 @@ function sortQueryKeys<T extends UnknownRecord>(
 	return Object.fromEntries(sorted) as T;
 }
 
-function headersFrom(headers: Record<string, string> | Headers | undefined) {
+function toHeaders(headers: Record<string, string> | Headers | undefined) {
 	return headers instanceof Headers ? Object.fromEntries(headers) : headers;
-}
-
-function isStandardSchema<TInput, TOutput>(
-	schema: unknown,
-): schema is s.StandardSchemaV1<TInput, TOutput> {
-	return isPlainObject(schema) && "~standard" in schema;
-}
-
-// a static on the command's class, inherited statics included
-function maybeStaticSchema<TInput, TOutput>(
-	command: Command,
-	name: "responseSchema" | "itemSchema",
-) {
-	const schema: unknown = Reflect.get(command.constructor, name);
-
-	return isStandardSchema<TInput, TOutput>(schema) ? schema : undefined;
-}
-
-/**
- * Finds a `responseSchema` on the command's class. json() and send()
- * validate a whole body with it
- */
-export function maybeResponseSchema<TInput, TOutput>(
-	command: Command<TInput, TOutput>,
-) {
-	return maybeStaticSchema<TInput, TOutput>(command, "responseSchema");
-}
-
-// a sequential media type's item schema, per OpenAPI 3.2's itemSchema
-function maybeItemSchema<TInput, TItem>(
-	command: SequentialMediaCommand<TInput, TItem>,
-) {
-	return maybeStaticSchema<TItem, TItem>(command, "itemSchema");
 }
 
 // stream() yields items, so json() and send() refuse a sequential command
@@ -92,6 +54,8 @@ type NotSequential = { readonly "~sequential"?: never };
 
 function toByteStream(body: unknown) {
 	if (body instanceof ReadableStream) {
+		// instanceof gives ReadableStream<any>, and FetcherMethod types a raw body
+		// as bytes
 		return body as ReadableStream<Uint8Array<ArrayBuffer>>;
 	}
 
@@ -103,7 +67,7 @@ function toByteStream(body: unknown) {
 		});
 	}
 
-	// a fetcher that ignores `raw` hands over a parsed body, its bytes spent
+	// a parsed body means the fetcher ignored `raw`, and its bytes are consumed
 	throw new TypeError(
 		"stream() received a parsed body; the fetcher must honour `raw`",
 	);
@@ -115,9 +79,9 @@ export type RestServiceClientConfig = {
 	credentials?: "include" | "omit" | "same-origin" | undefined;
 	responseValidator?: ((response: unknown) => boolean) | undefined;
 	/**
-	 * Orders the query's top-level keys before serialization, so a cache or a
-	 * signature keyed on the URL sees the same URL for any order the caller
-	 * wrote them in. An object parameter's members keep their order. `true`
+	 * Orders the query's top-level keys before serialization, so a query gives
+	 * the same URL for any order of its keys. An object
+	 * parameter's members keep their order. `true`
 	 * sorts by UTF-8 byte order, a comparator by its result
 	 */
 	sortQuery?: boolean | ((a: string, b: string) => number) | undefined;
@@ -164,20 +128,16 @@ export class RestServiceClient<
 		this.#logger?.(`[rest-client] ${msg}`, ...args);
 	}
 
-	// a schema on the Command is what triggers validation
-	async #maybeValidate<
-		TInput extends ClientInput,
-		TOutput extends ClientOutput,
-	>(command: Command<TInput, TOutput>, body: unknown, url: URL) {
-		const schema = maybeResponseSchema<TInput, TOutput>(command);
-
-		if (!schema) {
-			// no schema, so the body is returned as the command declares it
-			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- by design
-			return body as TOutput;
-		}
-
-		this.#log("validating response with schema");
+	async #parseBody<TInput extends ClientInput, TOutput extends ClientOutput>(
+		command: Command<TInput, TOutput>,
+		res: Response,
+		fetchedBody: unknown,
+		url: URL,
+	) {
+		// a bodiless response, a 204 say, resolves undefined. A JSON null was
+		// read from a body, so its res.body is still set and it stays null
+		const body =
+			fetchedBody === null && res.body === null ? undefined : fetchedBody;
 
 		if (this.#responseValidator && !this.#responseValidator(body)) {
 			throw new ResponseValidationError(
@@ -187,18 +147,11 @@ export class RestServiceClient<
 			);
 		}
 
-		const result = await schema["~standard"].validate(body);
-
-		if (result.issues) {
-			throw new ResponseValidationError(
-				command,
-				url,
-				PublicValidationError.fromIssues(result.issues),
-			);
+		try {
+			return await command.parseBody(body);
+		} catch (err) {
+			throw new ResponseValidationError(command, url, err);
 		}
-
-		// the schema may transform, so its output replaces the body
-		return result.value;
 	}
 
 	public async response<
@@ -263,8 +216,9 @@ export class RestServiceClient<
 	}
 
 	async #resolveHeaders(command: Command, runtimeOptions?: RuntimeOptions) {
+		// command headers override client headers, and either may be a resolver
 		const resolved = await Promise.all(
-			Object.entries(this.#headers ?? {}).map(
+			Object.entries({ ...this.#headers, ...command.headers }).map(
 				async ([key, valueOrResolver]) => {
 					if (typeof valueOrResolver === "function") {
 						// binding allows the resolver to access its client via `this`
@@ -278,12 +232,9 @@ export class RestServiceClient<
 			),
 		);
 
-		const clientHeaders = Object.fromEntries(resolved);
-
 		return {
-			...clientHeaders,
-			...command.headers,
-			...headersFrom(runtimeOptions?.headers),
+			...Object.fromEntries(resolved),
+			...toHeaders(runtimeOptions?.headers),
 		};
 	}
 
@@ -298,13 +249,13 @@ export class RestServiceClient<
 			...runtimeOptions,
 			headers: {
 				accept: "application/json",
-				...headersFrom(runtimeOptions?.headers),
+				...toHeaders(runtimeOptions?.headers),
 				"content-type": "application/json;charset=utf-8",
 			},
 		});
 
 		if (res.status < 400) {
-			return this.#maybeValidate(command, body, url);
+			return this.#parseBody(command, res, body, url);
 		}
 
 		throw ServiceError.fromResponse(res, body);
@@ -320,7 +271,7 @@ export class RestServiceClient<
 		const { res, body, url } = await this.response(command, runtimeOptions);
 
 		if (res.status < 400) {
-			return this.#maybeValidate(command, body, url);
+			return this.#parseBody(command, res, body, url);
 		}
 
 		throw ServiceError.fromResponse(res, body);
@@ -328,12 +279,11 @@ export class RestServiceClient<
 
 	/**
 	 * Resolves with the body's bytes, unparsed, JSON included. A sequential
-	 * media command's bytes are parsed into its items, each checked against
-	 * the class's `itemSchema` where it declares one. A status of 400 or above
-	 * rejects with a ServiceError
+	 * media command's bytes are parsed into its items, and a parse failure
+	 * errors the stream. A status of 400 or above rejects with a ServiceError
 	 */
 	public stream<InputType extends ClientInput, ItemType extends ClientOutput>(
-		command: SequentialMediaCommand<InputType, ItemType>,
+		command: Command<InputType, ItemType> & { readonly "~sequential": true },
 		runtimeOptions?: RuntimeOptions,
 	): Promise<ReadableStream<ItemType>>;
 
@@ -353,7 +303,7 @@ export class RestServiceClient<
 						...runtimeOptions,
 						headers: {
 							accept: sequential.mediaType,
-							...headersFrom(runtimeOptions?.headers),
+							...toHeaders(runtimeOptions?.headers),
 						},
 					}
 				: runtimeOptions,
@@ -379,30 +329,6 @@ export class RestServiceClient<
 			return bytes;
 		}
 
-		const items = sequential.parse(bytes);
-		const schema = maybeItemSchema(sequential);
-
-		if (!schema) {
-			return items;
-		}
-
-		return items.pipeThrough(
-			new TransformStream({
-				async transform(item, controller) {
-					const result = await schema["~standard"].validate(item);
-
-					// a rejected transform errors the stream with its reason
-					if (result.issues) {
-						throw new ResponseValidationError(
-							command,
-							url,
-							PublicValidationError.fromIssues(result.issues),
-						);
-					}
-
-					controller.enqueue(result.value);
-				},
-			}),
-		);
+		return sequential.parse(bytes, url);
 	}
 }
