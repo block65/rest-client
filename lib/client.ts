@@ -99,6 +99,8 @@ export class RestServiceClient<
 
 	readonly #headers: ResolvableHeaders | undefined;
 
+	readonly #credentials: RestServiceClientConfig["credentials"];
+
 	readonly #responseValidator: RestServiceClientConfig["responseValidator"];
 
 	readonly #logger: RestServiceClientConfig["logger"];
@@ -108,6 +110,7 @@ export class RestServiceClient<
 	constructor(base: URL | string, config: RestServiceClientConfig = {}) {
 		this.#base = new URL(base);
 		this.#headers = Object.freeze(config.headers);
+		this.#credentials = config.credentials;
 
 		this.#logger = config.logger;
 		this.#responseValidator = config.responseValidator;
@@ -184,6 +187,8 @@ export class RestServiceClient<
 			}),
 
 			headers,
+
+			...(this.#credentials && { credentials: this.#credentials }),
 
 			...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),
 
