@@ -1,8 +1,10 @@
 import {
 	Command,
+	PublicValidationError,
 	ResponseValidationError,
 	RestServiceClient,
 	jsonStringify,
+	validate,
 } from "@block65/rest-client";
 import type { Jsonifiable } from "type-fest";
 import * as v from "valibot";
@@ -51,10 +53,6 @@ function makeFetcher(body: Jsonifiable) {
 }
 
 describe("jsonStringify", () => {
-	test("serializes BigInt values to strings", () => {
-		expect(jsonStringify({ amount: BigInt(123) })).toBe('{"amount":"123"}');
-	});
-
 	test("serializes nested BigInt values", () => {
 		expect(
 			jsonStringify({ a: [BigInt(1), BigInt(2)], b: { c: BigInt(3) } }),
@@ -118,5 +116,48 @@ describe("response validation (schema presence drives it)", () => {
 		const result = await client.send(new GetAccountCommand());
 
 		expect(result.id).toBe(BigInt(123));
+	});
+});
+
+describe("validate", () => {
+	const nameSchema = v.string();
+
+	const asyncNameSchema = v.pipeAsync(
+		v.string(),
+		v.checkAsync(async (name) => name.length > 0, "Name is empty"),
+	);
+
+	test("a Promise value is validated once it settles", async () => {
+		await expect(validate(nameSchema, Promise.resolve("Alice"))).resolves.toBe(
+			"Alice",
+		);
+	});
+
+	test("an async schema resolves its output", async () => {
+		await expect(validate(asyncNameSchema, "Alice")).resolves.toBe("Alice");
+	});
+
+	test("an async schema rejects its issues as a PublicValidationError", async () => {
+		const rejection = await Promise.resolve(
+			validate(asyncNameSchema, ""),
+		).catch((err: unknown) => err);
+
+		assert(rejection instanceof PublicValidationError);
+		expect(rejection.message).toBe("Name is empty");
+	});
+});
+
+describe("responseValidator", () => {
+	test("a body it refuses rejects as a ResponseValidationError", async () => {
+		const client = new RestServiceClient(fakeUrl, {
+			fetcher: makeFetcher({ id: "123", name: "Alice" }),
+			responseValidator: () => false,
+		});
+
+		const command = new GetAccountUnvalidatedCommand();
+		const rejection = await client.json(command).catch((err: unknown) => err);
+
+		assert(rejection instanceof ResponseValidationError);
+		expect(rejection.command).toBe(command);
 	});
 });

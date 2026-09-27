@@ -20,6 +20,25 @@ export function requestListener(req: IncomingMessage, res: ServerResponse) {
 		return;
 	}
 
+	// returns the method, content type and body it received
+	if (req.url === "/echo-body") {
+		const chunks: Buffer[] = [];
+		req.on("data", (chunk: Buffer) => chunks.push(chunk));
+		req.on("end", () => {
+			res.writeHead(200, {
+				"content-type": "application/json; charset=utf-8",
+			});
+			res.end(
+				JSON.stringify({
+					method: req.method,
+					contentType: req.headers["content-type"],
+					body: Buffer.concat(chunks).toString(),
+				}),
+			);
+		});
+		return;
+	}
+
 	switch (req.url) {
 		case "/200":
 			res.writeHead(200, { "content-type": "application/json; charset=utf-8" });

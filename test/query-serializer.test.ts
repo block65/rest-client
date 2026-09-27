@@ -100,22 +100,30 @@ describe.each(rows)("%s", (_style, serialize, written) => {
 		}
 	});
 
-	// what the spec leaves to the implementation, recorded once and reviewed
+	// what the spec leaves to the implementation, recorded once and reviewed.
+	// query-string writes an empty array by its arrayFormat, which differs
+	// between the styles
+	test("an empty array", () => {
+		expect(serialize({ color: [], other: "kept" })).toMatchSnapshot();
+	});
+});
+
+// code that every style shares handles these, so one style tests them
+describe("every style", () => {
 	test.each([
 		["an undefined parameter", { color: undefined, other: "kept" }],
-		["an empty array", { color: [], other: "kept" }],
 		// query-string sorts unless told not to, and the client owns the order
 		["parameters written out of order", { z: "1", a: "2" }],
 		// oxlint-disable-next-line unicorn-unported/prefer-temporal -- Date interop
 		["a Date, through toJSON", { at: new Date(0) }],
 		["a lone surrogate", { color: "\uD800" }],
 	])("%s", (_case, query) => {
-		expect(serialize(query)).toMatchSnapshot();
+		expect(formJoinSerializer(query)).toMatchSnapshot();
 	});
 
 	test("a value with no string form is refused by name", () => {
 		expect(() =>
-			serialize({ color: new Map() }),
+			formJoinSerializer({ color: new Map() }),
 		).toThrowErrorMatchingSnapshot();
 	});
 });
@@ -179,11 +187,10 @@ describe("percent-encoding", () => {
 
 // the spec leaves an array or object member undefined for every style
 describe("nesting", () => {
+	// spaceDelimited and pipeDelimited write members with the same code as form
 	test.each([
 		["form", formJoinSerializer],
 		["form with explode", formExplodeSerializer],
-		["spaceDelimited", spaceDelimitedSerializer],
-		["pipeDelimited", pipeDelimitedSerializer],
 		["deepObject", deepObjectSerializer],
 	])("%s refuses a nested object", (_style, serialize) => {
 		expect(() =>

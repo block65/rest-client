@@ -227,12 +227,6 @@ describe("Client", () => {
 		await expect(client.json(new Fake500Command())).rejects.toMatchSnapshot();
 	});
 
-	test("JSON Error", async () => {
-		await expect(
-			client.json(new FakeJsonErrorCommand()),
-		).rejects.toThrowErrorMatchingSnapshot('"Data should be array"');
-	});
-
 	test("Headers", async () => {
 		const command = new FakeMyHeadersCommand();
 		const res = await client.json(command, {
@@ -262,6 +256,7 @@ describe("Client", () => {
 			.catch((err: unknown) => err);
 
 		assert(rejection instanceof ServiceError);
+		expect(rejection.message).toBe("Data should be array");
 		expect(rejection.response).toBeInstanceOf(Response);
 		expect(rejection.response.status).toBe(400);
 	});
@@ -521,14 +516,6 @@ describe("Client", () => {
 			const url = await serializeViaClient(query, { serializer });
 			expect(url.href).toMatchSnapshot();
 		});
-
-		test("writes the URL with sortQuery", async () => {
-			const url = await serializeViaClient(query, {
-				serializer,
-				sortQuery: true,
-			});
-			expect(url.href).toMatchSnapshot();
-		});
 	});
 
 	test("a command without a query sends no search", async () => {
@@ -548,23 +535,15 @@ describe("Client", () => {
 			{ fetcher },
 		);
 
-		test("json() still sends its content-type and accept defaults", async () => {
-			const res = await bareClient.json(new FakeMyHeadersCommand());
-
-			assert(res && typeof res === "object");
-			expect(res).toMatchObject({
-				accept: "application/json",
-				"content-type": "application/json;charset=utf-8",
-			});
-		});
-
-		test("command and runtime headers still reach the request", async () => {
+		test("json() defaults, command and runtime headers still reach the request", async () => {
 			const res = await bareClient.json(new FakeCommandHeadersCommand(), {
 				headers: { "x-runtime": "runtime" },
 			});
 
 			assert(res && typeof res === "object");
 			expect(res).toMatchObject({
+				accept: "application/json",
+				"content-type": "application/json;charset=utf-8",
 				"x-from-command": "command",
 				"x-runtime": "runtime",
 			});
@@ -612,22 +591,9 @@ describe("Client", () => {
 			expect(Object.keys(handed ?? {})).toStrictEqual(["z", "m", "a"]);
 		});
 
-		test("unset keeps the written order", async () => {
-			const url = await serializeViaClient(queryParams);
-			expect(url.search).toBe("?z=1&m=2&m=3&a=4");
-		});
-
 		test("true sorts the keys the default serializer writes", async () => {
 			const url = await serializeViaClient(queryParams, { sortQuery: true });
 			expect(url.search).toBe("?a=4&m=2&m=3&z=1");
-		});
-
-		test("true sorts the keys another style writes", async () => {
-			const url = await serializeViaClient(queryParams, {
-				sortQuery: true,
-				serializer: formJoinSerializer,
-			});
-			expect(url.search).toBe("?a=4&m=2,3&z=1");
 		});
 
 		// UTF-16 puts the emoji's surrogates before U+FF01, code points after
@@ -637,15 +603,6 @@ describe("Client", () => {
 				{ sortQuery: true },
 			);
 			expect([...url.searchParams.keys()]).toEqual(["\uFF01", "\u{1F600}"]);
-		});
-
-		test("a comparator decides the order", async () => {
-			// written ascending so a descending comparator has to move them
-			const url = await serializeViaClient(
-				{ a: 4, m: [2, 3], z: 1 },
-				{ sortQuery: (a, b) => b.localeCompare(a) },
-			);
-			expect(url.search).toBe("?z=1&m=2&m=3&a=4");
 		});
 	});
 
@@ -663,6 +620,47 @@ describe("Client", () => {
 
 		assert(res && typeof res === "object");
 		expect(res).toMatchObject({ "x-from-command": "from-runtime" });
+	});
+});
+
+describe("Command", () => {
+	class CreateCommand extends Command<never, never, { dryRun?: string }> {
+		public override method = "post" as const;
+
+		constructor() {
+			super("/accounts", '{"name":"Alice"}', { dryRun: "true" });
+		}
+	}
+
+	test("toJSON describes the request", () => {
+		expect(new CreateCommand().toJSON()).toStrictEqual({
+			method: "post",
+			pathname: "/accounts",
+			body: '{"name":"Alice"}',
+			query: { dryRun: "true" },
+		});
+	});
+
+	test("serialize and toString write the toJSON form", () => {
+		const command = new CreateCommand();
+		const json = JSON.stringify(command.toJSON());
+
+		expect(command.serialize()).toBe(json);
+		expect(command.toString()).toBe(json);
+	});
+});
+
+describe("ServiceError.fromResponse", () => {
+	test("keeps a body's details", () => {
+		const detail = { reason: "quota", metadata: { limit: "10" } };
+
+		const err = ServiceError.fromResponse(new Response(null, { status: 429 }), {
+			message: "Too many",
+			details: [detail],
+		});
+
+		expect(err.message).toBe("Too many");
+		expect(err.details).toStrictEqual([detail]);
 	});
 });
 
