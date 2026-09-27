@@ -100,15 +100,15 @@ describe.each(rows)("%s", (_style, serialize, written) => {
 		}
 	});
 
-	// what the spec leaves to the implementation, recorded once and reviewed.
-	// query-string writes an empty array by its arrayFormat, which differs
-	// between the styles
+	// query-string writes an empty array by each style's arrayFormat, so every
+	// style records one
 	test("an empty array", () => {
 		expect(serialize({ color: [], other: "kept" })).toMatchSnapshot();
 	});
 });
 
-// code that every style shares handles these, so one style tests them
+// what the spec leaves to the implementation, recorded once and reviewed.
+// Code every style shares handles these, so one style records them
 describe("every style", () => {
 	test.each([
 		["an undefined parameter", { color: undefined, other: "kept" }],
@@ -187,7 +187,8 @@ describe("percent-encoding", () => {
 
 // the spec leaves an array or object member undefined for every style
 describe("nesting", () => {
-	// spaceDelimited and pipeDelimited write members with the same code as form
+	// spaceDelimited and pipeDelimited prepare members with form's join, so the
+	// form case covers them
 	test.each([
 		["form", formJoinSerializer],
 		["form with explode", formExplodeSerializer],
