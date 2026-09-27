@@ -25,7 +25,7 @@ import { GetAccountCommand } from "./generated/commands.ts";
 const client = new RestServiceClient("https://api.example.com", {
 	headers: {
 		"x-build-id": "abc123",
-		authorization: () => Promise.resolve(`Bearer ${await getToken()}`),
+		authorization: async () => `Bearer ${await getToken()}`,
 	},
 });
 
@@ -38,7 +38,33 @@ const account = await client.json(new GetAccountCommand({ accountId: "1234" }));
 
 - `client.json(command)` — sets `content-type: application/json`, returns the parsed body. Throws `ServiceError` on `>=400`.
 - `client.send(command)` — same as above but inherits the command's content type.
-- `client.stream(command)` — returns a `ReadableStream<Uint8Array>` for non-JSON / streaming responses.
+- `client.stream(command)` — returns the response body as a `ReadableStream<Uint8Array>`, unparsed whatever its content type. Throws `ServiceError` on `>=400`.
+
+### Sequential media types
+
+A response with an OpenAPI 3.2 sequential media type is a stream of items. Its command extends a `SequentialMediaCommand` subclass for the media type, which names that type and splits the body into items, so `client.stream()` yields items rather than bytes, and sends the media type as `accept` unless the runtime headers set one. `json()` and `send()` do not accept such a command.
+
+`EventStreamCommand` covers `text/event-stream`. Its second type parameter is the type of one event's `data`, and each event arrives as `{ type, data, lastEventId, retry }` with `data` decoded as JSON:
+
+```ts
+import { EventStreamCommand } from "@block65/rest-client";
+
+type Transfer = { id: string; bytes: number };
+
+class StreamActivityCommand extends EventStreamCommand<never, Transfer> {
+	constructor() {
+		super("/activity");
+	}
+}
+
+const events = await client.stream(new StreamActivityCommand(), { signal });
+
+for await (const { type, data } of events) {
+	// ...
+}
+```
+
+A command sets `dataTransformer` to `textDataTransformer` when its data is not JSON. A `dataSchema` on the command, any Standard Schema, checks each event's decoded data as it arrives, and a mismatch errors the stream with `ResponseValidationError`.
 
 ### Resolvable headers
 
@@ -64,6 +90,8 @@ new RestServiceClient(url, {
 ```
 
 The default fetcher retries idempotent (`GET`) requests and supports timeouts and merged abort signals.
+
+A replacement fetcher must honour `FetcherParams.raw`, which `stream()` sets: it hands a successful body back as the response's `ReadableStream`, unparsed. A fetcher that parses it anyway makes `stream()` throw a `TypeError`.
 
 ### Query parameter styles
 
@@ -98,7 +126,7 @@ new RestServiceClient(url, { sortQuery: (a, b) => a.localeCompare(b) });
 
 ### Response validation via `responseSchema`
 
-When a generated command class exposes a static `responseSchema` (any [Standard Schema](https://standardschema.dev) validator, such as [valibot](https://valibot.dev)), the client automatically runs the schema against successful responses — useful for coercing JSON-unsafe types like `int64` strings into `BigInt`.
+When a command sets a `responseSchema` (any [Standard Schema](https://standardschema.dev) validator, such as [valibot](https://valibot.dev)), the client automatically runs the schema against successful responses — useful for coercing JSON-unsafe types like `int64` strings into `BigInt`.
 
 Schema presence on the command is the sole trigger; there is no client-level flag. Consumers opt in by importing from the codegen's validated commands file (lean imports skip schema attachment, so no validator loads and there's no bundle cost).
 

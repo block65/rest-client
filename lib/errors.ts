@@ -4,7 +4,7 @@ import {
 	type StatusCode,
 } from "@block65/custom-error";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
-import type { Command } from "./command.ts";
+import type { Command } from "./commands/command.ts";
 import { isPlainObject } from "./utils.ts";
 
 export class ServiceError extends CustomError {
@@ -19,9 +19,9 @@ export class ServiceError extends CustomError {
 	}
 
 	/**
-	 * Reconstructs a ServiceError from a raw response body and the originating
-	 * Response. A structured body supplies message, code and details. Any
-	 * other body falls back to `res.statusText` with an `http-<status>` detail
+	 * Builds a ServiceError from a response and its body. A plain-object body
+	 * with a `message` supplies message, code and details. Any other body
+	 * falls back to `res.statusText` with an `http-<status>` detail
 	 */
 	public static fromResponse(res: Response, body: unknown) {
 		if (isPlainObject(body) && "message" in body) {
@@ -50,8 +50,8 @@ export class ServiceError extends CustomError {
 }
 
 /**
- * Wraps a response-validation failure with the command and URL behind it,
- * which the schema's issues do not name
+ * Wraps a failure to decode or validate a response body with the command and
+ * URL behind it, which the cause does not name
  */
 export class ResponseValidationError extends CustomError {
 	override code = CustomError.INVALID_ARGUMENT;

@@ -3,13 +3,13 @@
 
 	"entry": ["src/main.ts", "oxfmt.config.ts", "oxlint.config.ts"],
 
-	// Public API of @block65/rest-client. These classes are exported and consumed
-	// by downstream packages, so their public members appear unused locally.
+	// fails on any clone. A threshold of 0 disables the limit, so it only reports
+	"duplicates": { "threshold": 0.01 },
+
+	// public members of exported classes, which nothing in this package reads
 	"usedClassMembers": [
 		{
-			// `code` is required by the @block65/custom-error framework; `from` is a
-			// public static factory for converting valibot ValiError into a
-			// serialisable error.
+			// `code` overrides CustomError's, which its serialization reads
 			"extends": "CustomError",
 			"members": ["code", "from"]
 		}

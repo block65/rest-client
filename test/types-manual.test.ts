@@ -2,7 +2,7 @@ import { stripUndefined } from "@block65/rest-client";
 import type { UndefinedOnPartialDeep } from "type-fest";
 import { expect, expectTypeOf, test } from "vitest";
 import { RestServiceClient } from "../lib/client.ts";
-import { Command } from "../lib/command.ts";
+import { Command } from "../lib/commands/command.ts";
 
 const fakeApiUrl = new URL("https://192.0.2.1");
 
@@ -47,7 +47,7 @@ test("manual command", async () => {
 	expectTypeOf(result).toMatchTypeOf<RandomOutput>();
 });
 
-// the deep-widened shape stripUndefined leaves behind, as Command sees it
+// a deepObject parameter's query type, exact-optional as codegen declares it
 type DeepObjectQuery = {
 	effective_at?: { gt?: `${number}`; lte?: `${number}` };
 	project_ids?: readonly string[];

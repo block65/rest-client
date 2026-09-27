@@ -5,6 +5,8 @@ import {
 	type QuerySerializer,
 	RestServiceClient,
 	type RestServiceClientConfig,
+	SequentialMediaCommand,
+	type SequentialMediaChunk,
 	ServiceError,
 	createIsomorphicNativeFetcher,
 	deepObjectSerializer,
@@ -12,6 +14,7 @@ import {
 	formJoinSerializer,
 	pipeDelimitedSerializer,
 	spaceDelimitedSerializer,
+	textDataTransformer,
 } from "@block65/rest-client";
 import getPort from "get-port";
 import type { JsonObject, UnknownRecord } from "type-fest";
@@ -21,6 +24,7 @@ import {
 	beforeAll,
 	describe,
 	expect,
+	expectTypeOf,
 	test,
 	vi,
 } from "vitest";
@@ -72,7 +76,31 @@ class FakeJsonErrorCommand extends Command {
 	}
 }
 
-class FakeEventStreamCommand extends Command<never, Uint8Array> {
+class Fake204Command extends Command {
+	public override method = "get" as const;
+
+	constructor() {
+		super("/204");
+	}
+}
+
+class FakeVendorJsonCommand extends Command {
+	public override method = "get" as const;
+
+	constructor() {
+		super("/vendor-json");
+	}
+}
+
+class FakeJsonSeqCommand extends Command {
+	public override method = "get" as const;
+
+	constructor() {
+		super("/json-seq");
+	}
+}
+
+class FakeEventStreamCommand extends Command {
 	public override method = "get" as const;
 
 	constructor() {
@@ -107,14 +135,13 @@ class FakeOverrideCommand extends Command<never, FakeMyHeadersOutput> {
 	}
 }
 
-// a command names its serializer, this one takes it so a test can pick
 class QueryCommand extends Command {
 	public override method = "get" as const;
 
 	public override readonly querySerializer: QuerySerializer;
 
 	constructor(query: UnknownRecord, serializer = formExplodeSerializer) {
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test data
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a test query may hold values outside JsonObject
 		super("/query", null, query as JsonObject);
 		this.querySerializer = serializer;
 	}
@@ -160,6 +187,36 @@ describe("Client", () => {
 		const res = await client.json(new Fake200Command());
 
 		expect(res).toMatchSnapshot();
+	});
+
+	test("a +json vendor type is parsed as JSON", async () => {
+		await expect(client.send(new FakeVendorJsonCommand())).resolves.toEqual({
+			login: "octocat",
+		});
+	});
+
+	test("a JSON text sequence is left as a stream", async () => {
+		await expect(client.send(new FakeJsonSeqCommand())).resolves.toBeInstanceOf(
+			ReadableStream,
+		);
+	});
+
+	test("a success without a body resolves undefined", async () => {
+		await expect(client.send(new Fake204Command())).resolves.toBeUndefined();
+		await expect(client.json(new Fake204Command())).resolves.toBeUndefined();
+	});
+
+	test("a JSON null body resolves null", async () => {
+		const nullClient = new RestServiceClient(new URL("http://127.0.0.1"), {
+			fetch: vi.fn<typeof globalThis.fetch>(
+				async () =>
+					new Response("null", {
+						headers: { "content-type": "application/json" },
+					}),
+			),
+		});
+
+		await expect(nullClient.json(new Fake200Command())).resolves.toBeNull();
 	});
 
 	test("404", async () => {
@@ -216,6 +273,120 @@ describe("Client", () => {
 			const text = await new Response(stream).text();
 
 			expect(text).toBe("event: ping\ndata: {}\n\n");
+		});
+
+		test("hands back a JSON success unparsed", async () => {
+			const stream = await client.stream(new Fake200Command());
+
+			await expect(new Response(stream).text()).resolves.toBe("[1,2,3]");
+		});
+
+		test("types a plain command's stream as bytes", async () => {
+			const stream = await client.stream(new FakeEventStreamCommand());
+
+			expectTypeOf(stream).toEqualTypeOf<
+				ReadableStream<Uint8Array<ArrayBuffer>>
+			>();
+
+			await stream.cancel();
+		});
+
+		test("yields the items a sequential media command parses", async () => {
+			class FakeTextCommand extends SequentialMediaCommand<never, string> {
+				public override method = "get" as const;
+
+				public readonly mediaType = "text/event-stream";
+
+				public override readonly dataTransformer = textDataTransformer;
+
+				constructor() {
+					super("/event-stream");
+				}
+
+				// each decoded text chunk is one item
+				public readonly createTransformer = () => {
+					const decoder = new TextDecoderStream();
+
+					return {
+						writable: decoder.writable,
+						readable: decoder.readable.pipeThrough(
+							new TransformStream<string, SequentialMediaChunk>({
+								transform: (data, controller) => {
+									controller.enqueue({ data });
+								},
+							}),
+						),
+					};
+				};
+			}
+
+			const stream = await client.stream(new FakeTextCommand());
+
+			expectTypeOf(stream).toEqualTypeOf<
+				ReadableStream<SequentialMediaChunk>
+			>();
+			await expect(
+				Array.fromAsync(stream).then((items) =>
+					items.map((item) => item.data).join(""),
+				),
+			).resolves.toBe("event: ping\ndata: {}\n\n");
+		});
+
+		test("hands back an empty body as an empty stream", async () => {
+			const stream = await client.stream(new Fake204Command());
+
+			await expect(new Response(stream).text()).resolves.toBe("");
+		});
+
+		test("hands back a body a custom fetcher left unset as an empty stream", async () => {
+			const bodilessClient = new RestServiceClient(
+				new URL("http://127.0.0.1"),
+				{
+					fetcher: vi.fn<FetcherMethod>(async ({ url }) => ({
+						url,
+						res: new Response(null, { status: 204 }),
+					})),
+				},
+			);
+
+			const stream = await bodilessClient.stream(new Fake204Command());
+
+			await expect(new Response(stream).text()).resolves.toBe("");
+		});
+
+		test("hands back a JSON redirect unparsed", async () => {
+			const redirectClient = new RestServiceClient(
+				new URL("http://127.0.0.1"),
+				{
+					fetch: vi.fn<typeof globalThis.fetch>(
+						async () =>
+							new Response('{"location":"/elsewhere"}', {
+								status: 302,
+								headers: { "content-type": "application/json" },
+							}),
+					),
+				},
+			);
+
+			const stream = await redirectClient.stream(new Fake200Command());
+
+			await expect(new Response(stream).text()).resolves.toBe(
+				'{"location":"/elsewhere"}',
+			);
+		});
+
+		test("rejects a body a custom fetcher parsed anyway", async () => {
+			const parsingClient = new RestServiceClient(new URL("http://127.0.0.1"), {
+				fetcher: vi.fn<FetcherMethod>(async ({ url }) => ({
+					url,
+					res: new Response(null, { status: 200 }),
+					body: [1, 2, 3],
+				})),
+			});
+
+			await expect(parsingClient.stream(new Fake200Command())).rejects.toThrow(
+				TypeError,
+			);
 		});
 
 		test("rejects a JSON refusal as a ServiceError carrying its response", async () => {
@@ -332,7 +503,7 @@ describe("Client", () => {
 		expect(url.search).toBe("?fixed=1");
 	});
 
-	// each serializer a command can name, reaching the URL through the client
+	// each exported serializer, end to end through the client
 	describe.each([
 		["formExplodeSerializer", formExplodeSerializer],
 		["formJoinSerializer", formJoinSerializer],
@@ -403,8 +574,7 @@ describe("Client", () => {
 	describe("sortQuery", () => {
 		const queryParams = { z: 1, m: [2, 3], a: 4 };
 
-		// the client reorders before it hands over, so these assert what the
-		// serializer was given, not the URL that came back
+		// a spy serializer shows the client's key order before a style writes it
 		test("the serializer is handed a sorted copy, values intact", async () => {
 			const serialize = vi.fn<QuerySerializer>(() => "");
 

@@ -1,4 +1,4 @@
-import type { Entries, JsonPrimitive, UnknownRecord } from "type-fest";
+import type { JsonPrimitive, Simplify, UnknownRecord } from "type-fest";
 
 export function isPlainObject(value: unknown): value is UnknownRecord {
 	if (Object.prototype.toString.call(value) !== "[object Object]") {
@@ -26,7 +26,7 @@ export function maybeToJson<T>(value: T) {
 
 type Stringifiable = { toString(): string };
 
-// Object's own toString yields "[object Object]", which says nothing
+// `Object`'s own `toString` yields "[object Object]"
 function isStringifiable(value: unknown): value is Stringifiable {
 	return (
 		typeof value === "object" &&
@@ -36,9 +36,7 @@ function isStringifiable(value: unknown): value is Stringifiable {
 }
 
 /**
- * A string, number, boolean or bigint stringifies, and so does an object
- * that overrides Object's `toString`, an array included. The caller decides
- * what undefined means where it stands
+ * An array stringifies too, as it overrides Object's `toString`
  */
 export function stringifyScalar(value: unknown): string | undefined {
 	switch (true) {
@@ -57,7 +55,7 @@ export function stringifyScalar(value: unknown): string | undefined {
 
 /**
  * JSON.stringify that writes a bigint as its decimal string instead of
- * throwing. The generated `Command`s use it
+ * throwing
  */
 export function jsonStringify(value: unknown): string {
 	return JSON.stringify(value, (_key, val) =>
@@ -65,7 +63,17 @@ export function jsonStringify(value: unknown): string {
 	);
 }
 
-export function typedObjectEntries<T extends UnknownRecord>(obj: T) {
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- narrowing Object.entries to the record's entries is the point
-	return Object.entries(obj) as Entries<T>;
+export type WithoutUndefinedProperties<T extends object> = Simplify<{
+	[P in keyof T]: Exclude<T[P], undefined>;
+}>;
+
+export type OptionalToUndefined<T extends object> = {
+	[P in keyof T]: undefined extends T[P] ? T[P] | undefined : T[P];
+};
+
+export function stripUndefined<T extends object>(obj: OptionalToUndefined<T>) {
+	const kept = Object.entries(obj).filter(([, v]) => v !== undefined);
+
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- fromEntries returns an index signature, never the mapped type
+	return Object.fromEntries(kept) as WithoutUndefinedProperties<T>;
 }

@@ -1,23 +1,18 @@
-import type * as s from "@standard-schema/spec";
 import type { UnknownRecord } from "type-fest";
 import { createIsomorphicNativeFetcher } from "../src/fetchers/isomorphic-native-fetcher.ts";
-import type { Command } from "./command.ts";
-import {
-	PublicValidationError,
-	ResponseValidationError,
-	ServiceError,
-} from "./errors.ts";
+import { type Command } from "./commands/command.ts";
+import { SequentialMediaCommand } from "./commands/sequential-media.ts";
+import { ResponseValidationError, ServiceError } from "./errors.ts";
 import type {
 	FetcherMethod,
 	ResolvableHeaders,
 	RuntimeOptions,
 } from "./types.ts";
-import { isPlainObject } from "./utils.ts";
 
 const utf8 = new TextEncoder();
 
-// `<` on strings misorders astral characters, and a signing scheme uses bytes
-function compareUtf8Bytes(a: string, b: string) {
+// code point order, where `<` misorders astral characters as UTF-16 units
+function utf8Compare(a: string, b: string) {
 	const bytesA = utf8.encode(a);
 	const bytesB = utf8.encode(b);
 
@@ -40,37 +35,43 @@ function compareUtf8Bytes(a: string, b: string) {
 // serializers keep insertion order, so this sets the URL's top-level order
 function sortQueryKeys<T extends UnknownRecord>(
 	query: T,
-	sort: true | ((a: string, b: string) => number),
+	compareFnOrBool: true | ((a: string, b: string) => number),
 ) {
-	const order = sort === true ? compareUtf8Bytes : sort;
+	const compare = compareFnOrBool === true ? utf8Compare : compareFnOrBool;
 
-	const sorted = Object.entries(query).toSorted(([a], [b]) => order(a, b));
+	const sorted = Object.entries(query).toSorted(([a], [b]) => compare(a, b));
 
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- reordering keeps the shape
 	return Object.fromEntries(sorted) as T;
 }
 
-function headersFrom(headers: Record<string, string> | Headers | undefined) {
+function toHeaders(headers: Record<string, string> | Headers | undefined) {
 	return headers instanceof Headers ? Object.fromEntries(headers) : headers;
 }
 
-function isStandardSchema<TInput, TOutput>(
-	schema: unknown,
-): schema is s.StandardSchemaV1<TInput, TOutput> {
-	return isPlainObject(schema) && "~standard" in schema;
-}
+// stream() yields items, so json() and send() refuse a sequential command
+type NotSequential = { readonly "~sequential"?: never };
 
-function getCommandResponseSchema<TInput, TOutput>(
-	command: Command<TInput, TOutput>,
-) {
-	const ctor = command.constructor;
-	if (
-		"responseSchema" in ctor &&
-		isStandardSchema<TInput, TOutput>(ctor.responseSchema)
-	) {
-		return ctor.responseSchema;
+function toByteStream(body: unknown) {
+	if (body instanceof ReadableStream) {
+		// instanceof gives ReadableStream<any>, and FetcherMethod types a raw body
+		// as bytes
+		return body as ReadableStream<Uint8Array<ArrayBuffer>>;
 	}
-	return;
+
+	// a fetcher may leave a bodiless response's body unset
+	if (body === null || body === undefined) {
+		return new ReadableStream<Uint8Array<ArrayBuffer>>({
+			start(controller) {
+				controller.close();
+			},
+		});
+	}
+
+	// a parsed body means the fetcher ignored `raw`, and its bytes are consumed
+	throw new TypeError(
+		"stream() received a parsed body; the fetcher must honour `raw`",
+	);
 }
 
 export type RestServiceClientConfig = {
@@ -79,9 +80,9 @@ export type RestServiceClientConfig = {
 	credentials?: "include" | "omit" | "same-origin" | undefined;
 	responseValidator?: ((response: unknown) => boolean) | undefined;
 	/**
-	 * Orders the query's top-level keys before serialization, so a cache or a
-	 * signature keyed on the URL sees the same URL for any order the caller
-	 * wrote them in. An object parameter's members keep their order. `true`
+	 * Orders the query's top-level keys before serialization, so a query gives
+	 * the same URL for any order of its keys. An object
+	 * parameter's members keep their order. `true`
 	 * sorts by UTF-8 byte order, a comparator by its result
 	 */
 	sortQuery?: boolean | ((a: string, b: string) => number) | undefined;
@@ -128,20 +129,16 @@ export class RestServiceClient<
 		this.#logger?.(`[rest-client] ${msg}`, ...args);
 	}
 
-	// a schema on the Command is what triggers validation
-	async #maybeValidate<
-		TInput extends ClientInput,
-		TOutput extends ClientOutput,
-	>(command: Command<TInput, TOutput>, body: unknown, url: URL) {
-		const schema = getCommandResponseSchema<TInput, TOutput>(command);
-
-		if (!schema) {
-			// no schema, so the body is returned as the command declares it
-			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- by design
-			return body as TOutput;
-		}
-
-		this.#log("validating response with schema");
+	async #parseBody<TInput extends ClientInput, TOutput extends ClientOutput>(
+		command: Command<TInput, TOutput>,
+		res: Response,
+		fetchedBody: unknown,
+		url: URL,
+	) {
+		// a bodiless response, a 204 say, resolves undefined. A JSON null was
+		// read from a body, so its res.body is still set and it stays null
+		const body =
+			fetchedBody === null && res.body === null ? undefined : fetchedBody;
 
 		if (this.#responseValidator && !this.#responseValidator(body)) {
 			throw new ResponseValidationError(
@@ -151,24 +148,25 @@ export class RestServiceClient<
 			);
 		}
 
-		// the schema may transform, so the parsed value replaces the raw body
-		const result = await schema["~standard"].validate(body);
-
-		if (result.issues) {
-			throw new ResponseValidationError(
-				command,
-				url,
-				PublicValidationError.fromIssues(result.issues),
-			);
+		try {
+			return await command.parseBody(body);
+		} catch (err) {
+			throw new ResponseValidationError(command, url, err);
 		}
-
-		return result.value;
 	}
 
 	public async response<
 		InputType extends ClientInput,
 		OutputType extends ClientOutput,
 	>(command: Command<InputType, OutputType>, runtimeOptions?: RuntimeOptions) {
+		return this.#fetch(command, runtimeOptions, false);
+	}
+
+	async #fetch(
+		command: Command,
+		runtimeOptions: RuntimeOptions | undefined,
+		raw: boolean,
+	) {
 		const { method } = command;
 
 		const url = await this.#buildUrl(command, runtimeOptions);
@@ -188,6 +186,8 @@ export class RestServiceClient<
 			headers,
 
 			...(runtimeOptions?.signal && { signal: runtimeOptions?.signal }),
+
+			...(raw && { raw }),
 		});
 
 		this.#log(
@@ -217,8 +217,9 @@ export class RestServiceClient<
 	}
 
 	async #resolveHeaders(command: Command, runtimeOptions?: RuntimeOptions) {
+		// command headers override client headers, and either may be a resolver
 		const resolved = await Promise.all(
-			Object.entries(this.#headers ?? {}).map(
+			Object.entries({ ...this.#headers, ...command.headers }).map(
 				async ([key, valueOrResolver]) => {
 					if (typeof valueOrResolver === "function") {
 						// binding allows the resolver to access its client via `this`
@@ -232,12 +233,9 @@ export class RestServiceClient<
 			),
 		);
 
-		const clientHeaders = Object.fromEntries(resolved);
-
 		return {
-			...clientHeaders,
-			...command.headers,
-			...headersFrom(runtimeOptions?.headers),
+			...Object.fromEntries(resolved),
+			...toHeaders(runtimeOptions?.headers),
 		};
 	}
 
@@ -245,20 +243,20 @@ export class RestServiceClient<
 		InputType extends ClientInput,
 		OutputType extends ClientOutput,
 	>(
-		command: Command<InputType, OutputType>,
+		command: Command<InputType, OutputType> & NotSequential,
 		runtimeOptions?: RuntimeOptions,
 	): Promise<OutputType> {
 		const { res, body, url } = await this.response(command, {
 			...runtimeOptions,
 			headers: {
 				accept: "application/json",
-				...headersFrom(runtimeOptions?.headers),
+				...toHeaders(runtimeOptions?.headers),
 				"content-type": "application/json;charset=utf-8",
 			},
 		});
 
 		if (res.status < 400) {
-			return this.#maybeValidate(command, body, url);
+			return this.#parseBody(command, res, body, url);
 		}
 
 		throw ServiceError.fromResponse(res, body);
@@ -268,36 +266,56 @@ export class RestServiceClient<
 		InputType extends ClientInput,
 		OutputType extends ClientOutput,
 	>(
-		command: Command<InputType, OutputType>,
+		command: Command<InputType, OutputType> & NotSequential,
 		runtimeOptions?: RuntimeOptions,
 	): Promise<OutputType> {
 		const { res, body, url } = await this.response(command, runtimeOptions);
 
 		if (res.status < 400) {
-			return this.#maybeValidate(command, body, url);
+			return this.#parseBody(command, res, body, url);
 		}
 
 		throw ServiceError.fromResponse(res, body);
 	}
 
 	/**
-	 * Resolves a success's body as a stream. A status from 400 rejects with a
-	 * ServiceError, as json() does
+	 * Resolves with the body's bytes, unparsed, JSON included. A sequential
+	 * media command's bytes are parsed into its items, and a parse failure
+	 * errors the stream. A status of 400 or above rejects with a ServiceError
 	 */
-	public async stream<
-		InputType extends ClientInput,
-		OutputType extends ClientOutput,
-	>(
+	public stream<InputType extends ClientInput, ItemType extends ClientOutput>(
+		command: Command<InputType, ItemType> & { readonly "~sequential": true },
+		runtimeOptions?: RuntimeOptions,
+	): Promise<ReadableStream<ItemType>>;
+
+	public stream<InputType extends ClientInput, OutputType extends ClientOutput>(
 		command: Command<InputType, OutputType>,
 		runtimeOptions?: RuntimeOptions,
-	): Promise<ReadableStream<OutputType>> {
-		const { res, body } = await this.response(command, runtimeOptions);
+	): Promise<ReadableStream<Uint8Array<ArrayBuffer>>>;
+
+	public async stream(command: Command, runtimeOptions?: RuntimeOptions) {
+		const sequential =
+			command instanceof SequentialMediaCommand ? command : undefined;
+
+		const { res, body, url } = await this.#fetch(
+			command,
+			sequential
+				? {
+						...runtimeOptions,
+						headers: {
+							accept: sequential.mediaType,
+							...toHeaders(runtimeOptions?.headers),
+						},
+					}
+				: runtimeOptions,
+			true,
+		);
 
 		if (res.status >= 400) {
-			// a refusal the fetcher left unparsed still holds the connection
 			if (body instanceof ReadableStream) {
-				// an errored stream is already released, and the caller needs the
-				// refusal, so a cancel failure is only logged
+				// an unread body holds its connection until cancelled. An errored
+				// stream is already released, so a failed cancel is only logged
+				// and the ServiceError still throws
 				await body.cancel().catch((err: unknown) => {
 					this.#log("refusal body cancel failed", err);
 				});
@@ -306,20 +324,12 @@ export class RestServiceClient<
 			throw ServiceError.fromResponse(res, body);
 		}
 
-		if (body instanceof ReadableStream) {
-			// the fetcher hands over the stream untyped, so the command's chunk
-			// type stands
-			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- untyped
-			return body as ReadableStream<OutputType>;
+		const bytes = toByteStream(body);
+
+		if (!sequential) {
+			return bytes;
 		}
 
-		return new ReadableStream<OutputType>({
-			start(controller) {
-				// a non-stream body is the parsed response the command declares
-				// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- by design
-				controller.enqueue(body as OutputType);
-				controller.close();
-			},
-		});
+		return sequential.parse(bytes, url);
 	}
 }

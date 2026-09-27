@@ -15,6 +15,8 @@ export type FetcherParams = {
 	headers?: Record<string, string>;
 	credentials?: "include" | "omit" | "same-origin";
 	signal?: AbortSignal;
+	/** Leave a success's body unparsed, as the response's own byte stream */
+	raw?: boolean;
 };
 
 export type FetcherResponse<T = unknown> = {
@@ -25,13 +27,14 @@ export type FetcherResponse<T = unknown> = {
 
 export type FetcherMethod = (
 	params: FetcherParams,
-) => Promise<FetcherResponse<ReadableStream<Uint8Array> | null | Jsonifiable>>;
+) => Promise<
+	FetcherResponse<ReadableStream<Uint8Array<ArrayBuffer>> | null | Jsonifiable>
+>;
 
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete" | "head";
 
 /**
- * Turns a command's query object into the search string after the `?`.
- * The exported serializers write one OpenAPI style each
+ * Turns a command's query object into the search string after the `?`
  */
 export type QuerySerializer = (query: UnknownRecord) => string;
 

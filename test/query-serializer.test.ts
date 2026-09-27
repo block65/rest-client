@@ -8,7 +8,7 @@ import {
 } from "@block65/rest-client";
 import type { UnknownRecord } from "type-fest";
 import { describe, expect, test } from "vitest";
-import { typedObjectEntries } from "../lib/utils.ts";
+import { typedObjectEntries } from "./helpers.ts";
 
 type Type = "undefined" | "string" | "array" | "object";
 
@@ -246,7 +246,8 @@ describe("hostile input", () => {
 		).toThrowErrorMatchingSnapshot();
 	});
 
-	// query-string copies keys through a plain object, which swallows this one
+	// query-string copies keys into a plain object, where assigning __proto__
+	// sets the prototype
 	test("a parameter named __proto__ is dropped and pollutes nothing", () => {
 		const query: unknown = JSON.parse('{"__proto__":{"polluted":"1"},"b":"1"}');
 

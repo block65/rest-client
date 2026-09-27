@@ -1,14 +1,10 @@
 import { defineConfig } from "@block65/shared-config/oxlint";
 
 export default defineConfig({
-	// Codegen output, ignored by the previous .oxlintrc.json as well
+	// Codegen output
 	ignorePatterns: ["test/fixtures/**"],
 
 	groups: { vitest: "on", valibot: "on" },
-
-	rules: {
-		"unicorn/catch-error-name": ["error", { name: "err" }],
-	},
 
 	overrides: [
 		{

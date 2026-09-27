@@ -164,7 +164,7 @@ settings:
 
 overrides:
   oxlint: npm:@block65/oxlint@>=1.83.0
-  oxlint-tsgolint: npm:@block65/oxlint-tsgolint@>=7.0.200200
+  oxlint-tsgolint: npm:@block65/oxlint-tsgolint@>=7.0.200300
 
 importers:
 
@@ -179,16 +179,22 @@ importers:
       p-retry:
         specifier: ^8.0.1
         version: 8.0.1
+      parse-sse:
+        specifier: ^0.1.0
+        version: 0.1.0
       query-string:
         specifier: ^9.5.1
         version: 9.5.1
     devDependencies:
       '@block65/shared-config':
-        specifier: ^0.5.0
-        version: 0.5.0(@block65/oxlint-tsgolint@7.0.200200)(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)(fallow@3.27.0)(oxfmt@0.68.0)
+        specifier: ^0.6.0
+        version: 0.6.0(@block65/oxlint-tsgolint@7.0.200300)(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200300))(eslint@10.10.0)(fallow@3.27.0)(oxfmt@0.68.0)
       '@block65/tsconfig':
         specifier: ^0.3.1
         version: 0.3.1
+      '@hono/standard-validator':
+        specifier: ^0.4.0
+        version: 0.4.0(@standard-schema/spec@1.1.0)(hono@4.13.9)
       '@types/node':
         specifier: ^26.6.2
         version: 26.6.2
@@ -198,15 +204,18 @@ importers:
       get-port:
         specifier: ^7.2.0
         version: 7.2.0
+      hono:
+        specifier: ^4.13.9
+        version: 4.13.9
       oxfmt:
         specifier: ^0.68.0
         version: 0.68.0
       oxlint:
         specifier: npm:@block65/oxlint@>=1.83.0
-        version: '@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200)'
+        version: '@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200300)'
       oxlint-tsgolint:
-        specifier: npm:@block65/oxlint-tsgolint@>=7.0.200200
-        version: '@block65/oxlint-tsgolint@7.0.200200'
+        specifier: npm:@block65/oxlint-tsgolint@>=7.0.200300
+        version: '@block65/oxlint-tsgolint@7.0.200300'
       type-fest:
         specifier: ^5.10.0
         version: 5.10.0
@@ -242,24 +251,24 @@ packages:
     os: [linux]
     libc: [glibc]
 
-  '@block65/oxlint-plugin@0.11.0':
-    resolution: {integrity: sha512-68MuNjQkloeKt4B4rQdW5jYoWK/e+6WB11uOmPC66R/sZdMMgi7yqA+YCG8wJRJPy4/NSK7zAdt1JiRoOBp+kA==}
+  '@block65/oxlint-plugin@0.12.1':
+    resolution: {integrity: sha512-hGPAZKw18lwLAkLKaPTw95vjuapJ4mx+YziblrgzHm8N5Lk/4Sv9a2kB3CQ7TC6PI6h+zTvZRaQgCD9A3X1z4w==}
     engines: {node: '>=24'}
     peerDependencies:
       oxlint: ^1.83.0
 
-  '@block65/oxlint-tsgolint-linux-arm64@7.0.200200':
-    resolution: {integrity: sha512-BRTbnw/wRUQePD6sKup3cyPoN5jc7GnAOyyJ6TE5lXp5B8cr1zbt3OVjoksoYnceqZpeO5g36PecgauSMNO+Pg==}
+  '@block65/oxlint-tsgolint-linux-arm64@7.0.200300':
+    resolution: {integrity: sha512-BYR2N+QTu1Ggo/fYabKECUWcNHkoIFcK5v14WV19J5147z9EjlqVnPnAUdqm6EU8TTZoVmHbv0JI4FXq82rGAg==}
     cpu: [arm64]
     os: [linux]
 
-  '@block65/oxlint-tsgolint-linux-x64@7.0.200200':
-    resolution: {integrity: sha512-Jj6CpfCqkioWv1kOtDBOFF1BS2OJ9KLWoowfOwPB635VnR1mLsi+utWh/6C0rkxxM6luunX5cB15g1rQ+OaGOA==}
+  '@block65/oxlint-tsgolint-linux-x64@7.0.200300':
+    resolution: {integrity: sha512-XvI2mU/SdwKkgo8EbYmmcwpGIOBJfLiAuV57uXm/eYo31NNumR7rEGlTIFNy2ZBXl6j3yv60ogE7msfnkRAKAw==}
     cpu: [x64]
     os: [linux]
 
-  '@block65/oxlint-tsgolint@7.0.200200':
-    resolution: {integrity: sha512-UZ/b6cEl7ahIygTXKaQKcsb7Abt2a8GW1BvZb4JVNJjwEcDXp/k1iL1u/yeUedLzKRQQvqmLHOzXPd6cl82WyQ==}
+  '@block65/oxlint-tsgolint@7.0.200300':
+    resolution: {integrity: sha512-/Nj4G7S9ufI1T7LPFmGAvmNoQwy14wiN9zNSaT/lmgbCa+rmRq4TBOv9Y0sCymTfts4M6q70/86UYslDZWRnaw==}
     hasBin: true
 
   '@block65/oxlint@1.83.0':
@@ -275,8 +284,8 @@ packages:
       vite-plus:
         optional: true
 
-  '@block65/shared-config@0.5.0':
-    resolution: {integrity: sha512-f7iXlaPc0GozRwUHzGxZ9hMrBGC6Ay07zTLt96A2zJ0YXsfyq0NkSOYe58nupTyu5P4rk/+lxjZPearGL/ORVg==}
+  '@block65/shared-config@0.6.0':
+    resolution: {integrity: sha512-CH3MENQRyzV7mwKzzkBBYpP1GbCb+rLGnnEMeuoCRTLMs9HLZNrngFWyMQrBljSQo4KD+sFrkfIjFW8HMQFjTQ==}
     engines: {node: '>=24'}
     peerDependencies:
       fallow: ^3.27.0
@@ -375,6 +384,12 @@ packages:
     resolution: {integrity: sha512-F1VHSLgn3X2tA45WamK3+IXLNgFTQiolZbthkawvRPCHAXdksSjhujJ9Ruuln24Y+q/2zsctrEdypLDpuaI/uA==}
     cpu: [x64]
     os: [win32]
+
+  '@hono/standard-validator@0.4.0':
+    resolution: {integrity: sha512-MxOm1asDh9j7c1D0KiWwppSbFgAQxTRO4YEhjMrJn3lF1BIcXenPdgjSGKDRfQmZdaTaMA8slQLETgVOKyJxFw==}
+    peerDependencies:
+      '@standard-schema/spec': ^1.0.0
+      hono: '>=4.11.2'
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -1037,6 +1052,10 @@ packages:
     resolution: {integrity: sha512-iZyKG96/JwPz1N55vj2Ie2vXbhu440zfUfJvSwEqEbeLluk7NnapfGqa7LH0mOsnDxTF85Mx8/dyR6HfqcbmbQ==}
     engines: {node: '>=20'}
 
+  hono@4.13.9:
+    resolution: {integrity: sha512-7dMkQmZoC4E6F7AtaQSPhlWAdnBti+j7rreMZl8QB4jFiEhP9TWbGWUMi8WYzBCgmgulxuvLQupKqo+Co6Omyg==}
+    engines: {node: '>=16.9.0'}
+
   hookified@1.15.1:
     resolution: {integrity: sha512-MvG/clsADq1GPM2KGo2nyfaWVyn9naPiXrqIe4jYjXNZQt238kWyOGrsyc/DmRAQ+Re6yeo6yX/yoNCG5KAEVg==}
 
@@ -1254,6 +1273,10 @@ packages:
   p-timeout@6.1.4:
     resolution: {integrity: sha512-MyIV3ZA/PmyBN/ud8vV9XzwTrNtR4jFrObymZYnZqMmW0zA8Z17vnT0rBgFE/TlohB+YCHqXMgZzb3Csp49vqg==}
     engines: {node: '>=14.16'}
+
+  parse-sse@0.1.0:
+    resolution: {integrity: sha512-8bObUwtEuLp2Z1gP6iRVMBzmEqaU5ohmofa3WmZVFfFZFKRP/+c03y8NVYzzXmQMotQ6mDS5Mnyk6tT1gKOTcQ==}
+    engines: {node: '>=20'}
 
   path-exists@4.0.0:
     resolution: {integrity: sha512-ak9Qy5Q7jYb2Wwcey5Fpvg2KoAc/ZIhLSLOSBmRmygPsGwkVVt0fZa0qrtMz+m6tJTAHfZQ8FnmB4MG4LWy7/w==}
@@ -1536,39 +1559,39 @@ snapshots:
   '@block65/oxlint-binding-linux-x64-gnu@1.83.0':
     optional: true
 
-  '@block65/oxlint-plugin@0.11.0(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)':
+  '@block65/oxlint-plugin@0.12.1(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200300))(eslint@10.10.0)':
     dependencies:
       css-tree: 3.2.1
       eslint-plugin-unicorn: 74.0.0(eslint@10.10.0)
-      oxlint: '@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200)'
+      oxlint: '@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200300)'
     transitivePeerDependencies:
       - eslint
 
-  '@block65/oxlint-tsgolint-linux-arm64@7.0.200200':
+  '@block65/oxlint-tsgolint-linux-arm64@7.0.200300':
     optional: true
 
-  '@block65/oxlint-tsgolint-linux-x64@7.0.200200':
+  '@block65/oxlint-tsgolint-linux-x64@7.0.200300':
     optional: true
 
-  '@block65/oxlint-tsgolint@7.0.200200':
+  '@block65/oxlint-tsgolint@7.0.200300':
     optionalDependencies:
-      '@block65/oxlint-tsgolint-linux-arm64': 7.0.200200
-      '@block65/oxlint-tsgolint-linux-x64': 7.0.200200
+      '@block65/oxlint-tsgolint-linux-arm64': 7.0.200300
+      '@block65/oxlint-tsgolint-linux-x64': 7.0.200300
 
-  '@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200)':
+  '@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200300)':
     optionalDependencies:
       '@block65/oxlint-binding-linux-arm64-gnu': 1.83.0
       '@block65/oxlint-binding-linux-x64-gnu': 1.83.0
-      oxlint-tsgolint: '@block65/oxlint-tsgolint@7.0.200200'
+      oxlint-tsgolint: '@block65/oxlint-tsgolint@7.0.200300'
 
-  '@block65/shared-config@0.5.0(@block65/oxlint-tsgolint@7.0.200200)(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)(fallow@3.27.0)(oxfmt@0.68.0)':
+  '@block65/shared-config@0.6.0(@block65/oxlint-tsgolint@7.0.200300)(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200300))(eslint@10.10.0)(fallow@3.27.0)(oxfmt@0.68.0)':
     dependencies:
-      '@block65/oxlint-plugin': 0.11.0(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200))(eslint@10.10.0)
+      '@block65/oxlint-plugin': 0.12.1(@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200300))(eslint@10.10.0)
     optionalDependencies:
       fallow: 3.27.0
       oxfmt: 0.68.0
-      oxlint: '@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200200)'
-      oxlint-tsgolint: '@block65/oxlint-tsgolint@7.0.200200'
+      oxlint: '@block65/oxlint@1.83.0(@block65/oxlint-tsgolint@7.0.200300)'
+      oxlint-tsgolint: '@block65/oxlint-tsgolint@7.0.200300'
     transitivePeerDependencies:
       - eslint
 
@@ -1644,6 +1667,11 @@ snapshots:
 
   '@fallow-cli/win32-x64-msvc@3.27.0':
     optional: true
+
+  '@hono/standard-validator@0.4.0(@standard-schema/spec@1.1.0)(hono@4.13.9)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      hono: 4.13.9
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -2123,6 +2151,8 @@ snapshots:
     dependencies:
       hookified: 1.15.1
 
+  hono@4.13.9: {}
+
   hookified@1.15.1: {}
 
   hookified@2.2.0: {}
@@ -2304,6 +2334,8 @@ snapshots:
       is-network-error: 1.3.2
 
   p-timeout@6.1.4: {}
+
+  parse-sse@0.1.0: {}
 
   path-exists@4.0.0: {}
 
