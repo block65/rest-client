@@ -48,8 +48,12 @@ exports[`Fetcher > JSON Error 1`] = `
 {
   "body": {
     "code": 9,
-    "message": "Data should be array",
-    "name": "CustomError",
+    "details": [
+      {
+        "locale": "en",
+        "message": "Data should be array",
+      },
+    ],
   },
   "res": Response {},
   "url": Any<URL>,
