@@ -682,6 +682,20 @@ describe("ServiceError.fromResponse", () => {
 		expect(err.details).toStrictEqual([localised, violations]);
 	});
 
+	test("keeps a body's own message", () => {
+		const err = ServiceError.fromResponse(
+			new Response(null, { status: 401, statusText: "Unauthorized" }),
+			{
+				code: 16,
+				message: "Unauthenticated",
+				details: [{ locale: "en", message: "Sign in first" }],
+			},
+		);
+
+		expect(err.code).toBe(16);
+		expect(err.message).toBe("Unauthenticated");
+	});
+
 	test("takes the status text when no detail is localised", () => {
 		const detail = { reason: "quota", metadata: { limit: "10" } };
 
