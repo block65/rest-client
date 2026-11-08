@@ -20,23 +20,34 @@ export class ServiceError extends CustomError {
 
 	/**
 	 * Builds a ServiceError from a response and its body. A plain-object body
-	 * with a `message` supplies message, code and details. Any other body
-	 * falls back to `res.statusText` with an `http-<status>` detail
+	 * with a status `code` is an error body. Its `details` are kept, and its
+	 * message is the first localised detail's, since a server never sends the
+	 * thrown message. Any other body falls back to `res.statusText` with an
+	 * `http-<status>` detail
 	 */
 	public static fromResponse(res: Response, body: unknown) {
-		if (isPlainObject(body) && "message" in body) {
+		if (isPlainObject(body) && isStatusCode(body.code)) {
+			const details =
+				"details" in body && Array.isArray(body.details) ? body.details : [];
+			const localised = details.find(
+				(detail): detail is { message: string } =>
+					isPlainObject(detail) &&
+					"locale" in detail &&
+					typeof detail.message === "string",
+			);
 			const err = new ServiceError(
-				typeof body.message === "string" ? body.message : res.statusText,
-				isStatusCode(body.code) ? body.code : CustomError.UNKNOWN,
+				localised?.message ?? res.statusText,
+				body.code,
 				res,
 			);
 
-			if ("details" in body && Array.isArray(body.details)) {
-				err.addDetail(...body.details);
+			if (details.length > 0) {
+				err.addDetail(...details);
 			}
 
 			return err;
 		}
+
 		return new ServiceError(res.statusText, CustomError.UNKNOWN, res).addDetail(
 			{
 				reason: `http-${res.status}`,

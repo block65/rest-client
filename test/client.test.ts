@@ -666,16 +666,43 @@ describe("Command", () => {
 });
 
 describe("ServiceError.fromResponse", () => {
-	test("keeps a body's details", () => {
-		const detail = { reason: "quota", metadata: { limit: "10" } };
+	test("reads a body of code and details, without a message", () => {
+		const localised = { locale: "en", message: "No such ticket" };
+		const violations = {
+			violations: [{ field: "title", description: "Required" }],
+		};
 
-		const err = ServiceError.fromResponse(new Response(null, { status: 429 }), {
-			message: "Too many",
-			details: [detail],
+		const err = ServiceError.fromResponse(new Response(null, { status: 404 }), {
+			code: 5,
+			details: [localised, violations],
 		});
 
-		expect(err.message).toBe("Too many");
+		expect(err.code).toBe(5);
+		expect(err.message).toBe("No such ticket");
+		expect(err.details).toStrictEqual([localised, violations]);
+	});
+
+	test("takes the status text when no detail is localised", () => {
+		const detail = { reason: "quota", metadata: { limit: "10" } };
+
+		const err = ServiceError.fromResponse(
+			new Response(null, { status: 429, statusText: "Too Many Requests" }),
+			{ code: 8, details: [detail] },
+		);
+
+		expect(err.code).toBe(8);
+		expect(err.message).toBe("Too Many Requests");
 		expect(err.details).toStrictEqual([detail]);
+	});
+
+	test("reads a body that is not an error body as http-<status>", () => {
+		const err = ServiceError.fromResponse(
+			new Response(null, { status: 502, statusText: "Bad Gateway" }),
+			{ message: "upstream said so" },
+		);
+
+		expect(err.code).toBe(2);
+		expect(err.message).toBe("Bad Gateway");
 	});
 });
 

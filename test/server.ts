@@ -1,5 +1,4 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { type SerializedError, type StatusCode } from "@block65/custom-error";
 
 // per-key attempt counters for the /flaky endpoint
 const flakyAttempts = new Map<string, number>();
@@ -89,10 +88,9 @@ export function requestListener(req: IncomingMessage, res: ServerResponse) {
 			res.writeHead(400, { "content-type": "application/json; charset=utf-8" });
 			res.end(
 				JSON.stringify({
-					name: "CustomError",
-					message: "Data should be array",
 					code: 9,
-				} satisfies SerializedError<StatusCode>),
+					details: [{ locale: "en", message: "Data should be array" }],
+				}),
 			);
 			break;
 		case "/event-stream":
